@@ -93,10 +93,10 @@ instruction
 	 $$ = { t:"+=", left: $1, right: $3, ln:@2.first_line};
       }
       | ID '(' ')' {
-	 $$ = { t:"call", f:$1, args:[]};
+	 $$ = { t:"call", f:$1, args:[], ln:@1.first_line};
       }
       | ID '(' listeExpr ')' {
-	 $$ = { t:"call", f:$1, args:$3};
+	 $$ = { t:"call", f:$1, args:$3, ln:@1.first_line};
       }
       | for lvalue "in" expr ":" blocOuSingle {
 	 $$ = { t:"for", compteur:$2, range:$4, do:$6};
@@ -143,10 +143,10 @@ expr
 	 $$ = {t:"+", left:$1, right:$3, ln:@2.first_line};
       }
       | ID '(' ')' {
-	 $$={t: "call", f:$1, args:[]};
+	 $$={t: "call", f:$1, args:[], ln:@1.first_line};
       }
       | ID '(' listeExpr ')' {
-	 $$={t: "call", f:$1, args:$3};
+	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
       }
       ;
 
