@@ -188,10 +188,6 @@ listInst
 	 $$ = $3;
 	 $$.unshift($1);
       }
-      | definition ";" listInst {
-	 $$ = $3;
-	 $$.unshift($1);
-      }
       ;
 
 definition
