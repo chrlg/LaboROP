@@ -1,7 +1,9 @@
 # Sommets du graphe
 Sommet A
-Sommet B,C
+Sommet A
+Sommet Gamma(A)
 Sommet "B\"C" # les noms des sommets peuvent être donnés sous forme de chaine
+Sommet B,C
 X += "C\nD" # méthode alternative
 
 v="A"

@@ -1,221 +1,243 @@
-var lexemes=[];
-onmessage = function (e){
-   var lex = lexico(e.data);
-   if(lex.ERROR){
-      postMessage(lex);
-      return;
+importScripts("grlang.js");
+
+grlang.yy.parseError = function(e, h){
+   var hh=h;
+   hh.msg=e;
+   if(hh.token && hh.token=="INVALID"){
+      hh.error="lexico";
+      hh.name="Erreur lexicale";
+      hh.msg="Symbole illégal "+h.text;
    }
-   lexemes=lex;
-   var prg = parseProgram();
-   postMessage(prg);
+   if(hh.line !== undefined){
+      hh.ln = hh.line+1;
+   }
+   throw(hh);
 }
 
-var indentLevel=0;
-
-function parseString(str){
-   var r={index:-1, val:""};
-   for(var i=1; i<str.length; i++){
-      if(str[i]==str[0]) {
-	 r.index=i+1;
-	 break;
-      }
-      if(str[i]=='\n') break;
-      if(str[i]=='\\'){
-	 i++;
-	 if(i>=str.length) break;
-	 if(str[i]=="n") r.val+="\n";
-	 else r.val += str[i];
-      }
-      else r.val += str[i];
-   }
-   return r;
-}
-
-function parseNumber(str){
-   var r={index:0, val:{t:false, v:""}};
-   r.val.v=str.match(/^[0-9]*/)[0];
-   r.index=r.val.v.length;
-   if(r.index>0) r.val.t="INT";
-   if(str[r.index]=='.'){
-      r.index++;
-      r.val.t="FLOAT";
-      r.val.v+=".";
-      var virg=str.slice(r.index).match(/^[0-9]*/)[0];
-      r.val.v+=virg;
-      r.index+=virg.length;
-   }
-   var expo=str.slice(r.index).match(/^[Ee][0-9]+/);
-   if(expo){
-      r.index += expo[0].length;
-      r.val.v += expo[0];
-   }
-   if(r.val.t=="INT") r.val.v=parseInt(r.val.v);
-   else r.val.v=parseFloat(r.val.v);
-   return r;
-}
-
-function lexico(str){
-   var lex=[];
+function parseTabulation(str){
+   var out="";
+   var startLine=true;
    var indents=[0];
-   var newline=true;
-   str+="\n\n";
-   var numln=1;
-   while (str != ""){
-      // Tabulation en début de ligne => BEGIN/END
-      if(newline){
-	 var m=str.match(/[^ ]/);
-	 if(m>0) str = str.slice(m.index);
-	 var li=indents.pop();
-	 indents.push(li);
-	 newline=false;
-	 if(m.index==li) continue;
-	 if(m.index>li){
-	    indents.push(m.index);
-	    lex.push({t: "BEGIN", ln:numln});
+   var ln=1;
+   str+="§;\n§;\n";
+   while(str!=""){
+      if(startLine){
+	 startLine=false;
+	 var m=str.match(/[^ ]/).index;
+	 if(str[m]=="\n"){
+	    str=str.slice(m);
 	    continue;
 	 }
-	 li=indents.pop();
-	 while(m.index<li){
-	    lex.push({t: "END", ln:numln});
-	    li=indents.pop();
+	 str=str.slice(m);
+	 var expected=indents[indents.length-1];
+	 if(m==expected) continue;
+	 if(m>expected){
+	    out+="§{";
+	    indents.push(m);
+	    continue;
 	 }
-	 if(m.index==li){
-	    indents.push(li);
-	 }else{
-	    return {ERROR: "Erreur d'indentation", ln: numln};
+	 while(m<expected){
+	    out += "§}§;";
+	    indents.pop();
+	    expected=indents[indents.length-1];
 	 }
-      }
-
-      // Commentaires
-      if(str[0]=='#'){
-	 str=str.slice(str.match(/\n/).index + 1);
-	 numln++;
-	 newline=true;
-	 if(lex.length==0) continue;
-	 if(lex[lex.length-1].t=="NL") continue;
-	 lex.push({t:"NL", ln:numln-1});
+	 if(m>expected){
+	    throw {error: "indent", msg: false, name: "Erreur d'indentation", ln:ln};
+	 }
 	 continue;
       }
-
-      // Fin de ligne
-      if(str[0]=='\n'){
-	 newline=true;
+      else if(str[0]=='\n'){
+	 ln ++;
+	 out += "\n";
 	 str=str.slice(1);
-	 numln++;
-	 if(lex.length==0) continue;
-	 if(lex[lex.length-1].t=="NL") continue;
-	 lex.push({t:"NL", ln:numln-1});
+	 startLine=true;
+	 continue;
+      }else{
+	 var m=str.match(/^[^\n]+/)[0];
+	 out += m;
+	 str=str.slice(m.length);
 	 continue;
       }
+   }
+   return out;
+}
 
-      // Espaces
-      if(str[0]==" "){
-	 str=str.slice(str.match(/[^ ]/).index);
-	 continue;
-      }
+function updateGraphe(envs){
+   var gr="";
+   var orient = envs[0]["X"].orient==true;
+   if(orient) gr+="digraph{";
+   else gr+="graph{";
+   for(var e in envs[1]){
+      gr+=(""+e+";");
+   }
+   var U=envs[0]["U"];
+   for(var i=0; i<U.arcs.length; i++){
+      if(orient) gr+=""+U.arcs[i][0] +"->"+U.arcs[i][1]+";";
+      else gr+=""+U.arcs[i][0]+"--"+U.arcs[i][1]+";";
+   }
+   gr+="}\n";
+   postMessage({graph:gr});
+}
 
-      // Identifiants
-      if(str[0].match(/[a-zA-Z_]/)){
-	 var m=str.match(/^[a-zA-Z_0-9]+/);
-	 var r={t: "I", v:m[0], ln:numln};
-	 if(r.v=="def" || r.v=="Arete" || r.v=="Arc" || r.v=="Sommet" || r.v=="for" || r.v=="while" || r.v=="return" ||
-	    r.v=="Gamma" || r.v=="Filtre" || r.v=="Premier" || r.v=="Dernier" || r.v=="True" || r.v=="False" || r.v=="random" || r.v=="Random"){
-	    r.t="K";
+function getEnv(sym, envs){
+   for(var i=envs.length-1; i>=0; i--){
+      if(envs[i][sym]) return envs[i][sym];
+   }
+   return undefined;
+}
+
+function evaluate(expr, envs){
+   if(expr.t=="string"){
+      return expr.val;
+   }
+   if(expr.t=="+"){
+      var a=evaluate(expr.left, envs);
+      var b=evaluate(expr.right, envs);
+      return a+b;
+   }
+   if(expr.t=="number"){
+      var v=parseFloat(expr.val);
+      if(isNaN(v)) throw {error:"math", name:"Erreur mathématique", msg: ""+expr.val+" n'est pas un nombre valide", ln:expr.ln};
+      return v;
+   }
+   if(expr.t=="id"){
+      var e=getEnv(expr.name, envs);
+      if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
+      return e;
+   }
+   console.log("Cannot evaluate", expr);
+}
+
+function creerSommets(liste, envs){
+   var changes=false;
+   for(var i=0; i<liste.length; i++){
+      if(liste[i].t=="id"){
+	 var e=getEnv(liste[i].name, envs);
+	 if(e===undefined){
+	    envs[1][liste[i].name] = {t: "Sommet", name: liste[i].name, marques:[]};
+	    changes=true;
+	    continue;
 	 }
-	 lex.push(r);
-	 str = str.slice(m[0].length);
-	 continue;
       }
-
-      // Chaines
-      if(str[0]=='"'){
-	 var r=parseString(str);
-	 if(r.index<0) return {ERROR:"Chaîne non terminée", ln:numln};
-	 str = str.slice(r.index);
-	 lex.push({t: "STRING", v:r.val, ln:numln});
-	 continue;
+      var s = evaluate(liste[i], envs);
+      if(typeof s !== "string") throw {error: "type", name: "Erreur de type", msg: "Le nom d'un sommet doit être une chaîne\nou un identifiant", ln:liste[i].ln};
+      if(envs[1][s]){
+	 throw("Sommet existe déjà");
       }
-
-      // Nombres
-      if(str[0].match(/^[0-9]/) || (str[0]=='.' && str[1].match(/^[0-9]/))){
-	 var r=parseNumber(str);
-	 r.ln=numln;
-	 lex.push(r.val);
-	 str = str.slice(r.index);
-	 continue;
+      if(!s.match(/^[A-Za-z0-9_]*$/)){
+	 throw{error: "type", name: "Nom de sommet illégal", 
+	       msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+s, ln: liste[i].ln};
       }
-      
-      // Opérateurs
-      var bi=str.slice(0,2);
-      if(bi=="+=" || bi=="-=" || bi=="==" || bi=="++" || bi=="--" || bi=="||" || bi=="&&" || bi=="**"){
-	 lex.push({t:"OP", v:str.slice(0,2), ln:numln});
-	 str = str.slice(2);
-	 continue;
-      }
-      // Opérateur d'un seul caractère
-      if(str[0].match(/[=,\[\]():.]/)){
-	 lex.push({t:"OP", v:str[0], ln:numln});
-	 str = str.slice(1);
-	 continue;
-      }
-
-      // Inconnu
-      return {ERROR: "Caractère <span>"+str[0]+"</span> illégal", ln: numln};
+      envs[1][s] = {t: "Sommet", name: s, marques:[]};
+      changes=true;
    }
-   return lex;
+   if(changes) updateGraphe(envs);
 }
 
-function parseDefArgList(){
-}
-
-function parseDef(){
-   if(lexemes.length<=0) return {ERROR: "Fin de fichier en pendant la définition d'une procédure", ln: 0};
-   if(lexemes[0].t=="NL") return {ERROR: "Saut de ligne interdit pendant la définition d'une procédure", ln:lexemes[0].ln};
-   if(lexemes[0].t!="I") return {ERROR: "Lexeme <span>"+lexemes[0].v+"</span> inattendu pendant la définition d'une procédure", ln:lexemes[0].ln};
-   var name=lexemes[0].v;
-   var args=parseDefArgList();
-   return {t: "DEF", name:name, args:args, body:[]};
-}
-
-function parseInstruction(){
-   if(lexemes.length<=0) return {ERROR: "Fin de fichier inattendue", ln:0};
-   var ln=lexemes[0].ln;
-   if(lexemes[0].t=="K" && lexemes[0].v=="Sommet"){
-      lexemes=lexemes.slice(1);
-      var lexpr=parseListeExpr();
-      return {t: "SOMMET", args: lexpr, ln:ln};
+function interpIncrement(ins, envs){
+   if(ins.left.t=="id" && ins.left.name=="X") return creerSommets([ins.right], envs);
+   if(ins.left.t=="id" && ins.left.name=="U"){
+      if(ins.right.t=="arete") return creerArete(ins.right.left, ins.right.right, envs);
+      if(ins.right.t=="arc") return creerArc(ins.right.left, ins.right.right, envs);
+      throw {error:"type", name:"Erreur de type", msg: "Argument invalide pour U+=", ln:ins.ln};
    }
-   return {ERROR: "Lexeme <span>"+lexemes[0].v+"</span> inattendu", ln:ln};
+   if(ins.left.t=="Gamma"){
+      if(envs[0]["X"].orient || envs[0]["X"].orient===undefined) return creerArc(ins.left.arg, ins.right, envs);
+      else return creerArete(ins.left.arg, ins.right, envs);
+   }
+   console.log("Cannot do +=", ins);
 }
 
-function parseListExpr(){
+function interpAffect(ins, envs){
+   var v=evaluate(ins.right, envs);
+   if(ins.left.t=="id") {
+      envs[envs.length-1][ins.left.name] = v;
+      return;
+   }
+   console.log("Cannot do =", ins);
 }
 
+function creerArete(left, right, envs){
+   var l, r;
 
-function parseProgram(){
-   var prg=[];
-   while(lexemes.length>0){
-      if(lexemes[0].t=="I" && lexemes[0].v=="def"){
-	 var ln=lexemes[0].ln;
-	 lexemes=lexemes.slice(1);
-	 var d=parseDef();
-	 if(d.ERROR) {
-	    if(d.ln==0) d.ln=ln;
-	    return d;
-	 }
-	 prg += d;
+   var X=envs[0]["X"];
+   if(X.orient) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: left.ln};
+   if(X.orient===undefined) X.orient=false;
+
+   if(left.t=="id" && getEnv(left.name, envs)===undefined) l=left.name;
+   else l=evaluate(left, envs);
+   if(right.t=="id" && getEnv(right.name, envs)===undefined) r=right.name;
+   else r=evaluate(right, envs);
+
+   if(l && l.t=="Sommet") l=l.name;
+   if(r && r.t=="Sommet") r=r.name;
+
+   if(typeof l !== "string") throw {error:"type", name: "Erreur de type", msg: ""+l+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
+   if(typeof r !== "string") throw {error:"type", name: "Erreur de type", msg: ""+r+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
+
+   if(envs[1][l]===undefined) envs[1][l] = {t: "Sommet", name: l, marques:[]};
+   if(envs[1][r]===undefined) envs[1][r] = {t: "Sommet", name: r, marques:[]};
+
+   var U=envs[0]["U"];
+   U.arcs.push([l,r]);
+   updateGraphe(envs);
+}
+
+function interpDef(def, envs){
+   if(envs[envs.length-1][def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
+   envs[envs.length-1][def.nom] = def;
+}
+
+function interpretWithEnv(tree, envs){
+   for(var i=0; i<tree.length; i++){
+      if(tree[i].t=="SOMMET"){
+	 creerSommets(tree[i].args, envs);
 	 continue;
       }
-      else if(lexemes[0].t=="NL"){
-	 lexemes=lexemes.slice(1);
+      if(tree[i].t=="ARETE"){
+	 creerArete(tree[i].left, tree[i].right, envs);
 	 continue;
       }
-      else{
-	 var d=parseInstruction();
-	 if(d.ERROR) return d;
-	 prg +=d;
+      if(tree[i].t=="+="){
+	 interpIncrement(tree[i], envs);
 	 continue;
+      }
+      if(tree[i].t=="="){
+	 interpAffect(tree[i], envs);
+	 continue;
+      }
+      if(tree[i].t=="DEF"){
+	 interpDef(tree[i], envs);
+	 continue;
+      }
+      console.log("Can't do ", tree[i]);
+   }
+   console.log("Terminated");
+}
+
+function interpret(tree){
+   var graphEnv={};
+   var predefEnv={};
+   predefEnv["M"]={t: "M"};
+   predefEnv["X"]={t: "X", orient:undefined};
+   predefEnv["U"]={t: "U", arcs:[]};
+   var globalEnv={};
+   var env=[predefEnv, graphEnv, globalEnv];
+   interpretWithEnv(tree, env);
+}
+
+onmessage = function (e){
+   try{
+      var str=parseTabulation(e.data);
+      var out = grlang.parse(str);
+      interpret(out);
+      postMessage({termine: 0});
+   }catch(e){
+      console.log(e);
+      if(e.error) postMessage(e);
+      else {
+	 postMessage({error: "syntax", name: "Erreur de syntaxe", msg: e.msg, ln: e.line+1, err:e});
       }
    }
-   return prg;
 }
+

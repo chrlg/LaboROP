@@ -2,6 +2,7 @@ var editor;
 var worker;
 var Range;
 var errorMarker=false;
+var lastError;
 
 function messageFromWorker(event){
    var $m=$("#misc");
@@ -10,25 +11,27 @@ function messageFromWorker(event){
       editor.session.removeMarker(errorMarker);
       errorMarker=false;
    }
-   if(event.data.ERROR){
+   if(event.data.error){
       var e=event.data;
       var ln=e.ln;
-      $("#misc").append("<span>Line "+ln+" </span>");
-      $("#misc").append("<b>"+e.ERROR+"</b>");
+      $m.append("<span>Line "+ln+" </span> : ");
+      $m.append("<b>"+e.name+"</b><br>");
+      if(e.msg) $("#misc").append("<pre>"+e.msg+"</pre>");
       errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
+      lastError = e;
       return;
    }
-   for(var i=0; i<event.data.length; i++){
-      var tok=event.data[i];
-      if(tok.t=="BEGIN") $m.append("<b>{</b>");
-      else if(tok.t=="END") $m.append("<b>}</b>");
-      else if(tok.t=="STRING") $m.append("«"+tok.v+"»");
-      else if(tok.t=="I") $m.append("<i>"+tok.v+"</i>");
-      else if(tok.t=="OP") $m.append("<b>"+tok.v+"</b>");
-      else if(tok.t=="NL") $m.append("<br/>");
-      else $m.append("<span>"+tok.t+":"+tok.v+"</span>");
+   if(event.data.graph){
+      showGraph(event.data.graph);
+      return;
+   }
+   if(event.data.termine!==undefined){
+      $m.append("<i>Program terminé avec le code "+event.data.termine+"</i>");
+   }
 
-      $m.append(" ");
+   for(var i=0; i<event.data.length; i++){
+      if(event.data[i]=="INVALID") $m.append("<span>###</span> ");
+      else $m.append("<b>"+event.data[i]+"</b> ");
    }
 }
 
@@ -42,8 +45,21 @@ function oneditorChange(e){
 }
 
 function realEditorChange(){
+   if(worker) worker.terminate();
+   worker = new Worker("interpret.js");
+   worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
    timeout=false;
+}
+
+function showGraph(str){
+   try{
+      v = Viz(str);
+      $("#show").html(v);
+   }catch(e){
+      console.log("Viz", str);
+      console.log(e);
+   }
 }
 
 function init(){
@@ -54,13 +70,8 @@ function init(){
    editor.setShowPrintMargin(false);
    editor.getSession().setTabSize(3);
 
-   v = Viz("digraph { A->B; }");
-   $("#show").html(v);
-
-   worker = new Worker("interpret.js");
-   worker.onmessage = messageFromWorker;
-
    editor.getSession().on('change', oneditorChange);
+   oneditorChange();
 }
 
 $(init);
