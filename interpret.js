@@ -200,7 +200,18 @@ function interpCall(call){
    var fn=getEnv(call.f);
    if(fn===undefined) throw {error:"symbol", name: "Fonction nom définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
-   console.log("About to call",fn, "with",call);
+   if(fn.t!="DEF") throw {error:"type", name:"Pas une fonction",
+	    msg:"Tentative d'appeler "+call.f+", qui n'est pas une fonction", ln:call.ln};
+   if(fn.args.length != call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
+	    msg:"Appel de "+call.f+" avec "+call.args.length+" argument(s) alors que "+
+	        fn.args.length+" sont attendus", ln:call.ln};
+   _localEnv = [];
+   _stackEnv.push(_localEnv);
+   for(var i=0; i<call.args.length; i++){
+      var v=evaluate(call.args[i]);
+      _localEnv[fn.args[i]] = v;
+   }
+   interpretWithEnv(fn.insts);
 }
 
 function interpretWithEnv(tree){
