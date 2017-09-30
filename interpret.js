@@ -1,5 +1,12 @@
 importScripts("grlang.js");
 
+var _predefEnv = {};
+var _grapheEnv = {};
+var _globalEnv = {};
+var _envStack = [_globalEnv] ;
+var _localEnv = _globalEnv;
+
+
 grlang.yy.parseError = function(e, h){
    var hh=h;
    hh.msg=e;
@@ -62,15 +69,15 @@ function parseTabulation(str){
    return out;
 }
 
-function updateGraphe(envs){
+function updateGraphe(){
    var gr="";
-   var orient = envs[0]["X"].orient==true;
+   var orient = _predefEnv["X"].orient==true;
    if(orient) gr+="digraph{";
    else gr+="graph{";
-   for(var e in envs[1]){
+   for(var e in _grapheEnv){
       gr+=(""+e+";");
    }
-   var U=envs[0]["U"];
+   var U=_predefEnv["U"];
    for(var i=0; i<U.arcs.length; i++){
       if(orient) gr+=""+U.arcs[i][0] +"->"+U.arcs[i][1]+";";
       else gr+=""+U.arcs[i][0]+"--"+U.arcs[i][1]+";";
@@ -79,20 +86,21 @@ function updateGraphe(envs){
    postMessage({graph:gr});
 }
 
-function getEnv(sym, envs){
-   for(var i=envs.length-1; i>=0; i--){
+function getEnv(sym){
+   var envs=[_localEnv, _globalEnv, _grapheEnv, _predefEnv];
+   for(var i=0; i<envs.length; i++){
       if(envs[i][sym]) return envs[i][sym];
    }
    return undefined;
 }
 
-function evaluate(expr, envs){
+function evaluate(expr){
    if(expr.t=="string"){
       return expr.val;
    }
    if(expr.t=="+"){
-      var a=evaluate(expr.left, envs);
-      var b=evaluate(expr.right, envs);
+      var a=evaluate(expr.left);
+      var b=evaluate(expr.right);
       return a+b;
    }
    if(expr.t=="number"){
@@ -101,73 +109,73 @@ function evaluate(expr, envs){
       return v;
    }
    if(expr.t=="id"){
-      var e=getEnv(expr.name, envs);
+      var e=getEnv(expr.name);
       if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
       return e;
    }
    console.log("Cannot evaluate", expr);
 }
 
-function creerSommets(liste, envs){
+function creerSommets(liste){
    var changes=false;
    for(var i=0; i<liste.length; i++){
       if(liste[i].t=="id"){
-	 var e=getEnv(liste[i].name, envs);
+	 var e=getEnv(liste[i].name);
 	 if(e===undefined){
-	    envs[1][liste[i].name] = {t: "Sommet", name: liste[i].name, marques:[]};
+	    _grapheEnv[liste[i].name] = {t: "Sommet", name: liste[i].name, marques:[]};
 	    changes=true;
 	    continue;
 	 }
       }
-      var s = evaluate(liste[i], envs);
+      var s = evaluate(liste[i]);
       if(typeof s !== "string") throw {error: "type", name: "Erreur de type", msg: "Le nom d'un sommet doit être une chaîne\nou un identifiant", ln:liste[i].ln};
-      if(envs[1][s]){
+      if(_grapheEnv[s]){
 	 throw("Sommet existe déjà");
       }
       if(!s.match(/^[A-Za-z0-9_]*$/)){
 	 throw{error: "type", name: "Nom de sommet illégal", 
 	       msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+s, ln: liste[i].ln};
       }
-      envs[1][s] = {t: "Sommet", name: s, marques:[]};
+      _grapheEnv[s] = {t: "Sommet", name: s, marques:[]};
       changes=true;
    }
-   if(changes) updateGraphe(envs);
+   if(changes) updateGraphe();
 }
 
-function interpIncrement(ins, envs){
-   if(ins.left.t=="id" && ins.left.name=="X") return creerSommets([ins.right], envs);
+function interpIncrement(ins){
+   if(ins.left.t=="id" && ins.left.name=="X") return creerSommets([ins.right]);
    if(ins.left.t=="id" && ins.left.name=="U"){
-      if(ins.right.t=="arete") return creerArete(ins.right.left, ins.right.right, envs);
-      if(ins.right.t=="arc") return creerArc(ins.right.left, ins.right.right, envs);
+      if(ins.right.t=="arete") return creerArete(ins.right.left, ins.right.right);
+      if(ins.right.t=="arc") return creerArc(ins.right.left, ins.right.right);
       throw {error:"type", name:"Erreur de type", msg: "Argument invalide pour U+=", ln:ins.ln};
    }
    if(ins.left.t=="Gamma"){
-      if(envs[0]["X"].orient || envs[0]["X"].orient===undefined) return creerArc(ins.left.arg, ins.right, envs);
-      else return creerArete(ins.left.arg, ins.right, envs);
+      if(_predefEnv["X"].orient || _predefEnv["X"].orient===undefined) return creerArc(ins.left.arg, ins.right);
+      else return creerArete(ins.left.arg, ins.right);
    }
    console.log("Cannot do +=", ins);
 }
 
-function interpAffect(ins, envs){
-   var v=evaluate(ins.right, envs);
+function interpAffect(ins){
+   var v=evaluate(ins.right);
    if(ins.left.t=="id") {
-      envs[envs.length-1][ins.left.name] = v;
+      _localEnv[ins.left.name] = v;
       return;
    }
    console.log("Cannot do =", ins);
 }
 
-function creerArete(left, right, envs){
+function creerArete(left, right){
    var l, r;
 
-   var X=envs[0]["X"];
+   var X=_predefEnv["X"];
    if(X.orient) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: left.ln};
    if(X.orient===undefined) X.orient=false;
 
-   if(left.t=="id" && getEnv(left.name, envs)===undefined) l=left.name;
-   else l=evaluate(left, envs);
-   if(right.t=="id" && getEnv(right.name, envs)===undefined) r=right.name;
-   else r=evaluate(right, envs);
+   if(left.t=="id" && getEnv(left.name)===undefined) l=left.name;
+   else l=evaluate(left);
+   if(right.t=="id" && getEnv(right.name)===undefined) r=right.name;
+   else r=evaluate(right);
 
    if(l && l.t=="Sommet") l=l.name;
    if(r && r.t=="Sommet") r=r.name;
@@ -175,39 +183,50 @@ function creerArete(left, right, envs){
    if(typeof l !== "string") throw {error:"type", name: "Erreur de type", msg: ""+l+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(typeof r !== "string") throw {error:"type", name: "Erreur de type", msg: ""+r+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
-   if(envs[1][l]===undefined) envs[1][l] = {t: "Sommet", name: l, marques:[]};
-   if(envs[1][r]===undefined) envs[1][r] = {t: "Sommet", name: r, marques:[]};
+   if(_grapheEnv[l]===undefined) _grapheEnv[l] = {t: "Sommet", name: l, marques:[]};
+   if(_grapheEnv[r]===undefined) _grapheEnv[r] = {t: "Sommet", name: r, marques:[]};
 
-   var U=envs[0]["U"];
+   var U=_predefEnv["U"];
    U.arcs.push([l,r]);
-   updateGraphe(envs);
+   updateGraphe();
 }
 
-function interpDef(def, envs){
-   if(envs[envs.length-1][def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
-   envs[envs.length-1][def.nom] = def;
+function interpDef(def){
+   if(_globalEnv[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
+   _globalEnv[def.nom] = def;
 }
 
-function interpretWithEnv(tree, envs){
+function interpCall(call){
+   var fn=getEnv(call.f);
+   if(fn===undefined) throw {error:"symbol", name: "Fonction nom définie",
+	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
+   console.log("About to call",fn, "with",call);
+}
+
+function interpretWithEnv(tree){
    for(var i=0; i<tree.length; i++){
       if(tree[i].t=="SOMMET"){
-	 creerSommets(tree[i].args, envs);
+	 creerSommets(tree[i].args);
 	 continue;
       }
       if(tree[i].t=="ARETE"){
-	 creerArete(tree[i].left, tree[i].right, envs);
+	 creerArete(tree[i].left, tree[i].right);
 	 continue;
       }
       if(tree[i].t=="+="){
-	 interpIncrement(tree[i], envs);
+	 interpIncrement(tree[i]);
 	 continue;
       }
       if(tree[i].t=="="){
-	 interpAffect(tree[i], envs);
+	 interpAffect(tree[i]);
 	 continue;
       }
       if(tree[i].t=="DEF"){
-	 interpDef(tree[i], envs);
+	 interpDef(tree[i]);
+	 continue;
+      }
+      if(tree[i].t=="call"){
+	 interpCall(tree[i]);
 	 continue;
       }
       console.log("Can't do ", tree[i]);
@@ -216,14 +235,15 @@ function interpretWithEnv(tree, envs){
 }
 
 function interpret(tree){
-   var graphEnv={};
-   var predefEnv={};
-   predefEnv["M"]={t: "M"};
-   predefEnv["X"]={t: "X", orient:undefined};
-   predefEnv["U"]={t: "U", arcs:[]};
-   var globalEnv={};
-   var env=[predefEnv, graphEnv, globalEnv];
-   interpretWithEnv(tree, env);
+   _grapheEnv={};
+   _predefEnv={};
+   _predefEnv["M"]={t: "M"};
+   _predefEnv["X"]={t: "X", orient:undefined};
+   _predefEnv["U"]={t: "U", arcs:[]};
+   _globalEnv={};
+   _localEnv=_globalEnv;
+   _stackEnv=[_localEnv];
+   interpretWithEnv(tree);
 }
 
 onmessage = function (e){
