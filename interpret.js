@@ -98,10 +98,11 @@ function evaluate(expr){
    if(expr.t=="string"){
       return expr.val;
    }
-   if(expr.t=="+"){
+   if(expr.t=="+" || expr.t=="<"){
       var a=evaluate(expr.left);
       var b=evaluate(expr.right);
-      return a+b;
+      if(expr.t=="+") return a+b;
+      if(expr.t=="<") return a<b;
    }
    if(expr.t=="number"){
       var v=parseFloat(expr.val);
@@ -217,6 +218,14 @@ function interpCall(call){
    _localEnv = _stackEnv[_stackEnv.length-1];
 }
 
+function interpIf(si){
+   var c=evaluate(si.cond);
+   if(typeof c !== "boolean") throw {error:"type", name: "Condition non booléenne",
+           msg:"La condition du if n'est pas un booléen", ln:si.ln};
+   if(c) interpretWithEnv(si["do"]);
+   else interpretWithEnv(si["else"]);
+}
+
 function interpretWithEnv(tree){
    for(var i=0; i<tree.length; i++){
       if(tree[i].t=="SOMMET"){
@@ -243,9 +252,12 @@ function interpretWithEnv(tree){
 	 interpCall(tree[i]);
 	 continue;
       }
+      if(tree[i].t=="if"){
+	 interpIf(tree[i]);
+	 continue;
+      }
       console.log("Can't do ", tree[i]);
    }
-   console.log("Terminated");
 }
 
 function interpret(tree){
