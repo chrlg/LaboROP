@@ -43,6 +43,8 @@
 ":"			return ":"
 "."			return "."
 "+"			return "+"
+"<"			return "<"
+">"			return ">"
 
 "Sommet"		return "Sommet"
 "Arete"			return "Arete"
@@ -64,7 +66,7 @@
 
 /lex
 
-%left "=="
+%left "=" "==" "<" ">"
 %left '+' '-'
 %left '*' '/'
 %right '!'
@@ -137,7 +139,16 @@ expr
 	 $$={t:"number", val:$1, ln:@1.first_line};
       }
       | expr "==" expr {
-	 $$ = {t:"==", left:$1, right:$3};
+	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "=" expr {
+	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "<" expr {
+	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr ">" expr {
+	 $$ = {t:">", left:$1, right:$3, ln:@2.first_line};
       }
       | expr "+" expr {
 	 $$ = {t:"+", left:$1, right:$3, ln:@2.first_line};

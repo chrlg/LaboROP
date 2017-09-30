@@ -89,7 +89,7 @@ function updateGraphe(){
 function getEnv(sym){
    var envs=[_localEnv, _globalEnv, _grapheEnv, _predefEnv];
    for(var i=0; i<envs.length; i++){
-      if(envs[i][sym]) return envs[i][sym];
+      if(envs[i][sym]!==undefined) return envs[i][sym];
    }
    return undefined;
 }
@@ -110,7 +110,7 @@ function evaluate(expr){
    }
    if(expr.t=="id"){
       var e=getEnv(expr.name);
-      if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
+      if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln, env:[_localEnv, _globalEnv, _grapheEnv, _predefEnv]};
       return e;
    }
    console.log("Cannot evaluate", expr);
@@ -205,13 +205,16 @@ function interpCall(call){
    if(fn.args.length != call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
 	    msg:"Appel de "+call.f+" avec "+call.args.length+" argument(s) alors que "+
 	        fn.args.length+" sont attendus", ln:call.ln};
-   _localEnv = [];
-   _stackEnv.push(_localEnv);
+   _newEnv = {};
    for(var i=0; i<call.args.length; i++){
       var v=evaluate(call.args[i]);
-      _localEnv[fn.args[i]] = v;
+      _newEnv[fn.args[i]] = v;
    }
+   _localEnv=_newEnv;
+   _stackEnv.push(_localEnv);
    interpretWithEnv(fn.insts);
+   _stackEnv.pop();
+   _localEnv = _stackEnv[_stackEnv.length-1];
 }
 
 function interpretWithEnv(tree){
