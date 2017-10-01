@@ -58,6 +58,7 @@
 "break"			return "break"
 "in"			return "in"
 "global"		return "global"
+"return"		return "return"
 
 [A-Za-z_][A-Za-z0-9_]*	return "ID"
 
@@ -94,6 +95,9 @@ instruction
       | lvalue "+=" expr {
 	 $$ = { t:"+=", left: $1, right: $3, ln:@2.first_line};
       }
+      | lvalue "++" {
+	 $$ = { t:"++", left: $1, ln:@2.first_line};
+      }
       | ID '(' ')' {
 	 $$ = { t:"call", f:$1, args:[], ln:@1.first_line};
       }
@@ -113,10 +117,16 @@ instruction
 	 $$ = { t:"if", cond:$2, do:$4, sinon:$7 };
       }
       | break {
-	 $$ = {t:"break"};
+	 $$ = {t:"break", ln:@1.first_line};
       }
       | continue {
-	 $$ = {t:"continue"};
+	 $$ = {t:"continue", ln:@1.first_line};
+      }
+      | return {
+	 $$ = {t:"return", val:undefined, ln:@1.first_line};
+      }
+      | return listeExpr {
+	 $$ = {t:"return", val:$2, ln:@1.first_line};
       }
       ;
 

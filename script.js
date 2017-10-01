@@ -71,7 +71,40 @@ function init(){
    editor.getSession().setTabSize(3);
 
    editor.getSession().on('change', oneditorChange);
+   editor.setValue(ex1);
    oneditorChange();
 }
 
 $(init);
+
+
+// DEBUG
+var ex1=`#
+Arete [A,B]
+Arete [A,B]
+Arete [A,C]
+Arete [A,C]
+Arete [A,D]
+Arete [B,D]
+Arete [C,D]
+
+def unchemin():
+   for [x,y] in U:
+      [x,y].passe=0
+   s=random(X)
+   n=0
+   while True:
+      [x,y]=random(Gamma(s), passe==0)
+      if [x,y]==null: break
+      s=y
+      [x,y].passe=1
+      n++
+   return n
+
+nmax=0
+while True:
+   n=unchemin()
+   if n>nmax:
+      nmax=n
+   print ("n=",n, " nmax=",nmax)
+`;
