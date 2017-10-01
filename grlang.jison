@@ -87,10 +87,10 @@ instruction
 	 $$ = { t:"SOMMET", args:$2, ln:@1.first_line} ;
       }
       | Arete "[" expr "," expr "]" {
-	 $$ = { t:"ARETE", left: $3, right: $5};
+	 $$ = { t:"ARETE", left: $3, right: $5, ln:@1.first_line};
       }
       | lvalue "=" expr {
-	 $$ = { t:"=", left: $1, right:$3};
+	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
       }
       | lvalue "+=" expr {
 	 $$ = { t:"+=", left: $1, right: $3, ln:@2.first_line};
@@ -105,16 +105,16 @@ instruction
 	 $$ = { t:"call", f:$1, args:$3, ln:@1.first_line};
       }
       | for lvalue "in" expr ":" blocOuSingle {
-	 $$ = { t:"for", compteur:$2, range:$4, do:$6};
+	 $$ = { t:"for", compteur:$2, range:$4, do:$6, ln:@1.first_line};
       }
       | while expr ":" blocOuSingle {
-	 $$ = { t:"while", cond:$2, do:$4 };
+	 $$ = { t:"while", cond:$2, do:$4, ln:@1.first_line };
       }
       | if expr ":" blocOuSingle {
-	 $$ = { t:"if", cond:$2, do:$4, else:[] };
+	 $$ = { t:"if", cond:$2, do:$4, else:[], ln:@1.first_line };
       }
       | if expr ";" blocOuSingle ";" else blocOuSingle {
-	 $$ = { t:"if", cond:$2, do:$4, sinon:$7 };
+	 $$ = { t:"if", cond:$2, do:$4, sinon:$7, ln:@1.first_line };
       }
       | break {
 	 $$ = {t:"break", ln:@1.first_line};

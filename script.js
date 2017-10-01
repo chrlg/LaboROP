@@ -72,10 +72,11 @@ function init(){
    editor.setTheme("ace/theme/monokai");
    editor.getSession().setMode("ace/mode/python");
    editor.setShowPrintMargin(false);
+   editor.$blockScrolling = Infinity;
    editor.getSession().setTabSize(3);
 
    editor.getSession().on('change', oneditorChange);
-   editor.setValue(ex1);
+   editor.setValue(ex1, -1);
    oneditorChange();
 }
 

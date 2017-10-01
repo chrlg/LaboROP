@@ -7,7 +7,7 @@ var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
 var _arcs=[];
 
-const _binaryOp = ["+", "<", ">"];
+const _binaryOp = ["+", "<", ">", "=="];
 
 
 grlang.yy.parseError = function(e, h){
@@ -81,8 +81,8 @@ function updateGraphe(){
       gr+=(""+e+";");
    }
    for(var i=0; i<_arcs.length; i++){
-      if(orient) gr+=""+_arcs[i][0].name +"->"+_arcs[i][1].name+";";
-      else gr+=""+_arcs[i][0].name+"--"+_arcs[i][1].name+";";
+      if(orient) gr+=""+_arcs[i].i.name +"->"+_arcs[i].a.name+";";
+      else gr+=""+_arcs[i].i.name+"--"+_arcs[i].a.name+";";
    }
    gr+="}\n";
    postMessage({graph:gr});
@@ -106,6 +106,7 @@ function evaluate(expr){
       if(expr.t=="+") return a+b;
       if(expr.t=="<") return a<b;
       if(expr.t==">") return a>b;
+      if(expr.t=="==") return a==b;
    }
    if(expr.t=="number"){
       var v=parseFloat(expr.val);
@@ -115,6 +116,7 @@ function evaluate(expr){
    if(expr.t=="id"){
       var e=getEnv(expr.name);
       if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
+      if(e===null) return null;
       if(e.t=="predfn") throw {error:"type", name:"Variable incorrecte", 
 	    msg: "Tentative d'utiliser la fonction prédéfinie "+expr.name+ " comme une variable",
 	    ln:expr.ln};
@@ -126,6 +128,20 @@ function evaluate(expr){
    if(expr.t=="call"){
       var v=interpCall(expr);
       return v;
+   }
+   if(expr.t=="Gamma"){
+      var v=evaluate(expr.arg);
+      if(typeof v=="string") v=_grapheEnv[v];
+      if(v===undefined || v.t!="Sommet"){
+	 throw {error:"type", name:"Mauvais argument pour gamma",
+		  msg:"Gamma attend un argument de type 'Sommet'", ln:expr.ln};
+      }
+      var rep=[];
+      for(var i=0; i<_arcs.length; i++){
+	 if(_arcs[i].i==v) rep.push(_arcs[i].a);
+	 if(_predefEnv.Oriente===false && _arcs[i].a==v) rep.push(_arcs[i].i);
+      }
+      return rep;
    }
    console.log("Cannot evaluate", expr);
 }
@@ -204,7 +220,7 @@ function creerArete(left, right){
    if(_grapheEnv[l]===undefined) _grapheEnv[l] = {t: "Sommet", name: l, marques:[]};
    if(_grapheEnv[r]===undefined) _grapheEnv[r] = {t: "Sommet", name: r, marques:[]};
 
-   _arcs.push([_grapheEnv[l],_grapheEnv[r]]);
+   _arcs.push({t:"Arc", i:_grapheEnv[l], a:_grapheEnv[r]});
    updateGraphe();
 }
 
@@ -319,14 +335,34 @@ function preRandom(args){
 
 function prePrint(args){
    str="";
+
+   function printRec(o){
+      if(typeof o=="object"){
+	 if(o.t=="Sommet") str+=o.name;
+	 else if(o.t=="Arc" && _predefEnv.oriente) str+="("+o.i.name+","+o.a.name+")";
+	 else if(o.t=="Arc") str+="["+o.i.name+","+o.a.name+"]";
+	 else if(o.length!==undefined){
+	    str+="[";
+	    for(var i=0; i<o.length; i++){
+	       printRec(o[i]);
+	       if(i<o.length-1) str+=",";
+	    }
+	    str+="]";
+	 }
+	 else str+="{"+o.t+"}";
+      }
+      else{
+         str+=o;
+      }
+   }
+
    for(var i=0; i<args.length; i++){
       var a=evaluate(args[i]);
-      str+=a;
+      printRec(a);
    }
+
    str+="\n";
    postMessage({print: str});
-   console.log("un", str);
-   console.log({print:str});
 }
 
 function preM(){
@@ -354,6 +390,7 @@ function interpret(tree){
    _predefEnv["pi"]=Math.PI;
    _predefEnv["random"]={t:"predfn", f:preRandom};
    _predefEnv["print"]={t:"predfn", f:prePrint};
+   _predefEnv["null"]=null;
    _globalEnv={};
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
