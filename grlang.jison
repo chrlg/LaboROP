@@ -176,16 +176,16 @@ lvalue
 	 $$=$1;
       } 
       | "Gamma" "(" expr ")" {
-	 $$={t: "Gamma", arg: $3};
+	 $$={t: "Gamma", arg: $3, ln:@1.first_line};
       }
       | "(" ID "," ID ")" {
-	 $$={t: "arc", initial:$2, terminal:$4};
+	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
       | "[" expr "," expr "]" {
-	 $$={t:"arete", left: $2, right: $4};
+	 $$={t:"arete", left: $2, right: $4, ln:@3.first_line};
       }
       | lvalue "." ID {
-	 $$={t: "field", o:$1, f:$3};
+	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
       }
       ;
 

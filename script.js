@@ -6,7 +6,6 @@ var lastError;
 
 function messageFromWorker(event){
    var $m=$("#misc");
-   $m.empty();
    if(errorMarker){
       editor.session.removeMarker(errorMarker);
       errorMarker=false;
@@ -19,6 +18,10 @@ function messageFromWorker(event){
       if(e.msg) $("#misc").append("<pre>"+e.msg+"</pre>");
       errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
       lastError = e;
+      return;
+   }
+   if(event.data.print){
+      $m.append("<pre>"+event.data.print+"</pre>");
       return;
    }
    if(event.data.graph){
@@ -50,6 +53,7 @@ function realEditorChange(){
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
    timeout=false;
+   $("#misc").empty();
 }
 
 function showGraph(str){
