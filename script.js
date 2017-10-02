@@ -49,11 +49,18 @@ function oneditorChange(e){
 
 function realEditorChange(){
    if(worker) worker.terminate();
+   worker=false;
    worker = new Worker("interpret.js");
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
-   timeout=false;
+   timeout=setTimeout(Terminate, 20000);
    $("#misc").empty();
+}
+
+function Terminate(){
+   timeout=false;
+   worker.terminate();
+   worker=false;
 }
 
 function showGraph(str){
