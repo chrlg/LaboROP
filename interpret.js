@@ -127,6 +127,9 @@ function evaluate(expr){
    }
    if(expr.t=="call"){
       var v=interpCall(expr);
+      if(v!==undefined && v.t=="empty") throw {error:"type", name:"Pas de valeur de retour",
+	    msg:"La fonction "+expr.f+" n'a retourné aucune valeur",
+	    ln:expr.ln};
       return v;
    }
    if(expr.t=="Gamma"){
@@ -247,7 +250,7 @@ function interpCall(call){
       var v=evaluate(call.args[i]);
       newEnv[fn.args[i]] = v;
    }
-   newEnv["*"]=false;
+   newEnv["*"]={t:"empty"};
    _localEnv=newEnv;
    _stackEnv.push(_localEnv);
    interpretWithEnv(fn.insts, false);
@@ -273,7 +276,9 @@ function interpWhile(tant){
       if(!c) break;
       var b=interpretWithEnv(tant["do"], true);
       if(b=="break") break;
+      if(b=="return") return "return";
    }
+   return false;
 }
 
 function interpFor(ins){
@@ -299,7 +304,22 @@ function interpForeach(ins){
       else console.log("TODO foreach compteur=", ins.compteur);
       var b=interpretWithEnv(ins.do, true);
       if(b=="break") break;
+      if(b=="return") return "return";
    }
+   return false;
+}
+
+function interpReturn(ins){
+   if(_localEnv["*"]===undefined){
+      throw {error:"exec", name:"Return en dehors d'une fonction",
+             msg:"'return' ne peut être utilisé qu'à l'intérieur d'une fonction",
+	     ln:ins.ln};
+   }
+   if(ins.val===undefined) return;
+   var v=ins.val.map(evaluate);
+   if(v.length==1) _localEnv["*"]=v[0];
+   else _localEnv["*"]={t:"tuple", v:v};
+   return;
 }
 
 function interpretWithEnv(tree, isloop){
@@ -331,19 +351,22 @@ function interpretWithEnv(tree, isloop){
       if(tree[i].t=="if"){
 	 var b=interpIf(tree[i], isloop);
 	 if(isloop && b=="break") return "break";
-	 if(isloop && b=="break") return "break";
+	 if(b=="return") return "return";
 	 continue;
       }
       if(tree[i].t=="while"){
-	 interpWhile(tree[i]);
+	 var b=interpWhile(tree[i]);
+	 if(b=="return") return "return";
 	 continue;
       }
       if(tree[i].t=="for"){
-	 interpFor(tree[i]);
+	 var b=interpFor(tree[i]);
+	 if(b=="return") return "return";
 	 continue;
       }
       if(tree[i].t=="foreach"){
-         interpForeach(tree[i]);
+         var b=interpForeach(tree[i]);
+	 if(b=="return") return "return";
          continue;
       }
       if(tree[i].t=="break"){
@@ -351,6 +374,10 @@ function interpretWithEnv(tree, isloop){
 	       msg:"'break' ne peut être utilisé que dans une boucle for ou while",
 	       ln:tree[i].ln};
 	 return "break";
+      }
+      if(tree[i].t=="return"){
+	 interpReturn(tree[i]);
+	 return "return";
       }
       console.log("Can't do ", tree[i]);
    }
