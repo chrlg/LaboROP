@@ -59,6 +59,7 @@
 "in"			return "in"
 "global"		return "global"
 "return"		return "return"
+"range"			return "range"
 
 [A-Za-z_][A-Za-z0-9_]*	return "ID"
 
@@ -105,7 +106,10 @@ instruction
 	 $$ = { t:"call", f:$1, args:$3, ln:@1.first_line};
       }
       | for lvalue "in" expr ":" blocOuSingle {
-	 $$ = { t:"for", compteur:$2, range:$4, do:$6, ln:@1.first_line};
+	 $$ = { t:"foreach", compteur:$2, range:$4, do:$6, ln:@1.first_line};
+      }
+      | for lvalue "in" "range" "(" expr "," expr ")" ":" blocOuSingle {
+	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$11, ln:@1.first_line};
       }
       | while expr ":" blocOuSingle {
 	 $$ = { t:"while", cond:$2, do:$4, ln:@1.first_line };

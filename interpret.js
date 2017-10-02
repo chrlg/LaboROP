@@ -250,19 +250,19 @@ function interpCall(call){
    newEnv["*"]=false;
    _localEnv=newEnv;
    _stackEnv.push(_localEnv);
-   interpretWithEnv(fn.insts);
+   interpretWithEnv(fn.insts, false);
    var retval=newEnv["*"];
    _stackEnv.pop();
    _localEnv = _stackEnv[_stackEnv.length-1];
    return retval;
 }
 
-function interpIf(si){
+function interpIf(si, isloop){
    var c=evaluate(si.cond);
    if(typeof c !== "boolean") throw {error:"type", name: "Condition non booléenne",
            msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
-   if(c) interpretWithEnv(si["do"]);
-   else interpretWithEnv(si["else"]);
+   if(c) return interpretWithEnv(si["do"], isloop);
+   else return interpretWithEnv(si["else"], isloop);
 }
 
 function interpWhile(tant){
@@ -271,11 +271,38 @@ function interpWhile(tant){
       if(typeof c!=="boolean") throw {error:"type", name: "Condition non booléenne",
 	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
       if(!c) break;
-      interpretWithEnv(tant["do"]);
+      var b=interpretWithEnv(tant["do"], true);
+      if(b=="break") break;
    }
 }
 
-function interpretWithEnv(tree){
+function interpFor(ins){
+   console.log("TODO for", ins);
+}
+
+function interpForeach(ins){
+   var range=evaluate(ins.range);
+   if(typeof range != "object" || range.length===undefined){
+      throw {error:"type", name:"Mauvaise plage pour 'for'",
+             msg:""+range+" ne peut être une plage d'itération pour 'for'",
+             ln:ins.range.ln};
+   }
+   for(var i=0; i<range.length; i++){
+      if(ins.compteur.t=="id") _localEnv[ins.compteur.name] = range[i];
+      else if(ins.compteur.t=="arete"){
+         if(range[i].t!="Arc")
+            throw {error:"type", name:"Mauvaise plage pour 'for'",
+                   msg:"Il ne s'agit pas d'une liste d'arêtes", ln:ins.range.ln};
+         _localEnv[ins.compteur.left.name]=range[i].i;
+         _localEnv[ins.compteur.right.name]=range[i].a;
+      }
+      else console.log("TODO foreach compteur=", ins.compteur);
+      var b=interpretWithEnv(ins.do, true);
+      if(b=="break") break;
+   }
+}
+
+function interpretWithEnv(tree, isloop){
    for(var i=0; i<tree.length; i++){
       if(tree[i].t=="SOMMET"){
 	 creerSommets(tree[i].args);
@@ -302,15 +329,32 @@ function interpretWithEnv(tree){
 	 continue;
       }
       if(tree[i].t=="if"){
-	 interpIf(tree[i]);
+	 var b=interpIf(tree[i], isloop);
+	 if(isloop && b=="break") return "break";
+	 if(isloop && b=="break") return "break";
 	 continue;
       }
       if(tree[i].t=="while"){
 	 interpWhile(tree[i]);
 	 continue;
       }
+      if(tree[i].t=="for"){
+	 interpFor(tree[i]);
+	 continue;
+      }
+      if(tree[i].t=="foreach"){
+         interpForeach(tree[i]);
+         continue;
+      }
+      if(tree[i].t=="break"){
+	 if(!isloop) throw {error:"exec", name:"Break en dehors d'une boucle",
+	       msg:"'break' ne peut être utilisé que dans une boucle for ou while",
+	       ln:tree[i].ln};
+	 return "break";
+      }
       console.log("Can't do ", tree[i]);
    }
+   return false;
 }
 
 function preRandom(args){
