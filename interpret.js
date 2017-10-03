@@ -270,6 +270,15 @@ function interpPlusPlus(ins){
    }
 }
 
+function setRef(ref, val){
+   // Copy "profonde" pour les tableaux et structures
+   if(val.t=="array" || val.t=="struct"){
+      ref[0][ref[1]] = JSON.parse(JSON.stringify(val));
+   }
+   // Inutile de copier pour number, boolean, string
+   // Et on veut garder la référence pour Sommet, Arete et Arc
+   else ref[0][ref[1]] = val;
+}
 
 // Affectation lvalue,lvalue,lvalue,...=expr,expr,expr,...
 // Note le tuple expr,expr ne peut être que le résultat d'une fonction
@@ -284,8 +293,8 @@ function interpAffect(ins){
    // Affectation de chaque lvalue
    for(var i=0; i<ins.left.length; i++){
       var o=evaluateLVal(ins.left[i]);
-      if(v.t=="tuple") o[0][o[1]] = v.vals[i];
-      else o[0][o[1]] = v;
+      if(v.t=="tuple") setRef(o, v.vals[i]);
+      else setRef(o, v);
    }
 }
 
@@ -511,13 +520,28 @@ function prePrint(args){
 	 if(o.t=="Sommet") str+=o.name;
 	 else if(o.t=="Arete") str+="("+o.i.name+","+o.a.name+")";
 	 else if(o.t=="Arc") str+="["+o.i.name+","+o.a.name+"]";
-	 else if(o.length!==undefined){
+	 else if(o.t=="number") str+=(""+o.val);
+	 else if(o.t=="string") str+=o.val;
+	 else if(o.t=="boolean") str+= o.val?"True":"False";
+	 else if(o.t=="array"){
 	    str+="[";
-	    for(var i=0; i<o.length; i++){
-	       printRec(o[i]);
-	       if(i<o.length-1) str+=",";
+	    for(var i=0; i<o.val.length; i++){
+	       printRec(o.val[i]);
+	       if(i<o.val.length-1) str+=",";
 	    }
 	    str+="]";
+	 }
+	 else if(o.t=="struct"){
+	    str+="{";
+	    var first=true;
+	    for(var k in o.f){
+	       if(first) first=false;
+	       else str+=" ";
+	       str+=k;
+	       str+=":";
+	       printRec(o.f[k]);
+	    }
+	    str+="}";
 	 }
 	 else str+="{"+o.t+"}";
       }
@@ -536,15 +560,23 @@ function prePrint(args){
 }
 
 function preM(){
-   return [[]];
+   var M={t:"array", val:[]};
+   var k=Object.keys(_grapheEnv);
+   for(var i=0; i<k.length; i++){
+      M.val[i]={t:"array", val:[]};
+      for(var j=0; j<k.length; j++){
+	 M.val[i].val[j]=0;
+      }
+   }
+   return M;
 }
 
 function preX(){
-   return Object.values(_grapheEnv);
+   return {t:"array", val:Object.values(_grapheEnv)};
 }
 
 function preU(){
-   return _arcs;
+   return {t:"array", val:_arcs};
 }
 
 function interpret(tree){
