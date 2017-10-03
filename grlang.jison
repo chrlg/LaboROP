@@ -43,6 +43,8 @@
 "||"			return "||"
 "or"			return "||"
 
+"[]"			return "[]"
+
 "="			return "="
 "["			return "["
 "]"			return "]"
@@ -265,6 +267,9 @@ expr
       | "Gamma" "(" expr ")" {
 	 $$={t: "Gamma", arg: $3, ln:@1.first_line};
       }
+      | "[]" {
+	 $$={t: "array", val:[], ln:@1.first_line};
+      }
       ;
 
 lvalue
@@ -274,11 +279,14 @@ lvalue
       | "(" ID "," ID ")" {
 	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
-      | "[" expr "," expr "]" {
-	 $$={t:"arete", left: $2, right: $4, ln:@3.first_line};
+      | "[" ID "," ID "]" {
+	 $$={t:"arete", initial: $2, terminal: $4, ln:@3.first_line};
       }
       | lvalue "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
+      }
+      | id "[" expr "]" {
+	 $$={t:"index", tab:$1, index:$3, ln:@2.firt_line};
       }
       ;
 

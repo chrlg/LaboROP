@@ -93,12 +93,55 @@ function isOrient(){
    else return _predefEnv.Oriente.val;
 }
 
+// Récupère l'objet désigné par "sym"
 function getEnv(sym){
    var envs=[_localEnv, _globalEnv, _grapheEnv, _predefEnv];
    for(var i=0; i<envs.length; i++){
-      if(envs[i][sym]!==undefined) return envs[i][sym];
+      if(envs[i][sym]!==undefined){
+	 if(envs[i][sym].t=="global") continue;
+	 return envs[i][sym];
+      }
    }
    return undefined;
+}
+
+// Retourne la référence (une paire "objet/index" mutable) vers une l-value
+// Ou un quadruplet pour les arcs et aretes
+function evaluateLVal(lv){
+   if(lv.t=="id") { // une variable (non prédéfinie) : a=
+      if(_predefEnv[lv.name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
+      if(_localEnv[lv.name] && _localEnv[lv.name].t=="global") return [_globalEnv, lv.name];
+      else return [_localEnv, lv.name];
+   }
+   else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
+      if(_predefEnv[lv.initial] || _predefEnv[lv.terminal]) 
+	    throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
+      var a,b;
+      if(_localEnv[lv.initial] && _localEnv[lv.initial].t=="global") a=_globalEnv;
+      else a=_localEnv;
+      if(_localEnv[lv.terminal] && _localEnv[lv.terminal].t=="global") b=_globalEnv;
+      else b=_localEnv;
+      return [a, lv.initial, b, lv.terminal];
+   }
+   else if(lv.t=="field") { // a.f=
+      var o=evaluateLVal(lv.o);
+      if(o[0][o[1]]===undefined || o[0][o[1]].t!="struct"){
+	 o[0][o[1]]={t:"struct", f:{}};
+      }
+      return [o[0][o[1]].f, lv.f];
+   }
+   else if(lv.t=="index"){ // a[12]=
+      var o=evaluateLVal(lv.tab);
+      if(o[0][o[1]]===undefined || o[0][o[1]].t!="array"){
+	 o[0][o[1]]={t:"array", val:[]};
+      }
+      var i=evaluate(lv.index);
+      if(i===undefined || i.t!="number"){
+	 throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
+      }
+      return [ o[0][o[1]].val, i.val ];
+   }
+   else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
 }
 
 function evaluate(expr){
@@ -210,7 +253,7 @@ function interpIncrement(ins){
       throw {error:"type", name:"Erreur de type", msg: "Argument invalide pour U+=", ln:ins.ln};
    }
    if(ins.left.t=="Gamma"){
-      if(isOrient() || isOrient===undefined) return creerArc(ins.left.arg, ins.right);
+      if(isOrient() || isOrient()===undefined) return creerArc(ins.left.arg, ins.right);
       else return creerArete(ins.left.arg, ins.right);
    }
    if(ins.left.t=="id"){
@@ -227,18 +270,23 @@ function interpPlusPlus(ins){
    }
 }
 
+
+// Affectation lvalue,lvalue,lvalue,...=expr,expr,expr,...
+// Note le tuple expr,expr ne peut être que le résultat d'une fonction
 function interpAffect(ins){
    var v=evaluate(ins.right);
-   if(ins.left.t=="id") {
-      if(_predefEnv[ins.left.name]!==undefined){
-	 throw {error:"type", name:"Surdéfinition", 
-	        msg: "Vous ne pouvez modifier la variable prédéfinie "+ins.left.name,
-		ln: ins.ln};
-      }
-      _localEnv[ins.left.name] = v;
-      return;
+   if(!v) throw {error:"type", name:"Valeur invalide", msg:"Valeur undefined invalide", ln:ins.right.ln};
+   // Si c'est un tuple, il doit correspondre au nombre de lvalues. Sinon, il doit n'y avoir qu'une lvalue
+   if(v.t=="tuple" && v.vals.length != ins.left.length) throw {error:"type", name:"Nombre d'expressions invalide",
+	 msg:"Les nombres de valeurs à droite et à gauche du '=' ne correspondent pas", ln:ins.ln};
+   if(v.t!="tuple" && ins.left.length!=1) throw {error:"type", name:"Nombre d'expressions invalide",
+	 msg:"Une seule expression pour remplir plusieurs destinations", ln:ins.ln};
+   // Affectation de chaque lvalue
+   for(var i=0; i<ins.left.length; i++){
+      var o=evaluateLVal(ins.left[i]);
+      if(v.t=="tuple") o[0][o[1]] = v.vals[i];
+      else o[0][o[1]] = v;
    }
-   console.log("Cannot do =", ins);
 }
 
 function creerArete(left, right){
@@ -381,6 +429,12 @@ function interpretWithEnv(tree, isloop){
 	 creerArc(tree[i].left, tree[i].right);
 	 continue;
       }
+      if(tree[i].t=="ArcOuArete"){
+	 if(isOrient()) creerArc(tree[i].left, tree[i].right);
+	 else if(isOrient()===false) creerArete(tree[i].left, tree[i].right);
+	 else throw {error:"exec", name:"Notation ambigue", msg:"Vous ne pouvez utiliser cette notation sans avoir fixé l'orientation du graphe", ln:tree[i].ln};
+	 continue;
+      }
       if(tree[i].t=="="){
 	 interpAffect(tree[i]);
 	 continue;
@@ -499,7 +553,7 @@ function interpret(tree){
    _predefEnv={};
    _predefEnv["M"]={t: "predvar", f:preM};
    _predefEnv["X"]={t: "predvar", f:preX};
-   _predefEnv["Oriente"]=undefined;
+   _predefEnv["Oriente"]={t: "boolean", val:undefined};
    _predefEnv["U"]={t: "predvar", f:preU};
    _predefEnv["True"]={t:"boolean", val:true};
    _predefEnv["False"]={t:"boolean", val:false};
