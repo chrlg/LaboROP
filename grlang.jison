@@ -63,6 +63,7 @@
 
 "Sommet"		return "Sommet"
 "Arete"			return "Arete"
+"Arc"			return "Arc"
 "Gamma"			return "Gamma"
 "def"			return "def"
 "for"			return "for"
@@ -111,6 +112,12 @@ instruction
       }
       | Arete "[" expr "," expr "]" {
 	 $$ = { t:"ARETE", left: $3, right: $5, ln:@1.first_line};
+      }
+      | Arc "(" expr "," expr ")" {
+	 $$ = { t:"Arc", left:$3, right:$5, ln:@1.first_line};
+      }
+      | "Gamma" "(" expr ")" "+=" expr {
+	 $$ = { t:"ArcOuArete", left:$3, right:$6, ln:@1.first_line};
       }
       | llvalue "=" expr {
 	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
@@ -255,15 +262,15 @@ expr
       | ID '(' listeExpr ')' {
 	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
       }
+      | "Gamma" "(" expr ")" {
+	 $$={t: "Gamma", arg: $3, ln:@1.first_line};
+      }
       ;
 
 lvalue
       : id {
 	 $$=$1;
       } 
-      | "Gamma" "(" expr ")" {
-	 $$={t: "Gamma", arg: $3, ln:@1.first_line};
-      }
       | "(" ID "," ID ")" {
 	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
