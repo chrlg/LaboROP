@@ -114,9 +114,9 @@ def unchemin():
    return n
 
 nmax=0
-while True:
+for essai in range(0,1000):
    n=unchemin()
    if n>nmax:
       nmax=n
-   print ("n=",n, " nmax=",nmax)
+   print ("essai #",essai," n=",n, " nmax=",nmax)
 `;

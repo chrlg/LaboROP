@@ -97,9 +97,10 @@ function getEnv(sym){
 }
 
 function evaluate(expr){
-   if(expr.t=="string"){
-      return expr.val;
+   if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
+      return expr;
    }
+   // TODO FROM HERE
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
       var b=evaluate(expr.right);
@@ -107,11 +108,6 @@ function evaluate(expr){
       if(expr.t=="<") return a<b;
       if(expr.t==">") return a>b;
       if(expr.t=="==") return a==b;
-   }
-   if(expr.t=="number"){
-      var v=parseFloat(expr.val);
-      if(isNaN(v)) throw {error:"math", name:"Erreur mathématique", msg: ""+expr.val+" n'est pas un nombre valide", ln:expr.ln};
-      return v;
    }
    if(expr.t=="id"){
       var e=getEnv(expr.name);
@@ -149,30 +145,39 @@ function evaluate(expr){
    console.log("Cannot evaluate", expr);
 }
 
+
+// Ajoute des sommets dans l'environnement _grapheEnv
 function creerSommets(liste){
    var changes=false;
    for(var i=0; i<liste.length; i++){
+      // Cas 1: l'argument est un ID, sans guillemets, désignant une variable encore inexistante
+      // Dans ce cas, on crée un sommet ayant pour nom cet ID
       if(liste[i].t=="id"){
 	 var e=getEnv(liste[i].name);
 	 if(e===undefined){
+	    // Note : inutile de vérifier si le sommet existe déjà : s'il existait, getEnv l'aurait retourné
 	    _grapheEnv[liste[i].name] = {t: "Sommet", name: liste[i].name, marques:[]};
 	    changes=true;
 	    continue;
 	 }
       }
+      // Cas 2 : c'est une expression (y compris de la forme "id". Mais maintenant ce qui nous intéresse c'est sa valeur)
+      // Sa valeur doit être une chaine de caractère, correspondant à un sommet qui n'existe pas déjà
       var s = evaluate(liste[i]);
-      if(typeof s !== "string") throw {error: "type", name: "Erreur de type", msg: "Le nom d'un sommet doit être une chaîne\nou un identifiant", ln:liste[i].ln};
-      if(_grapheEnv[s]){
+      if(!s || s.t != "string") throw {error: "type", name: "Erreur de type", msg: "Le nom d'un sommet doit être une chaîne\nou un identifiant", ln:liste[i].ln};
+      if(_grapheEnv[s.val]){
 	 throw("Sommet existe déjà");
       }
-      if(!s.match(/^[A-Za-z0-9_]*$/)){
+      // Et par ailleurs, cette chaîne doit avoir la forme classique d'un ID
+      if(!s.val.match(/^[A-Za-z0-9_]*$/)){
 	 throw{error: "type", name: "Nom de sommet illégal", 
-	       msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+s, ln: liste[i].ln};
+	       msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+s.val, ln: liste[i].ln};
       }
-      _grapheEnv[s] = {t: "Sommet", name: s, marques:[]};
+      // Un sommet est créé dans l'environnement adéquat
+      _grapheEnv[s.val] = {t: "Sommet", name: s.val, marques:[]};
       changes=true;
    }
-   if(changes) updateGraphe();
+   if(changes) updateGraphe(); // Envoie du nouveau graphe à dessiner au thread HTML
 }
 
 function interpIncrement(ins){
@@ -186,7 +191,18 @@ function interpIncrement(ins){
       if(_predefEnv["Oriente"] || _predefEnv["Oriente"]===undefined) return creerArc(ins.left.arg, ins.right);
       else return creerArete(ins.left.arg, ins.right);
    }
+   if(ins.left.t=="id"){
+      
+      if(_localEnv[ins.left.name]===undefined) throw {error:"variable", name:"Variable non définie", 
+	    msg:""+inst.left.name+" n'est pas définie", ln:ins.left.ln};
+      _localEnv[ins.left.name] += evaluate(ins.right);
+   }
    console.log("Cannot do +=", ins);
+}
+
+function interpPlusPlus(ins){
+   if(ins.left.t=="id"){
+   }
 }
 
 function interpAffect(ins){
@@ -330,10 +346,6 @@ function interpretWithEnv(tree, isloop){
       }
       if(tree[i].t=="ARETE"){
 	 creerArete(tree[i].left, tree[i].right);
-	 continue;
-      }
-      if(tree[i].t=="+="){
-	 interpIncrement(tree[i]);
 	 continue;
       }
       if(tree[i].t=="="){

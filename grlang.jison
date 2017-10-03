@@ -33,6 +33,15 @@
 "++"			return "++"
 "--"			return "--"
 "=="			return "=="
+"-="			return "-="
+"**"			return "**"
+"!="			return "!="
+"<="			return "<="
+">="			return ">="
+"&&"			return "&&"
+"and"			return "&&"
+"||"			return "||"
+"or"			return "||"
 
 "="			return "="
 "["			return "["
@@ -45,6 +54,12 @@
 "+"			return "+"
 "<"			return "<"
 ">"			return ">"
+"-"			return "-"
+"*"			return "*"
+"%"			return "%"
+"/"			return "/"
+"?"			return "?"
+"!"			return "!"
 
 "Sommet"		return "Sommet"
 "Arete"			return "Arete"
@@ -68,10 +83,17 @@
 
 /lex
 
-%left "=" "==" "<" ">"
+%right ":" "?"
+%left "||"
+%left "&&"
+%left "=" "==" "!="
+%left "<" ">" "<=" ">="
 %left '+' '-'
-%left '*' '/'
-%right '!'
+%left '*' '/' "%"
+%left "**"
+%right "++" "--" "!"
+%left "++" "--"
+%left "."
 
 %start program
 
@@ -90,14 +112,20 @@ instruction
       | Arete "[" expr "," expr "]" {
 	 $$ = { t:"ARETE", left: $3, right: $5, ln:@1.first_line};
       }
-      | lvalue "=" expr {
+      | llvalue "=" expr {
 	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
       }
       | lvalue "+=" expr {
 	 $$ = { t:"+=", left: $1, right: $3, ln:@2.first_line};
       }
+      | lvalue "-=" expr {
+	 $$ = { t:"-=", left: $1, right: $3, ln:@2.first_line};
+      }
       | lvalue "++" {
 	 $$ = { t:"++", left: $1, ln:@2.first_line};
+      }
+      | lvalue "--" {
+	 $$ = { t:"--", left: $1, ln:@2.first_line};
       }
       | ID '(' ')' {
 	 $$ = { t:"call", f:$1, args:[], ln:@1.first_line};
@@ -132,6 +160,9 @@ instruction
       | return listeExpr {
 	 $$ = {t:"return", val:$2, ln:@1.first_line};
       }
+      | global listID {
+	 $$ = {t:"global", vars:$2, ln:@1.first_line};
+      }
       ;
 
 listeExpr
@@ -150,7 +181,7 @@ expr
 	 $$={t:"string", val:$1, ln:@1.first_line};
       }
       | NUMBER {
-	 $$={t:"number", val:$1, ln:@1.first_line};
+	 $$={t:"number", val:parseFloat($1), ln:@1.first_line};
       }
       | expr "==" expr {
 	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
@@ -158,14 +189,65 @@ expr
       | expr "=" expr {
 	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
       }
+      | expr "!=" expr {
+	 $$ = {t:"!=", left:$1, right:$3, ln:@2.first_line};
+      }
       | expr "<" expr {
 	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};
       }
       | expr ">" expr {
 	 $$ = {t:">", left:$1, right:$3, ln:@2.first_line};
       }
+      | expr ">=" expr {
+	 $$ = {t:">=", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "<=" expr {
+	 $$ = {t:"<=", left:$1, right:$3, ln:@2.first_line};
+      }
       | expr "+" expr {
 	 $$ = {t:"+", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "-" expr {
+	 $$ = {t:"-", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "*" expr {
+	 $$ = {t:"*", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "/" expr {
+	 $$ = {t:"/", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "%" expr {
+	 $$ = {t:"%", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "**" expr {
+	 $$ = {t:"**", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "++" {
+	 $$ = {t:"++", left:$1, right:undefined, ln:@2.first_line};
+      }
+      | "++" expr {
+	 $$ = {t:"++", left:undefined, right:$2, ln:@1.first_line};
+      }
+      | expr "--" {
+	 $$ = {t:"--", left:$1, right:undefined, ln:@2.first_line};
+      }
+      | "--" expr {
+	 $$ = {t:"--", left:undefined, right:$2, ln:@1.first_line};
+      }
+      | expr "?" expr ":" expr {
+	 $$ = {t:"?:", cond:$1, oui:$3, non:$5, ln:@2.first_line};
+      }
+      | expr "&&" expr {
+	 $$ = {t:"&&", cond:$1, oui:$3, non:$5, ln:@2.first_line};
+      }
+      | expr "||" expr {
+	 $$ = {t:"||", cond:$1, oui:$3, non:$5, ln:@2.first_line};
+      }
+      | "!" expr {
+	 $$ = {t:"!", right:$2, ln:@1.first_line};
+      }
+      | "(" expr ")" {
+	 $$ = $2;
       }
       | ID '(' ')' {
 	 $$={t: "call", f:$1, args:[], ln:@1.first_line};
@@ -190,6 +272,16 @@ lvalue
       }
       | lvalue "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
+      }
+      ;
+
+llvalue
+      : lvalue {
+	 $$=[$1];
+      }
+      | llvalue "," lvalue {
+	 $$=$1;
+	 $$.push($3);
       }
       ;
 
