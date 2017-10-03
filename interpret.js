@@ -242,19 +242,31 @@ function interpAffect(ins){
 }
 
 function creerArete(left, right){
-   var l, r; // Le nom des sommets à relier
-
    // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
    if(isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: left.ln};
    if(isOrient()===undefined) _predefEnv["Oriente"]={t:"boolean", val:false};
 
 
-   l=evalSommet(left, true);
-   r=evalSommet(right, true);
+   var l=evalSommet(left, true);
+   var r=evalSommet(right, true);
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
    _arcs.push({t:"Arete", i:l, a:r});
+   updateGraphe();
+}
+
+function creerArc(left, right){
+   // Un arc implique un graphe orienté
+   if(isOrient()===undefined) _predefEnv["Oriente"]={t:"boolean", val: true};
+   if(!isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
+
+   var l=evalSommet(left, true);
+   var r=evalSommet(right, true);
+   if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
+   if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
+
+   _arcs.push({t:"Arc", i:l, a:r});
    updateGraphe();
 }
 
@@ -363,6 +375,10 @@ function interpretWithEnv(tree, isloop){
       }
       if(tree[i].t=="ARETE"){
 	 creerArete(tree[i].left, tree[i].right);
+	 continue;
+      }
+      if(tree[i].t=="Arc"){
+	 creerArc(tree[i].left, tree[i].right);
 	 continue;
       }
       if(tree[i].t=="="){
