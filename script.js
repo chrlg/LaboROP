@@ -50,7 +50,7 @@ function oneditorChange(e){
 function realEditorChange(){
    if(worker) worker.terminate();
    worker=false;
-   worker = new Worker("interpret.js");
+   worker = new Worker("interpret.js#"+Math.random());
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
    timeout=setTimeout(Terminate, 20000);

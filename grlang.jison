@@ -145,8 +145,8 @@ instruction
       | for lvalue "in" expr ":" blocOuSingle {
 	 $$ = { t:"foreach", compteur:$2, range:$4, do:$6, ln:@1.first_line};
       }
-      | for lvalue "in" "range" "(" expr "," expr ")" ":" blocOuSingle {
-	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$11, ln:@1.first_line};
+      | for lvalue "in" "range" "(" expr "," expr rangeStep ")" ":" blocOuSingle {
+	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$12, step:$9, ln:@1.first_line};
       }
       | while expr ":" blocOuSingle {
 	 $$ = { t:"while", cond:$2, do:$4, ln:@1.first_line };
@@ -171,6 +171,15 @@ instruction
       }
       | global listID {
 	 $$ = {t:"global", vars:$2, ln:@1.first_line};
+      }
+      ;
+
+rangeStep
+      : "," expr {
+	 $$ = $2;
+      }
+      | {
+	 $$ = false;
       }
       ;
 

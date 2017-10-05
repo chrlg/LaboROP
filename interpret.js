@@ -161,6 +161,8 @@ function evaluateLVal(lv){
    else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
 }
 
+
+// EXPRESSIONS
 function evaluate(expr){
    // Les valeurs natives. 
    if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
@@ -293,8 +295,8 @@ function interpPlusPlus(ins){
 
 function setRef(ref, val, ln){
    // Copy "profonde" pour les tableaux et structures
-   if(o[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
-	    msg:"Impossible d'écraser le sommet "+o[1], ln:ln};
+   if(ref[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
+	    msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
    if(val.t=="array" || val.t=="struct"){
       ref[0][ref[1]] = JSON.parse(JSON.stringify(val));
    }
@@ -405,14 +407,31 @@ function interpWhile(tant){
 }
 
 function interpFor(ins){
-   console.log("TODO for", ins);
+   var comptRef = evaluateLVal(ins.compteur);
+   var start=evaluate(ins.start);
+   var end=evaluate(ins.end);
+   var step={t:"number", val:1};
+   if(ins.step) step=evaluate(ins.step);
+   if(start===undefined || start.t!="number") throw {error:"type", name:"Bornes du for non numériques",
+	 msg:"Le point de départ d'un range doit être un nombre", ln:ins.start.ln};
+   if(end===undefined || end.t!="number") throw {error:"type", name:"Bornes du for non numériques",
+	 msg:"La fin d'un range doit être un nombre", ln:ins.end.ln};
+   if(step===undefined || step.t!="number") throw {error:"type", name:"Bornes du for non numériques",
+	 msg:"Le pas d'un range doit être un nombre", ln:ins.step.ln};
+   for(var i=start.val; i<end.val; i+=step.val){
+      setRef(comptRef, {t:"number", val:i});
+      var b=interpretWithEnv(ins.do, true);
+      if(b=="break") break;
+      if(b=="return") return "return";
+   }
+   return false;
 }
 
 function interpForeach(ins){
    var range=evaluate(ins.range);
-   if(typeof range != "object" || range.length===undefined){
+   if(range.t!="array"){
       throw {error:"type", name:"Mauvaise plage pour 'for'",
-             msg:""+range+" ne peut être une plage d'itération pour 'for'",
+             msg:"Un "+range.t+" ne peut être une plage d'itération pour 'for'",
              ln:ins.range.ln};
    }
    for(var i=0; i<range.length; i++){
