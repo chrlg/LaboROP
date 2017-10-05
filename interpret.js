@@ -287,8 +287,10 @@ function interpPlusPlus(ins){
    }
 }
 
-function setRef(ref, val){
+function setRef(ref, val, ln){
    // Copy "profonde" pour les tableaux et structures
+   if(o[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
+	    msg:"Impossible d'écraser le sommet "+o[1], ln:ln};
    if(val.t=="array" || val.t=="struct"){
       ref[0][ref[1]] = JSON.parse(JSON.stringify(val));
    }
@@ -310,10 +312,8 @@ function interpAffect(ins){
    // Affectation de chaque lvalue
    for(var i=0; i<ins.left.length; i++){
       var o=evaluateLVal(ins.left[i]);
-      if(o[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
-	    msg:"Impossible d'écraser le sommet "+o[1], ln:ins.left[i].ln};
-      if(v.t=="tuple") setRef(o, v.vals[i]);
-      else setRef(o, v);
+      if(v.t=="tuple") setRef(o, v.vals[i], ins.left[i].ln);
+      else setRef(o, v, ins.left[i].ln);
    }
 }
 
