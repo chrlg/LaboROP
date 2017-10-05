@@ -285,7 +285,7 @@ lvalue
       | lvalue "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
       }
-      | id "[" expr "]" {
+      | lvalue "[" expr "]" {
 	 $$={t:"index", tab:$1, index:$3, ln:@2.firt_line};
       }
       ;

@@ -108,31 +108,48 @@ function getEnv(sym){
 // Retourne la référence (une paire "objet/index" mutable) vers une l-value
 // Ou un quadruplet pour les arcs et aretes
 function evaluateLVal(lv){
-   if(lv.t=="id") { // une variable (non prédéfinie) : a=
-      if(_predefEnv[lv.name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
-      if(_localEnv[lv.name] && _localEnv[lv.name].t=="global") return [_globalEnv, lv.name];
-      else return [_localEnv, lv.name];
+
+   // Fonction utilitaire : récupère l'environnement concerné
+   function getIdlv(name){
+      if(_predefEnv[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
+      if(_grapheEnv[name]) return _grapheEnv;
+      if(_localEnv[name] && _localEnv[name].t=="global") return _globalEnv;
+      return _localEnv;
    }
+
+   if(lv.t=="id") { // une variable (non prédéfinie) : a=
+      return [getIdlv(lv.name), lv.name];
+   }
+
    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
-      if(_predefEnv[lv.initial] || _predefEnv[lv.terminal]) 
-	    throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
-      var a,b;
-      if(_localEnv[lv.initial] && _localEnv[lv.initial].t=="global") a=_globalEnv;
-      else a=_localEnv;
-      if(_localEnv[lv.terminal] && _localEnv[lv.terminal].t=="global") b=_globalEnv;
-      else b=_localEnv;
+      var a=getIdlv(lv.initial);
+      var b=getIdlv(lv.terminal);
       return [a, lv.initial, b, lv.terminal];
    }
+
    else if(lv.t=="field") { // a.f=
-      var o=evaluateLVal(lv.o);
-      if(o[0][o[1]]===undefined || o[0][o[1]].t!="struct"){
-	 o[0][o[1]]={t:"struct", f:{}};
+      var o=evaluateLVal(lv.o); // référence ver a
+      var e=o[0];  // Environnement de a
+      var i=o[1];  // Nom de a dans cet environnement
+      var v=e[i];  // Valeur de a (en gros, ce que donnerait evaluate)
+
+      if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
+
+      else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
+	 if(o.length==2) return [v.marques, lv.f]; // Sommet
+	 if(o.length==4) throw {error:"TODO", name:"Erreur interne", msg:"TODO:attributs arcs/aretes", ln:lv.ln};
+      }else if(v.t!="struct"){ // Autre chose sans champ
+	 e[i]=={t:"struct", f:{}};
       }
       return [o[0][o[1]].f, lv.f];
    }
+
    else if(lv.t=="index"){ // a[12]=
-      var o=evaluateLVal(lv.tab);
-      if(o[0][o[1]]===undefined || o[0][o[1]].t!="array"){
+      var o=evaluateLVal(lv.tab); // o=référence vers a
+      var v=o[0][o[1]]; // valeur (evaluate(lv.tab))
+      if(v===undefined) o[0][o[1]] = {t:"array", val:[]}; // Une création de variable
+      else if(o[0]==_grapheEnv) throw{error:"env", name:"Les sommets ne sont pas des tableaux", msg:"", ln:lv.ln};
+      else if(v.t!="array"){ // Une variable qui était autre chose qu'un tableau, et devient un tableau
 	 o[0][o[1]]={t:"array", val:[]};
       }
       var i=evaluate(lv.index);
