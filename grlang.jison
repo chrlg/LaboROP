@@ -62,6 +62,7 @@
 "/"			return "/"
 "?"			return "?"
 "!"			return "!"
+"$".*			return "$"
 
 "Sommet"		return "Sommet"
 "Arete"			return "Arete"
@@ -171,6 +172,9 @@ instruction
       }
       | global listID {
 	 $$ = {t:"global", vars:$2, ln:@1.first_line};
+      }
+      | "$" {
+	 $$ = {t:"$", i:$1};
       }
       ;
 

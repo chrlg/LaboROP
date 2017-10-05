@@ -530,6 +530,10 @@ function interpretWithEnv(tree, isloop){
 	 interpReturn(tree[i]);
 	 return "return";
       }
+      if(tree[i].t=="$"){
+	 console.log(eval(tree[i].i.slice(1)));
+	 continue;
+      }
       console.log("Can't do ", tree[i]);
    }
    return false;
