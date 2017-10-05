@@ -202,6 +202,20 @@ function evaluate(expr){
       if(e.t=="predvar") return e.f();
       return e;
    }
+
+   // Gamma d'un sommet
+   if(expr.t=="Gamma"){
+      var v=evaluate(expr.arg);
+      if(v.t!="Sommet") throw {error:"type", name:"Argument invalide pour Gamma",
+	    msg:"Argument de type "+v.t+" invalide pour Gamma. Sommet attendu.", ln:expr.ln};
+      var rep=[];
+      for(var i=0; i<_arcs.length; i++){
+	 if(_arcs[i].i==v) rep.push(_arcs[i].a);
+	 if(isOrient()===false && _arcs[i].a==v) rep.push(_arcs[i].i);
+      }
+      return {t:"array", val:rep};
+   }
+
    // TODO FROM HERE
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
@@ -217,20 +231,6 @@ function evaluate(expr){
 	    msg:"La fonction "+expr.f+" n'a retourné aucune valeur",
 	    ln:expr.ln};
       return v;
-   }
-   if(expr.t=="Gamma"){
-      var v=evaluate(expr.arg);
-      if(typeof v=="string") v=_grapheEnv[v];
-      if(v===undefined || v.t!="Sommet"){
-	 throw {error:"type", name:"Mauvais argument pour gamma",
-		  msg:"Gamma attend un argument de type 'Sommet'", ln:expr.ln};
-      }
-      var rep=[];
-      for(var i=0; i<_arcs.length; i++){
-	 if(_arcs[i].i==v) rep.push(_arcs[i].a);
-	 if(isOrient()===false && _arcs[i].a==v) rep.push(_arcs[i].i);
-      }
-      return rep;
    }
    console.log("Cannot evaluate", expr);
 }
@@ -424,9 +424,9 @@ function interpIf(si, isloop){
 function interpWhile(tant){
    for(;;){
       var c=evaluate(tant.cond);
-      if(typeof c!=="boolean") throw {error:"type", name: "Condition non booléenne",
+      if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
 	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
-      if(!c) break;
+      if(!c.val) break;
       var b=interpretWithEnv(tant["do"], true);
       if(b=="break") break;
       if(b=="return") return "return";
@@ -564,18 +564,17 @@ function preRandom(args){
       return Math.random();
    }
    var a=evaluate(args[0]);
-   if(typeof a=="number"){
+   if(a.t=="number"){
       return Math.floor(Math.random()*a);
    }
-   if(typeof a != "object"){
-      console.log(args);
+   if(a.t!="array"){
       throw {error:"type", name:"Mauvais argument pour random", 
-	 msg:""+a+" n'est pas un argument valide pour random", ln:args[0].ln};
+	 msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
    }
    if(args.length==1){
-      var k=Object.keys(a);
+      var k=Object.keys(a.val);
       var r=Math.floor(Math.random()*k.length);
-      return a[k[r]];
+      return a.val[k[r]];
    }
 }
 
