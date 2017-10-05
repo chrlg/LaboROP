@@ -162,18 +162,13 @@ function evaluateLVal(lv){
 }
 
 function evaluate(expr){
+   // Les valeurs natives. 
    if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
       return expr;
    }
-   // TODO FROM HERE
-   if(_binaryOp.indexOf(expr.t)>=0){
-      var a=evaluate(expr.left);
-      var b=evaluate(expr.right);
-      if(expr.t=="+") return a+b;
-      if(expr.t=="<") return a<b;
-      if(expr.t==">") return a>b;
-      if(expr.t=="==") return a==b;
-   }
+
+   // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
+   // (le langage interdit donc les pointeurs de fonctions)
    if(expr.t=="id"){
       var e=getEnv(expr.name);
       if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
@@ -185,6 +180,15 @@ function evaluate(expr){
 	    msg: ""+expr.name+" est une fonction", ln:expr.ln};
       if(e.t=="predvar") return e.f();
       return e;
+   }
+   // TODO FROM HERE
+   if(_binaryOp.indexOf(expr.t)>=0){
+      var a=evaluate(expr.left);
+      var b=evaluate(expr.right);
+      if(expr.t=="+") return a+b;
+      if(expr.t=="<") return a<b;
+      if(expr.t==">") return a>b;
+      if(expr.t=="==") return a==b;
    }
    if(expr.t=="call"){
       var v=interpCall(expr);
