@@ -124,7 +124,9 @@ function evaluateLVal(lv){
    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
       var a=getIdlv(lv.initial);
       var b=getIdlv(lv.terminal);
-      return [a, lv.initial, b, lv.terminal];
+      var cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
+      var c=getIdlv(cn);
+      return [a, lv.initial, b, lv.terminal, c, cn];
    }
 
    else if(lv.t=="field") { // a.f=
@@ -137,7 +139,24 @@ function evaluateLVal(lv){
 
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
 	 if(o.length==2) return [v.marques, lv.f]; // Sommet
-	 if(o.length==4) throw {error:"TODO", name:"Erreur interne", msg:"TODO:attributs arcs/aretes", ln:lv.ln};
+	 if(o.length==6) {
+	    var w=o[4][o[5]];
+	    if(w!==undefined && (w.t=="Arc"||w.t=="Arete")) return [w.marques, lv.f]; // Arc défini
+	    // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
+	    // mais peut-être que les sommets qui le constituent correspondent bien à un arc
+	    var s1=o[0][o[1]];
+	    var s2=o[2][o[3]];
+	    if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
+	       throw {error:"type", name:"Pas un arc ou une arête", 
+		     msg:"La paire ne correspond pas à un arc ou une arête", ln:lv.ln};
+	    }
+	    for(var i=0; i<_arcs.length; i++){
+	       if(_arcs[i].i==s1 && _arcs[i].a==s2) return [_arcs[i].marques, lv.f];
+	       if(o[5][0]=="-" && _arcs[i].a==s1 && _arcs[i].i==s2) return [_arcs[i].marques, lv.f];
+	    }
+	    throw {error:"type", name:"Arc ou arête inexistant", 
+	       msg:"La paire ne correspond pas à un arc ou une arête", ln:lv.ln};
+	 }
       }else if(v.t!="struct"){ // Autre chose sans champ
 	 e[i]=={t:"struct", f:{}};
       }
@@ -218,7 +237,7 @@ function evaluate(expr){
 
 // Fonction interne d'ajout de sommet
 function addSommet(name){
-   _grapheEnv[name] = {t:"Sommet", name:name, marques:[]};
+   _grapheEnv[name] = {t:"Sommet", name:name, marques:{}};
 }
 
 // Récupère la valeur d'un sommet à partir d'une chaine ou d'une variable non identifiée
@@ -295,11 +314,12 @@ function interpPlusPlus(ins){
 
 function setRef(ref, val, ln){
    // Cas des arcs et arêtes
-   if(ref.length==4){
+   if(ref.length==6){
       if(val.t!="Arc" && val.t!="Arete") throw {error:"type", name:"Erreur de type",
 	    msg:"Impossible d'affecter un "+val.t+ " à un arc ou une arête", ln:ln};
       setRef(ref.slice(0,2), val.i, ln);
-      setRef(ref.slice(2), val.a, ln);
+      setRef(ref.slice(2,4), val.a, ln);
+      setRef(ref.slice(4), val, ln);
       return;
    }
    // Copy "profonde" pour les tableaux et structures
@@ -342,7 +362,7 @@ function creerArete(left, right){
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
-   _arcs.push({t:"Arete", i:l, a:r});
+   _arcs.push({t:"Arete", i:l, a:r, marques:{}});
    updateGraphe();
 }
 
@@ -356,7 +376,7 @@ function creerArc(left, right){
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
-   _arcs.push({t:"Arc", i:l, a:r});
+   _arcs.push({t:"Arc", i:l, a:r, marques:{}});
    updateGraphe();
 }
 
