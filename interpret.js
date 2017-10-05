@@ -294,6 +294,14 @@ function interpPlusPlus(ins){
 }
 
 function setRef(ref, val, ln){
+   // Cas des arcs et arêtes
+   if(ref.length==4){
+      if(val.t!="Arc" && val.t!="Arete") throw {error:"type", name:"Erreur de type",
+	    msg:"Impossible d'affecter un "+val.t+ " à un arc ou une arête", ln:ln};
+      setRef(ref.slice(0,2), val.i, ln);
+      setRef(ref.slice(2), val.a, ln);
+      return;
+   }
    // Copy "profonde" pour les tableaux et structures
    if(ref[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
 	    msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
@@ -434,16 +442,9 @@ function interpForeach(ins){
              msg:"Un "+range.t+" ne peut être une plage d'itération pour 'for'",
              ln:ins.range.ln};
    }
-   for(var i=0; i<range.length; i++){
-      if(ins.compteur.t=="id") _localEnv[ins.compteur.name] = range[i];
-      else if(ins.compteur.t=="arete"){
-         if(range[i].t!="Arc")
-            throw {error:"type", name:"Mauvaise plage pour 'for'",
-                   msg:"Il ne s'agit pas d'une liste d'arêtes", ln:ins.range.ln};
-         _localEnv[ins.compteur.left.name]=range[i].i;
-         _localEnv[ins.compteur.right.name]=range[i].a;
-      }
-      else console.log("TODO foreach compteur=", ins.compteur);
+   var comptRef=evaluateLVal(ins.compteur);
+   for(var i=0; i<range.val.length; i++){
+      setRef(comptRef, range.val[i], ins.compteur.ln);
       var b=interpretWithEnv(ins.do, true);
       if(b=="break") break;
       if(b=="return") return "return";
