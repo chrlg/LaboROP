@@ -111,7 +111,7 @@ function getEnv(sym){
 
 // Retourne la référence (une paire "objet/index" mutable) vers une l-value
 // Ou un quadruplet pour les arcs et aretes
-function evaluateLVal(lv){
+function evaluateLVal(lv, direct){
 
    // Fonction utilitaire : récupère l'environnement concerné
    function getIdlv(name){
@@ -126,6 +126,8 @@ function evaluateLVal(lv){
    }
 
    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
+      if(lv.t=="arete" && isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
+      if(lv.t=="arc" && !isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
       var a=getIdlv(lv.initial);
       var b=getIdlv(lv.terminal);
       var cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
@@ -436,7 +438,7 @@ function interpCall(call){
    var fn=getEnv(call.f);
    if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
-   if(fn.t=="predfn") return fn.f(call.args);
+   if(fn.t=="predfn") return fn.f(call.args, call.ln);
    if(fn.t!="DEF") throw {error:"type", name:"Pas une fonction",
 	    msg:"Tentative d'appeler "+call.f+", qui n'est pas une fonction", ln:call.ln};
    if(fn.args.length != call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
@@ -668,8 +670,8 @@ function prePrint(args){
    function printRec(o){
       if(typeof o=="object"){
 	 if(o.t=="Sommet") str+=o.name;
-	 else if(o.t=="Arete") str+="("+o.i.name+","+o.a.name+")";
-	 else if(o.t=="Arc") str+="["+o.i.name+","+o.a.name+"]";
+	 else if(o.t=="Arete") str+="["+o.i.name+","+o.a.name+"]";
+	 else if(o.t=="Arc") str+="("+o.i.name+","+o.a.name+")";
 	 else if(o.t=="number") str+=(""+o.val);
 	 else if(o.t=="string") str+=o.val;
 	 else if(o.t=="boolean") str+= (o.val?"True":"False");
@@ -729,6 +731,20 @@ function preU(){
    return {t:"array", val:_arcs};
 }
 
+function preArcs(args, ln){
+   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction arcs/aretes attend un et un seul argument", ln:ln};
+   var a=evaluate(args[0]);
+   if(a.t!="Sommet") throw {error:"type", name:"Erreur de type", 
+      msg:"La fonction arcs/aretes attend un argument de type Sommet", ln:args[0].ln};
+   var rep=[];
+   for(var i=0; i<_arcs.length; i++){
+      if(_arcs[i].i==a) rep.push(_arcs[i]);
+      else if(_arcs[i].a==a) rep.push(_arcs[i]);
+   }
+   return {t:"array", val:rep};
+}
+
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
@@ -742,6 +758,8 @@ function interpret(tree){
    _predefEnv["pi"]={t:"number", val:Math.PI};
    _predefEnv["random"]={t:"predfn", f:preRandom};
    _predefEnv["print"]={t:"predfn", f:prePrint};
+   _predefEnv["arcs"]={t:"predfn", f:preArcs};
+   _predefEnv["aretes"]={t:"predfn", f:preArcs};
    _predefEnv["null"]=NULL;
    _globalEnv={};
    _localEnv=_globalEnv;
