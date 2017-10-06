@@ -109,6 +109,29 @@ function getEnv(sym){
    return undefined;
 }
 
+function evaluateArc(o, ln){
+   if(o.length!=6) throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:ln};
+   var w=o[4][o[5]];
+
+   // Arc qui a déjà été défini directement dans l'environnement
+   if(w!==undefined && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) return w; // Arc défini
+
+   // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
+   // mais peut-être que les sommets qui le constituent correspondent bien à un arc
+   var s1=o[0][o[1]];
+   var s2=o[2][o[3]];
+   if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
+      throw {error:"type", name:"Pas un arc ou une arête", 
+	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
+   }
+   for(var i=0; i<_arcs.length; i++){
+      if(_arcs[i].i==s1 && _arcs[i].a==s2) return _arcs[i];
+      if(o[5][0]=="-" && _arcs[i].a==s1 && _arcs[i].i==s2) return _arcs[i];
+   }
+   throw {error:"type", name:"Arc ou arête inexistant", 
+      msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
+}
+
 // Retourne la référence (une paire "objet/index" mutable) vers une l-value
 // Ou un quadruplet pour les arcs et aretes
 function evaluateLVal(lv, direct){
@@ -146,22 +169,9 @@ function evaluateLVal(lv, direct){
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
 	 if(o.length==2) return [v.marques, lv.f]; // Sommet
 	 if(o.length==6) {
-	    var w=o[4][o[5]];
-	    if(w!==undefined && (w.t=="Arc"||w.t=="Arete")) return [w.marques, lv.f]; // Arc défini
-	    // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
-	    // mais peut-être que les sommets qui le constituent correspondent bien à un arc
-	    var s1=o[0][o[1]];
-	    var s2=o[2][o[3]];
-	    if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
-	       throw {error:"type", name:"Pas un arc ou une arête", 
-		     msg:"La paire ne correspond pas à un arc ou une arête", ln:lv.ln};
-	    }
-	    for(var i=0; i<_arcs.length; i++){
-	       if(_arcs[i].i==s1 && _arcs[i].a==s2) return [_arcs[i].marques, lv.f];
-	       if(o[5][0]=="-" && _arcs[i].a==s1 && _arcs[i].i==s2) return [_arcs[i].marques, lv.f];
-	    }
-	    throw {error:"type", name:"Arc ou arête inexistant", 
-	       msg:"La paire ne correspond pas à un arc ou une arête", ln:lv.ln};
+	    var w=evaluateArc(o, lv.ln);
+	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
+	    return [w.marques, lv.f];
 	 }
       }else if(v.t!="struct"){ // Autre chose sans champ
 	 e[i]=={t:"struct", f:{}};
@@ -254,6 +264,18 @@ function evaluate(expr){
       }
       if(isEq(a, b)) return (expr.t=="==")?TRUE:FALSE;
       else return (expr.t=="==")?FALSE:TRUE;
+   }
+
+   // Arete ou arc
+   if(expr.t=="arete" || expr.t=="arc"){
+      var ref=evaluateLVal(expr);
+      if(ref.length!=6) throw {error:"interne", name:"Erreur interne", msg:"L-Value d'une arête mal évaluée",
+	 ln:expr.ln};
+      var v=evaluateArc(ref);
+      if(v===undefined) throw {error:"type", name:"Arc ou arête inexistant", msg:"", ln:expr.ln};
+      if(v.t=="null") return v;
+      if(v.t=="Arc" || v.t=="Arete") return v;
+      throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:expr.ln};
    }
 
    // TODO FROM HERE
