@@ -315,6 +315,12 @@ function interpPlusPlus(ins){
 function setRef(ref, val, ln){
    // Cas des arcs et arêtes
    if(ref.length==6){
+      if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
+	 setRef(ref.slice(0,2), val, ln);
+	 setRef(ref.slice(2,4), val, ln);
+	 setRef(ref.slice(4), val, ln);
+	 return;
+      }
       if(val.t!="Arc" && val.t!="Arete") throw {error:"type", name:"Erreur de type",
 	    msg:"Impossible d'affecter un "+val.t+ " à un arc ou une arête", ln:ln};
       setRef(ref.slice(0,2), val.i, ln);
@@ -571,10 +577,36 @@ function preRandom(args){
       throw {error:"type", name:"Mauvais argument pour random", 
 	 msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
    }
+   if(a.val.length<=0){
+      return {t:"null"};
+   }
+   var r=Math.floor(Math.random()*a.val.length);
    if(args.length==1){
-      var k=Object.keys(a.val);
-      var r=Math.floor(Math.random()*k.length);
-      return a.val[k[r]];
+      return a.val[r];
+   }
+   else{
+      // On parcours tous les éléments de la liste à partir du r
+      // et on retourne le premier qui vérifie la condition
+      for(var ii=0; ii<a.val.length; ii++){
+	 var i=(r+ii)%a.val.length;
+	 var cur=a.val[i];
+	 var env=false; // Environnement d'évaluation de la condition (champs des éléments)
+	 if(cur && cur.t=="struct") env=cur.f;
+	 if(cur && (cur.t=="Arc" || cur.t=="Arete" || cur.t=="Sommet")) env=cur.marques;
+	 if(env){ // S'il y a un environnement, on le push avant d'évaluer la condition
+	    _localEnv=env;
+	    _stackEnv.push(env);
+	 }
+	 var v=evaluate(args[1]);
+	 if(env){
+	    _stackEnv.pop();
+	    _localEnv = _stackEnv[_stackEnv.length-1];
+	 }
+	 if(!v || v.t!="boolean") throw {error:"type", name:"Condition non booléenne",
+	    msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
+	 if(v.val) return cur;
+      }
+      return {t:"null"}; // Rien ne correspond à la condition
    }
 }
 
