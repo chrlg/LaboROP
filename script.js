@@ -83,7 +83,7 @@ function init(){
    editor.getSession().setTabSize(3);
 
    editor.getSession().on('change', oneditorChange);
-   editor.setValue(ex1, -1);
+   editor.setValue(ex2, -1);
    oneditorChange();
 }
 
@@ -106,7 +106,7 @@ def unchemin():
    s=random(X)
    n=0
    while True:
-      [x,y]=random(Gamma(s), passe==0)
+      [x,y]=random(aretes(s), passe==0)
       if [x,y]==null: break
       s=y
       [x,y].passe=1
@@ -119,4 +119,13 @@ for essai in range(0,1000):
    if n>nmax:
       nmax=n
    print ("essai #",essai," n=",n, " nmax=",nmax)
+`;
+
+var ex2=`#
+for chou in range(0,3):
+   for chevre in range(0,3):
+      for loup in range(0,3):
+         for passeur in range(0,3):
+            print(chou,chevre,loup,passeur)
+
 `;

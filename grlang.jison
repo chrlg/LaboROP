@@ -135,8 +135,14 @@ instruction
       | lvalue "++" {
 	 $$ = { t:"++", left: $1, ln:@2.first_line};
       }
+      | "++" lvalue {
+	 $$ = { t:"++", right: $1, ln:@1.first_line};
+      }
       | lvalue "--" {
 	 $$ = { t:"--", left: $1, ln:@2.first_line};
+      }
+      | "--" lvalue {
+	 $$ = { t:"--", right: $1, ln:@1.first_line};
       }
       | ID '(' ')' {
 	 $$ = { t:"call", f:$1, args:[], ln:@1.first_line};
@@ -264,10 +270,10 @@ expr
 	 $$ = {t:"?:", cond:$1, oui:$3, non:$5, ln:@2.first_line};
       }
       | expr "&&" expr {
-	 $$ = {t:"&&", cond:$1, oui:$3, non:$5, ln:@2.first_line};
+	 $$ = {t:"&&", left:$1, right:$3, ln:@2.first_line};
       }
       | expr "||" expr {
-	 $$ = {t:"||", cond:$1, oui:$3, non:$5, ln:@2.first_line};
+	 $$ = {t:"||", left:$1, right:$3, ln:@2.first_line};
       }
       | "!" expr {
 	 $$ = {t:"!", right:$2, ln:@1.first_line};

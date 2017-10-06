@@ -639,12 +639,18 @@ function interpretWithEnv(tree, isloop){
 	 interpAffect(tree[i]);
 	 continue;
       }
-      if(tree[i].t=="DEF"){
-	 interpDef(tree[i]);
+      if(tree[i].t=="++" || tree[i].t=="--"){
+	 evaluate(tree[i]);
 	 continue;
       }
-      if(tree[i].t=="call"){
-	 interpCall(tree[i]);
+      if(tree[i].t=="foreach"){
+         var b=interpForeach(tree[i]);
+	 if(b=="return") return "return";
+         continue;
+      }
+      if(tree[i].t=="for"){
+	 var b=interpFor(tree[i]);
+	 if(b=="return") return "return";
 	 continue;
       }
       if(tree[i].t=="if"){
@@ -658,15 +664,13 @@ function interpretWithEnv(tree, isloop){
 	 if(b=="return") return "return";
 	 continue;
       }
-      if(tree[i].t=="for"){
-	 var b=interpFor(tree[i]);
-	 if(b=="return") return "return";
+      if(tree[i].t=="call"){
+	 interpCall(tree[i]);
 	 continue;
       }
-      if(tree[i].t=="foreach"){
-         var b=interpForeach(tree[i]);
-	 if(b=="return") return "return";
-         continue;
+      if(tree[i].t=="DEF"){
+	 interpDef(tree[i]);
+	 continue;
       }
       if(tree[i].t=="break"){
 	 if(!isloop) throw {error:"exec", name:"Break en dehors d'une boucle",
