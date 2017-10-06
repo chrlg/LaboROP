@@ -483,9 +483,9 @@ function interpCall(call){
 
 function interpIf(si, isloop){
    var c=evaluate(si.cond);
-   if(typeof c !== "boolean") throw {error:"type", name: "Condition non booléenne",
+   if(c.t != "boolean") throw {error:"type", name: "Condition non booléenne",
            msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
-   if(c) return interpretWithEnv(si["do"], isloop);
+   if(c.val) return interpretWithEnv(si["do"], isloop);
    else return interpretWithEnv(si["else"], isloop);
 }
 
