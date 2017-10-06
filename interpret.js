@@ -791,7 +791,16 @@ function preArcs(args, ln){
    var rep=[];
    for(var i=0; i<_arcs.length; i++){
       if(_arcs[i].i==a) rep.push(_arcs[i]);
-      else if(_arcs[i].a==a) rep.push(_arcs[i]);
+      else if(_arcs[i].a==a) {
+	 if(_arcs[i].t=="Arete"){ // Dans le cas précis de arete, on inverse les sommets
+	    // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
+	    // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
+	    var pivot=_arcs[i].i;
+	    _arcs[i].i=_arcs[i].a;
+	    _arcs[i].a=pivot;
+	 }
+	 rep.push(_arcs[i]);
+      }
    }
    return {t:"array", val:rep};
 }
