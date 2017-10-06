@@ -266,6 +266,16 @@ function evaluate(expr){
       else return (expr.t=="==")?FALSE:TRUE;
    }
 
+   // and / or
+   if(expr.t=="&&" || expr.t=="||"){
+      var a=evaluate(expr.left);
+      var b=evaluate(expr.right);
+      if(a.t!="boolean" || b.t!="boolean")
+	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+      if(expr.t=="&&") return (a.val && b.val)?TRUE:FALSE;
+      else return (a.val||b.val)?TRUE:FALSE;
+   }
+
    // Comparaison (inégalité)
    // Uniquement pour des valeurs scalaires
    if(expr.t=="<" || expr.t==">" || expr.t=="<=" || expr.t==">="){
@@ -327,6 +337,7 @@ function evaluate(expr){
       if(expr.left) return v;
       else return newVal;
    }
+
 
    // TODO FROM HERE
    if(_binaryOp.indexOf(expr.t)>=0){
