@@ -307,6 +307,27 @@ function evaluate(expr){
       throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:expr.ln};
    }
 
+   // ++ / --
+   if(expr.t=="++" || expr.t=="--"){
+      var op;
+      if(expr.left) op=evaluateLVal(expr.left);
+      else if(expr.right) op=evaluateLVal(expr.right);
+      else throw {error:"interne", name:"++ ou -- sans opérande", msg:"", ln:expr.ln};
+      if(op.length!=2) throw {error:"type", name:"++ ou -- utilisé sur arc ou arête", msg:"", ln:expr.ln};
+      var v=op[0][op[1]];
+      if(!v) throw {error:"env", name:"Variable non définie", msg:"", ln:expr.ln};
+      if(v.t!="number") throw {error:"type", name:"Erreur de type", 
+	    msg:"++ ou -- attend un nombre et a été utilisé sur un "+v.t, ln:expr.ln};
+      var newVal={t:"number", val:v.val};
+      if(expr.t=="++") newVal.val++;
+      else newVal.val--;
+
+      setRef(op, newVal, expr.ln);
+
+      if(expr.left) return v;
+      else return newVal;
+   }
+
    // TODO FROM HERE
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
