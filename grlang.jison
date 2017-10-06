@@ -79,6 +79,7 @@
 "global"		return "global"
 "return"		return "return"
 "range"			return "range"
+"exit"			return "exit"
 
 [A-Za-z_][A-Za-z0-9_]*	return "ID"
 
@@ -172,6 +173,9 @@ instruction
       }
       | global listID {
 	 $$ = {t:"global", vars:$2, ln:@1.first_line};
+      }
+      | exit '(' expr ')' {
+	 $$ = {t:"exit", arg:$3, ln:@1.first_line};
       }
       | "$" {
 	 $$ = {t:"$", i:$1};

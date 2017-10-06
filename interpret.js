@@ -8,6 +8,10 @@ var _localEnv = _globalEnv;
 var _arcs=[];
 
 const _binaryOp = ["+", "<", ">", "=="];
+const FALSE={t:"boolean", val:false};
+const TRUE={t:"boolean", val:true};
+const UNDEFINED={t:"boolean", val:undefined};
+const NULL={t:"null"};
 
 
 grlang.yy.parseError = function(e, h){
@@ -193,7 +197,6 @@ function evaluate(expr){
    if(expr.t=="id"){
       var e=getEnv(expr.name);
       if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
-      if(e===null) return null;
       if(e.t=="predfn") throw {error:"type", name:"Variable incorrecte", 
 	    msg: "Tentative d'utiliser la fonction prédéfinie "+expr.name+ " comme une variable",
 	    ln:expr.ln};
@@ -214,6 +217,41 @@ function evaluate(expr){
 	 if(isOrient()===false && _arcs[i].a==v) rep.push(_arcs[i].i);
       }
       return {t:"array", val:rep};
+   }
+
+   // Comparaison (égalité)
+   // Pour les valeurs scalaires, compare la valeur. Pour les sommets et arcs, la référence suffit
+   // Pour les vecteurs et structures : comparaison récursive
+   if(expr.t=="==" || expr.t=="!="){
+      var a=evaluate(expr.left);
+      var b=evaluate(expr.right);
+      if(a.t=="global" || a.t=="predvar" || a.t=="predfn" || a.t=="DEF")
+	    throw {error:"exec", name:"Erreur interne", msg:""+a.t+" dans ==", ln:expr.ln};
+      if(a.t=="tuple")
+	    throw {error:"type", name:"Valeurs multiples", 
+		  msg:"Tentative d'utiliser l'opérateur de comparaison avec une valeur multiple",
+		  ln:expr.ln};
+      function isEq(a,b){
+	 if(a.t!=b.t) return false;
+	 if(a.t=="null") return true;
+	 if(a.t=="Sommet" || a.t=="Arete" || a.t=="Arc") return a==b;
+	 if(a.t=="boolean" || a.t=="number" || a.t=="string") return a.val==b.val;
+	 if(a.t=="array"){
+	    if(a.val.length!=b.val.length) return false;
+	    for(var i=0; i<a.val.length; i++){
+	       if(!isEq(a.val[i], b.val[i])) return false;
+	    }
+	    return true;
+	 }
+	 if(a.t=="struct"){
+	    for(var f in a.f) if(b.f[f]===undefined) return false;
+	    for(var f in b.f) if(a.f[f]===undefined) return false;
+	    for(var f in a.f) if(!isEq(a.f[f], b.f[f])) return false;
+	    return true;
+	 }
+      }
+      if(isEq(a, b)) return (expr.t=="==")?TRUE:FALSE;
+      else return (expr.t=="==")?FALSE:TRUE;
    }
 
    // TODO FROM HERE
@@ -360,7 +398,7 @@ function interpAffect(ins){
 function creerArete(left, right){
    // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
    if(isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: left.ln};
-   if(isOrient()===undefined) _predefEnv["Oriente"]={t:"boolean", val:false};
+   if(isOrient()===undefined) _predefEnv["Oriente"]=FALSE;
 
 
    var l=evalSommet(left, true);
@@ -374,7 +412,7 @@ function creerArete(left, right){
 
 function creerArc(left, right){
    // Un arc implique un graphe orienté
-   if(isOrient()===undefined) _predefEnv["Oriente"]={t:"boolean", val: true};
+   if(isOrient()===undefined) _predefEnv["Oriente"]=TRUE;
    if(!isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
    var l=evalSommet(left, true);
@@ -491,6 +529,16 @@ function interpReturn(ins){
    return;
 }
 
+function interpExit(arg){
+   var v=evaluate(arg);
+   if(v.t=="boolean" || v.t=="string" || v.t=="number")
+      throw {error:"exit", val:v.val, ln:arg.ln};
+   if(v.t=="Sommet") throw {error:"exit", val:v.name, ln:arg.ln};
+   if(v.t=="Arc") throw {error:"exit", val:v.i.name+"->"+v.a.name, ln:arg.ln};
+   if(v.t=="Arete") throw {error:"exit", val:v.i.name+"--"+v.a.name, ln:arg.ln};
+   throw {error:"type", name:"Mauvais type pour exit", msg:"", ln:arg.ln};
+}
+
 
 // LISTE D'INSTRUCTIONS
 function interpretWithEnv(tree, isloop){
@@ -556,6 +604,10 @@ function interpretWithEnv(tree, isloop){
 	 interpReturn(tree[i]);
 	 return "return";
       }
+      if(tree[i].t=="exit"){
+	 interpExit(tree[i].arg);
+	 return "exit";
+      }
       if(tree[i].t=="$"){
 	 console.log(eval(tree[i].i.slice(1)));
 	 continue;
@@ -578,7 +630,7 @@ function preRandom(args){
 	 msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
    }
    if(a.val.length<=0){
-      return {t:"null"};
+      return NULL;
    }
    var r=Math.floor(Math.random()*a.val.length);
    if(args.length==1){
@@ -606,7 +658,7 @@ function preRandom(args){
 	    msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
 	 if(v.val) return cur;
       }
-      return {t:"null"}; // Rien ne correspond à la condition
+      return NULL; // Rien ne correspond à la condition
    }
 }
 
@@ -620,7 +672,7 @@ function prePrint(args){
 	 else if(o.t=="Arc") str+="["+o.i.name+","+o.a.name+"]";
 	 else if(o.t=="number") str+=(""+o.val);
 	 else if(o.t=="string") str+=o.val;
-	 else if(o.t=="boolean") str+= o.val?"True":"False";
+	 else if(o.t=="boolean") str+= (o.val?"True":"False");
 	 else if(o.t=="array"){
 	    str+="[";
 	    for(var i=0; i<o.val.length; i++){
@@ -683,14 +735,14 @@ function interpret(tree){
    _predefEnv={};
    _predefEnv["M"]={t: "predvar", f:preM};
    _predefEnv["X"]={t: "predvar", f:preX};
-   _predefEnv["Oriente"]={t: "boolean", val:undefined};
+   _predefEnv["Oriente"]=UNDEFINED;
    _predefEnv["U"]={t: "predvar", f:preU};
-   _predefEnv["True"]={t:"boolean", val:true};
-   _predefEnv["False"]={t:"boolean", val:false};
+   _predefEnv["True"]=TRUE;
+   _predefEnv["False"]=FALSE;
    _predefEnv["pi"]={t:"number", val:Math.PI};
    _predefEnv["random"]={t:"predfn", f:preRandom};
    _predefEnv["print"]={t:"predfn", f:prePrint};
-   _predefEnv["null"]={t:"null"};
+   _predefEnv["null"]=NULL;
    _globalEnv={};
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
@@ -705,7 +757,14 @@ onmessage = function (e){
       postMessage({termine: 0});
    }catch(e){
       console.log(e);
-      if(e.error) postMessage(e);
+      if(e.error) {
+	 if(e.error=="exit") {
+	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
+	       msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
+	    else postMessage({termine: e.val});
+	 }
+	 else postMessage(e);
+      }
       else {
 	 postMessage({error: "syntax", name: "Erreur de syntaxe", msg: e.msg, ln: e.line+1, err:e});
       }
