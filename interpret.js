@@ -266,6 +266,35 @@ function evaluate(expr){
       else return (expr.t=="==")?FALSE:TRUE;
    }
 
+   // Comparaison (inégalité)
+   // Uniquement pour des valeurs scalaires
+   if(expr.t=="<" || expr.t==">" || expr.t=="<=" || expr.t==">="){
+      var a=evaluate(expr.left);
+      var b=evaluate(expr.right);
+      if(a.t=="global" || a.t=="predvar" || a.t=="predfn" || a.t=="DEF")
+	    throw {error:"exec", name:"Erreur interne", msg:""+a.t+" dans ==", ln:expr.ln};
+      if(a.t=="tuple")
+	    throw {error:"type", name:"Valeurs multiples", 
+		  msg:"Tentative d'utiliser l'opérateur de comparaison avec une valeur multiple",
+		  ln:expr.ln};
+      if(a.t != b.t) throw {error:"type", name:"Comparaison de valeur de types différents",
+	    msg:"", ln:expr.ln};
+      var vala=false, valb=false;
+      if(a.t=="number" || a.t=="string"){
+	 vala=a.val;
+	 valb=b.val;
+      }else if(a.t=="Sommet"){
+	 vala=a.name;
+	 valb=b.name;
+      }else throw {error:"type", name:"Type invalide pour une comparaison",
+	 msg:"Tentative de comparer deux valeurs de type "+a.t, ln:expr.ln};
+      if(expr.t=="<") return (vala<valb)?TRUE:FALSE;
+      else if(expr.t==">") return (vala>valb)?TRUE:FALSE;
+      else if(expr.t==">=") return (vala>=valb)?TRUE:FALSE;
+      else if(expr.t=="<=") return (vala<=valb)?TRUE:FALSE;
+      else throw {error:"interne", name:"Hein?", msg:"", ln:expr.ln};
+   }
+
    // Arete ou arc
    if(expr.t=="arete" || expr.t=="arc"){
       var ref=evaluateLVal(expr);
