@@ -7,7 +7,7 @@ var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
 var _arcs=[];
 
-const _binaryOp = ["+", "<", ">", "=="];
+const _binaryOp = ["+", "-", "*", "/", "%", "**"];
 const FALSE={t:"boolean", val:false};
 const TRUE={t:"boolean", val:true};
 const UNDEFINED={t:"boolean", val:undefined};
@@ -338,15 +338,37 @@ function evaluate(expr){
       else return newVal;
    }
 
-
    // TODO FROM HERE
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
       var b=evaluate(expr.right);
-      if(expr.t=="+") return a+b;
-      if(expr.t=="<") return a<b;
-      if(expr.t==">") return a>b;
-      if(expr.t=="==") return a==b;
+      // Cas particulier pour le + : on accepte aussi chaines et tableau
+      if(expr.t=="+"){
+	 if(a.t=="array"){
+	    var val=a.val.slice();
+	    val.push(b);
+	    return {t:"array", val:val};
+	    // TODO: matrices
+	 }
+	 if(a.t=="string"){
+	    if(b.t=="string") return {t:"string", val:a.val+b.val};
+	    if(b.t=="number") return {t:"string", val:a.val+b.val};
+	    if(b.t=="boolean") return {t:"string", val:a.val+(b.val?"True":"False")};
+	    if(b.t=="Sommet") return {t:"string", val:a.val+b.name};
+	    if(b.t=="Arc") return {t:"string", val:a.val+"("+b.i.name+","+b.a.name+")"};
+	    if(b.t=="Arete") return {t:"string", val:a.val+"["+b.i.name+","+b.a.name+"]"};
+	    if(b.t=="null") return {t:"string", val:a.val+"null"};
+	 }
+      }
+      if(a.t!="number" || b.t!="number")
+	 throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
+      if(expr.t=="+") return {t:"number", val:a.val+b.val};
+      if(expr.t=="-") return {t:"number", val:a.val-b.val};
+      if(expr.t=="*") return {t:"number", val:a.val*b.val};
+      if(expr.t=="/") return {t:"number", val:a.val/b.val};
+      if(expr.t=="%") return {t:"number", val:a.val%b.val};
+      if(expr.t=="**") return {t:"number", val:a.val**b.val};
+      throw {error:"interne", name:"Erreur interne", msg:"Hein?", ln:expr.ln};
    }
    if(expr.t=="call"){
       var v=interpCall(expr);
@@ -667,6 +689,7 @@ function interpretWithEnv(tree, isloop){
       if(tree[i].t=="if"){
 	 var b=interpIf(tree[i], isloop);
 	 if(isloop && b=="break") return "break";
+	 if(isloop && b=="continue") return "continue";
 	 if(b=="return") return "return";
 	 continue;
       }
@@ -688,6 +711,12 @@ function interpretWithEnv(tree, isloop){
 	       msg:"'break' ne peut être utilisé que dans une boucle for ou while",
 	       ln:tree[i].ln};
 	 return "break";
+      }
+      if(tree[i].t=="continue"){
+	 if(!isloop) throw {error:"exec", name:"continue en dehors d'une boucle",
+	       msg:"'continue' ne peut être utilisé que dans une boucle for ou while",
+	       ln:tree[i].ln};
+	 return "continue";
       }
       if(tree[i].t=="return"){
 	 interpReturn(tree[i]);
