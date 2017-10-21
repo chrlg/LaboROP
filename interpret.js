@@ -1,19 +1,30 @@
 importScripts("grlang.js");
 
+// Les environnements
+// Il y a 3 environnements globaux: _predef qui contient les constantes et fonctions fournies
+// _grapheEnv, qui contient les sommets désignés par leurs noms
+// _globalEnv, qui contient les variables globales et fonctions définies par l'utilisateur
+// Et 1 environnement local, qui est créé à chaque appel de fonction
+// Par défaut, l'envionnement local est l'environnement global. 
+// _envStack est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
 var _predefEnv = {};
 var _grapheEnv = {};
 var _globalEnv = {};
 var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
-var _arcs=[];
 
-const _binaryOp = ["+", "-", "*", "/", "%", "**"];
+var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
+              // mais on a aussi besoin, globalement, d'une liste d'arcs
+
+// Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
+// définies dans _predefEnv. FALSE correspond à False, etc.)
 const FALSE={t:"boolean", val:false};
 const TRUE={t:"boolean", val:true};
 const UNDEFINED={t:"boolean", val:undefined};
 const NULL={t:"null"};
 
 
+// Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
    var hh=h;
    hh.msg=e;
@@ -28,45 +39,53 @@ grlang.yy.parseError = function(e, h){
    throw(hh);
 }
 
+// Comme on fait un langage python-like, les tabulations ont un sens syntaxique.
+// Mais l'analyseur lexical n'est pas vraiment adapté à cela (la simple présence d'une tabulation
+// ne signifie rien hors contexte. Ce qui compte, c'est "y en a-t-il plus, moins ou autant que sur la ligne d'avant")
+// Cette fonction, appelée avant l'analyse syntaxique, se charge d'ajouter des symboles §{ et $} quand le nombre
+// de tabulations augmente ou baisse dans une ligne
+// Ce qui permettra à l'analyseur syntaxique de fonction comme pour un langage normal. En traitant §{ et §} comme
+// le begin/end de pascal ou le { } de C/C++/Java/etc
 function parseTabulation(str){
-   var out="";
-   var startLine=true;
-   var indents=[0];
-   var ln=1;
-   str+="§;\n§;\n";
+   var out=""; // Variable contenant le code transformé
+   var startLine=true; // Indique si on vient de commencer une ligne (au début, c'est forcément le cas)
+   var indents=[0]; // Nombre d'espace en début de ligne pour le bloc courant
+   var ln=1; // Numéro de ligne
+   str+="§;\n§;\n"; // Juste pour forcer à finir tous les blocs commencés
    while(str!=""){
-      if(startLine){
-	 startLine=false;
-	 var m=str.match(/[^ ]/).index;
-	 if(str[m]=="\n"){
-	    str=str.slice(m);
+      if(startLine){ // Si on vient de commencer une ligne (on vient de commencer le fichier ou de voir un retour charriot)
+	 startLine=false;  // on génère potentiellement des §{/§}.   
+	 var m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
+	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
+	 if(str[m]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
 	    continue;
 	 }
-	 str=str.slice(m);
-	 var expected=indents[indents.length-1];
-	 if(m==expected) continue;
-	 if(m>expected){
-	    out+="§{";
-	    indents.push(m);
-	    continue;
+	 var expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
+	 if(m==expected) continue; // C'est le même, donc rien à faire de spécial. Ni §{ ni §}
+	 if(m>expected){ // Il y en a plus. Donc on vient de commencer un bloc indenté. 
+	    out+="§{"; // On génère un §{ pour l'analyseur syntaxique
+	    indents.push(m); // On note que le bloc courant fait maintenant cette taille d'indentation
+	    continue; 
 	 }
-	 while(m<expected){
-	    out += "§}§;";
-	    indents.pop();
-	    expected=indents[indents.length-1];
+	 while(m<expected){ // Il y en a moins. Donc on va générer un certain nombre de "end" (pas forcément 1 seul)
+	    out += "§}§;";  // ça dépend de combien de niveau au redescend d'un seul coup (est-ce qu'on revient à la taille
+	    indents.pop();  // d'indentation précédente ? La précédente de la précédente ? Etc.
+	    expected=indents[indents.length-1]; // Note: on ajoute un §;, parce que c'est aussi une fin de ligne
 	 }
-	 if(m>expected){
-	    throw {error: "indent", msg: false, name: "Erreur d'indentation", ln:ln};
-	 }
+	 if(m>expected){ // une fois tout ça fait, normalement on est donc sorti des blocs. Mais peut-être que l'indentation
+	    throw {error: "indent", msg: false, name: "Erreur d'indentation", ln:ln}; // à la quelle on vient de revenir ne
+	 } // correspond à aucune indentation précédente. Genre on est sans indentation → on ouvre un bloc en indentant de 4 espaces
+	 // puis on indente de 2 espaces. Ça n'est ni franchement une sortie (on ne revient pas à 0) ni la suite du bloc
+	 // (on ne reste pas à 4), ni un nouveau bloc (on ne passe pas à plus que 4). Bref, c'est rien de légal
 	 continue;
       }
-      else if(str[0]=='\n'){
-	 ln ++;
-	 out += "\n";
+      else if(str[0]=='\n'){ //Un \n augmente le compteur de numéro de ligne (utilisé uniquement pour les messages d'erreur
+	 ln ++; // d'indentation), et signale au présent code que la prochaine lecture correspondra au début d'une ligne
+	 out += "\n"; // cad là où on compte les indentations.
 	 str=str.slice(1);
 	 startLine=true;
 	 continue;
-      }else{
+      }else{ // Sinon, on se contente de prendre tout ce qui est jusqu'à la fin de la ligne et l'ajouter à la sortie
 	 var m=str.match(/^[^\n]+/)[0];
 	 out += m;
 	 str=str.slice(m.length);
@@ -76,6 +95,7 @@ function parseTabulation(str){
    return out;
 }
 
+// Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
 function updateGraphe(){
    var gr="";
    var orient = isOrient();
@@ -92,28 +112,53 @@ function updateGraphe(){
    postMessage({graph:gr});
 }
 
+
+// Fonction utilitaire : donne la valeur de la variable (du langage cible) "Oriente"
 function isOrient(){
    if(_predefEnv.Oriente===undefined) return undefined;
    else return _predefEnv.Oriente.val;
 }
 
-// Récupère l'objet désigné par "sym"
+// Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
 function getEnv(sym){
    var envs=[_localEnv, _globalEnv, _grapheEnv, _predefEnv];
    for(var i=0; i<envs.length; i++){
       if(envs[i][sym]!==undefined){
-	 if(envs[i][sym].t=="global") continue;
-	 return envs[i][sym];
+	 if(envs[i][sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
+	 return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
       }
    }
    return undefined;
 }
 
+
+// Etant donnée une référence o (un "pointeur" en quelques sortes) vers un arc
+// donne la valeur de l'arc (l'objet de _arcs)
+// Note: une référence (cf plus loin) est une paire (object / nom) tel que
+// objet.nom désigne l'objet référé
+// Ça me sert ici de pointeur, puisque ça veut dire que je peux modifier la valeur
+// de l'objet référé
+// o est donc un tableau de dimension 2
+// o[0] est donc classiquement un environnement, et o[1] le nom d'une variable
+// définie dans cet environnement. Donc o[0][o[1]] sa valeur
+// o[0] peut également être le champ "f" (liste des champs) d'une structure
+// et donc o[1] le nom d'un champ. Donc o[0][o[1]] est structure.champ
+// o[0] peut aussi être le champ val d'un tableau, et o[1] l'indice (un nombre donc)
+// Ce qui là encore veut dire que o[0][o[1]] = la valeur référencée
+// Le cas des arcs est toutefois particulier. Car un arc [a,b] dans la syntaxe particulière 
+// du langage, c'est à la fois juste une paire de sommet ([a,b]=random(arcs(S)) signifie que a
+// et b sont de nouvelles variables de type sommet), mais aussi un pointeur vers l'objet arc lui
+// même (on peut ensuite écrire [a,b].champ=12. Ce qui ne touche pas aux sommets, mais aux
+// champs de l'arc lui-même)
+// Pour cette raison la référence vers un arc n'est pas de longueur 2 mais 6
+// Avec o[0][o[1]] étant la référence vers le 1er sommet, o[2][o[3]] vers le 2e sommet
+// et o[4][o[5]] vers le 5e
 function evaluateArc(o, ln){
    if(o.length!=6) throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:ln};
-   var w=o[4][o[5]];
+   var w=o[4][o[5]]; // L'arc lui-même
 
    // Arc qui a déjà été défini directement dans l'environnement
+   // Cad que 
    if(w!==undefined && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) return w; // Arc défini
 
    // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
@@ -132,6 +177,7 @@ function evaluateArc(o, ln){
       msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
 }
 
+const _binaryOp = ["+", "-", "*", "/", "%", "**"];
 // Retourne la référence (une paire "objet/index" mutable) vers une l-value
 // Ou un quadruplet pour les arcs et aretes
 function evaluateLVal(lv, direct){
@@ -269,11 +315,15 @@ function evaluate(expr){
    // and / or
    if(expr.t=="&&" || expr.t=="||"){
       var a=evaluate(expr.left);
+      if(a.t!="boolean")
+	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
+      if(a.val && expr.t=="||") return TRUE;
+      if(!a.val && expr.t=="&&") return FALSE;
       var b=evaluate(expr.right);
-      if(a.t!="boolean" || b.t!="boolean")
+      if(b.t!="boolean")
 	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
-      if(expr.t=="&&") return (a.val && b.val)?TRUE:FALSE;
-      else return (a.val||b.val)?TRUE:FALSE;
+      if(b.val) return TRUE;
+      else return FALSE;
    }
 
    // Comparaison (inégalité)
@@ -342,7 +392,7 @@ function evaluate(expr){
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
       var b=evaluate(expr.right);
-      // Cas particulier pour le + : on accepte aussi chaines et tableau
+      // Cas particulier pour le + : on accepte aussi chaines et tableau, et booléens
       if(expr.t=="+"){
 	 if(a.t=="array"){
 	    var val=a.val.slice();
@@ -358,7 +408,16 @@ function evaluate(expr){
 	    if(b.t=="Arc") return {t:"string", val:a.val+"("+b.i.name+","+b.a.name+")"};
 	    if(b.t=="Arete") return {t:"string", val:a.val+"["+b.i.name+","+b.a.name+"]"};
 	    if(b.t=="null") return {t:"string", val:a.val+"null"};
+            throw {error:"type", name:"Erreur de type", msg:"", ln:expr.ln};
 	 }
+         if(a.t=="boolean"){ // Ou non paresseux
+            if(b.t=="boolean") return (a.val||b.val)?TRUE:FALSE;
+            throw {error:"type", name:"Erreur de type", msg:"", ln:expr.ln};
+         }
+      }
+      // Cas particulier pour * : et non paresseux
+      if(expr.t=="*"){
+         if(a.t=="boolean" && b.t=="boolean") return (a.val&&b.val)?TRUE:FALSE;
       }
       if(a.t!="number" || b.t!="number")
 	 throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
@@ -893,6 +952,13 @@ function interpret(tree){
 }
 
 onmessage = function (e){
+   if(e.data=="tick"){
+      var v=0;
+      if(_globalEnv["tick"]) v=_globalEnv["tick"].val;
+      v++;
+      _globalEnv["tick"]={t:"number", val:v};
+      return;
+   }
    try{
       var str=parseTabulation(e.data);
       var out = grlang.parse(str);

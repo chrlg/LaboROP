@@ -40,14 +40,16 @@ function messageFromWorker(event){
 
 var timeout=false;
 function oneditorChange(e){
+   if(e.lines.length<2) return;
    if(timeout){
       clearTimeout(timeout);
       timeout=false;
    }
-   timeout = setTimeout(realEditorChange, 2000);
+   timeout = setTimeout(realEditorChange, 200);
 }
 
 function realEditorChange(){
+   console.log("hi");
    if(worker) worker.terminate();
    worker=false;
    worker = new Worker("interpret.js#"+Math.random());
@@ -85,6 +87,10 @@ function init(){
    editor.getSession().on('change', oneditorChange);
    editor.setValue(ex2, -1);
    oneditorChange();
+
+   setInterval(function(){
+      if(worker) worker.postMessage("tick");
+   }, 1000);
 }
 
 $(init);
