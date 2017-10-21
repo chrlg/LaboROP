@@ -21,7 +21,7 @@ function messageFromWorker(event){
       return;
    }
    if(event.data.print){
-      $m.append("<pre>"+event.data.print+"</pre>");
+      $m.append("<pre class='console'>"+event.data.print+"</pre>");
       return;
    }
    if(event.data.graph){

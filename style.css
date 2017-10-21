@@ -25,6 +25,12 @@ div#misc{
    left: 50vw;
    width: calc(50vw - 4px);
    height: calc(50vh - 4px);
+   overflow: scroll;
+}
+
+pre.console{
+   white-space: pre-wrap;
+   word-wrap: break-word;
 }
 
 #misc i {

@@ -15,6 +15,10 @@ var _localEnv = _globalEnv;
 
 var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
               // mais on a aussi besoin, globalement, d'une liste d'arcs
+var _str="";
+var _instrCnt=0;
+var _strChange=false;
+var _grapheChange=false;
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
 // définies dans _predefEnv. FALSE correspond à False, etc.)
@@ -475,7 +479,6 @@ function evalSommet(som, creer){
 
 // Ajoute des sommets dans l'environnement _grapheEnv
 function creerSommets(liste){
-   var changes=false;
    for(var i=0; i<liste.length; i++){
       var ev=evalSommet(liste[i], false);
       // On a récupéré un sommet existant
@@ -483,12 +486,11 @@ function creerSommets(liste){
       // Un nom de sommet inexistant
       if(typeof ev == "string") {
 	 addSommet(ev);
-	 changes=true;
       }
       // Autre chose ?
       else throw {error:"interne", name:"Erreur interne", msg:"Ni string, ni sommet dans creerSommet\nev:"+ev+"\nev.t="+ev.t, ln:liste[i].ln};
    }
-   if(changes) updateGraphe();
+   _grapheChange=true;
 }
 
 function interpIncrement(ins){
@@ -573,7 +575,7 @@ function creerArete(left, right){
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
    _arcs.push({t:"Arete", i:l, a:r, marques:{}});
-   updateGraphe();
+   _grapheChange=true;
 }
 
 function creerArc(left, right){
@@ -587,7 +589,7 @@ function creerArc(left, right){
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
    _arcs.push({t:"Arc", i:l, a:r, marques:{}});
-   updateGraphe();
+   _grapheChange=true;
 }
 
 function interpDef(def){
@@ -706,9 +708,23 @@ function interpExit(arg){
 }
 
 
+function regularCheck(){
+   _instrCnt=0;
+   if(_grapheChange){
+      _grapheChange=false;
+      updateGraphe();
+   }
+   if(_strChange){
+      _strChange=false;
+      _str=_str.slice(-5000);
+      postMessage({print: _str});
+   }
+}
+
 // LISTE D'INSTRUCTIONS
 function interpretWithEnv(tree, isloop){
    for(var i=0; i<tree.length; i++){
+      if(_instrCnt++>1000000) regularCheck();
       if(tree[i].t=="SOMMET"){
 	 creerSommets(tree[i].args);
 	 continue;
@@ -840,40 +856,39 @@ function preRandom(args){
 }
 
 function prePrint(args){
-   str="";
-
+   _strChange=true;
    function printRec(o){
       if(typeof o=="object"){
-	 if(o.t=="Sommet") str+=o.name;
-	 else if(o.t=="Arete") str+="["+o.i.name+","+o.a.name+"]";
-	 else if(o.t=="Arc") str+="("+o.i.name+","+o.a.name+")";
-	 else if(o.t=="number") str+=(""+o.val);
-	 else if(o.t=="string") str+=o.val;
-	 else if(o.t=="boolean") str+= (o.val?"True":"False");
+	 if(o.t=="Sommet") _str+=o.name;
+	 else if(o.t=="Arete") _str+="["+o.i.name+","+o.a.name+"]";
+	 else if(o.t=="Arc") _str+="("+o.i.name+","+o.a.name+")";
+	 else if(o.t=="number") _str+=(""+o.val);
+	 else if(o.t=="string") _str+=o.val;
+	 else if(o.t=="boolean") _str+= (o.val?"True":"False");
 	 else if(o.t=="array"){
-	    str+="[";
+	    _str+="[";
 	    for(var i=0; i<o.val.length; i++){
 	       printRec(o.val[i]);
-	       if(i<o.val.length-1) str+=",";
+	       if(i<o.val.length-1) _str+=",";
 	    }
-	    str+="]";
+	    _str+="]";
 	 }
 	 else if(o.t=="struct"){
-	    str+="{";
+	    _str+="{";
 	    var first=true;
 	    for(var k in o.f){
 	       if(first) first=false;
-	       else str+=" ";
-	       str+=k;
-	       str+=":";
+	       else _str+=" ";
+	       _str+=k;
+	       _str+=":";
 	       printRec(o.f[k]);
 	    }
-	    str+="}";
+	    _str+="}";
 	 }
-	 else str+="{"+o.t+"}";
+	 else _str+="{"+o.t+"}";
       }
       else{
-         str+=o;
+         _str+=o;
       }
    }
 
@@ -881,9 +896,11 @@ function prePrint(args){
       var a=evaluate(args[i]);
       printRec(a);
    }
+}
 
-   str+="\n";
-   postMessage({print: str});
+function prePrintln(a){
+   prePrint(a);
+   _str+="\n";
 }
 
 function preM(){
@@ -942,6 +959,7 @@ function interpret(tree){
    _predefEnv["pi"]={t:"number", val:Math.PI};
    _predefEnv["random"]={t:"predfn", f:preRandom};
    _predefEnv["print"]={t:"predfn", f:prePrint};
+   _predefEnv["println"]={t:"predfn", f:prePrintln};
    _predefEnv["arcs"]={t:"predfn", f:preArcs};
    _predefEnv["aretes"]={t:"predfn", f:preArcs};
    _predefEnv["null"]=NULL;
@@ -949,6 +967,7 @@ function interpret(tree){
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
    interpretWithEnv(tree, false, false);
+   regularCheck();
 }
 
 onmessage = function (e){
