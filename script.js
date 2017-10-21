@@ -49,7 +49,6 @@ function oneditorChange(e){
 }
 
 function realEditorChange(){
-   console.log("hi");
    if(worker) worker.terminate();
    worker=false;
    worker = new Worker("interpret.js#"+Math.random());
@@ -83,6 +82,8 @@ function init(){
    editor.setShowPrintMargin(false);
    editor.$blockScrolling = Infinity;
    editor.getSession().setTabSize(3);
+   editor.commands.addCommand({name:"CompileEtExec", bindKey:{win:"Ctrl-s", mac:"Command-s"}, 
+                                 exec:realEditorChange});
 
    editor.getSession().on('change', oneditorChange);
    editor.setValue(ex2, -1);
