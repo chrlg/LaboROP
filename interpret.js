@@ -392,7 +392,6 @@ function evaluate(expr){
       else return newVal;
    }
 
-   // TODO FROM HERE
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
       var b=evaluate(expr.right);
@@ -433,12 +432,24 @@ function evaluate(expr){
       if(expr.t=="**") return {t:"number", val:a.val**b.val};
       throw {error:"interne", name:"Erreur interne", msg:"Hein?", ln:expr.ln};
    }
+
    if(expr.t=="call"){
       var v=interpCall(expr);
-      if(v!==undefined && v.t=="empty") throw {error:"type", name:"Pas de valeur de retour",
+      if(v===undefined || v.t=="empty") throw {error:"type", name:"Pas de valeur de retour",
 	    msg:"La fonction "+expr.f+" n'a retourné aucune valeur",
 	    ln:expr.ln};
       return v;
+   }
+
+   // TODO FROM HERE
+   if(expr.t=="index"){
+      var tab=evaluate(expr.tab);
+      var idx=evaluate(expr.index);
+      if(idx.t!="number") throw {error:"type", name:"Erreur de type", msg:"Index non entier",
+            ln:expr.index.ln};
+      if(tab.t=="array") return tab.val[idx.val];
+      if(tab.t=="string") return tab.val[idx.val];
+      if(tab.t=="Sommet") return tab.name[idx.val];
    }
    console.log("Cannot evaluate", expr);
 }
