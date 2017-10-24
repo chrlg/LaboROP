@@ -105,14 +105,19 @@ function updateGraphe(){
    var orient = isOrient();
    if(orient) gr+="digraph{";
    else gr+="graph{";
+   // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
+   // été générés de toutes façons avec leurs arcs)
+   // (Note: servira plus tard pour les attributs)
    for(var e in _grapheEnv){
       gr+=(""+e+";");
    }
+   // Arcs ou aretes
    for(var i=0; i<_arcs.length; i++){
       if(orient) gr+=""+_arcs[i].i.name +"->"+_arcs[i].a.name+";";
       else gr+=""+_arcs[i].i.name+"--"+_arcs[i].a.name+";";
    }
    gr+="}\n";
+   // Envoie le graphe au thread principal, qui appelera dot avec
    postMessage({graph:gr});
 }
 
