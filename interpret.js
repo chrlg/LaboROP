@@ -12,13 +12,14 @@ var _grapheEnv = {};
 var _globalEnv = {};
 var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
+var _numSommet=0, _numArc=0; // Compteur sommets et arcs
 
 var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
               // mais on a aussi besoin, globalement, d'une liste d'arcs
-var _str="";
-var _instrCnt=0;
-var _strChange=false;
-var _grapheChange=false;
+var _str=""; // Chaine "stdout" à envoyer à la console
+var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
+var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
+var _grapheChange=false; // true ssi le graphe a changé depuis la dernière fois qu'il a été affiché
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
 // définies dans _predefEnv. FALSE correspond à False, etc.)
@@ -299,6 +300,8 @@ function evaluate(expr){
 		  msg:"Tentative d'utiliser l'opérateur de comparaison avec une valeur multiple",
 		  ln:expr.ln};
       function isEq(a,b){
+	 if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
+	 if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
 	 if(a.t!=b.t) return false;
 	 if(a.t=="null") return true;
 	 if(a.t=="Sommet" || a.t=="Arete" || a.t=="Arc") return a==b;
@@ -460,15 +463,14 @@ function evaluate(expr){
       else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
    }
 
-   // TODO FROM HERE
    if(expr.t=="index"){
       var tab=evaluate(expr.tab);
       var idx=evaluate(expr.index);
       if(idx.t!="number") throw {error:"type", name:"Erreur de type", msg:"Index non entier",
             ln:expr.index.ln};
       if(tab.t=="array") return tab.val[idx.val];
-      if(tab.t=="string") return tab.val[idx.val];
-      if(tab.t=="Sommet") return tab.name[idx.val];
+      if(tab.t=="string") return {t:"string", val:tab.val[idx.val]};
+      if(tab.t=="Sommet") return {t:"string", val:tab.name[idx.val]};
    }
    console.log("Cannot evaluate", expr);
 }
