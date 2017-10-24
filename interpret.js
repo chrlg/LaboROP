@@ -61,7 +61,7 @@ function parseTabulation(str){
 	 startLine=false;  // on génère potentiellement des §{/§}.   
 	 var m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
 	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
-	 if(str[m]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
+	 if(str[0]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
 	    continue;
 	 }
 	 var expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
@@ -439,6 +439,20 @@ function evaluate(expr){
 	    msg:"La fonction "+expr.f+" n'a retourné aucune valeur",
 	    ln:expr.ln};
       return v;
+   }
+
+   if(expr.t=="SOMMET"){
+      var v=evalSommet(expr.arg, true);
+      if(!v || v.t!="Sommet") throw {error:"type", name:"Pas un sommet", 
+	 msg:"Un "+v.t+" n'est pas un sommet valide", ln:expr.arg.ln};
+      return v;
+   }
+
+   if(expr.t=="field"){
+      var o=evaluate(expr.o);
+      if(o.t=="struct") return o.f[expr.f];
+      else if(o.t=="Sommet" || o.t=="Arc" || o.t=="Arete") return o.marques[expr.f];
+      else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
    }
 
    // TODO FROM HERE

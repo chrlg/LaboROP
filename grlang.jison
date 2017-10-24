@@ -88,6 +88,7 @@
 
 /lex
 
+%left "Sommet"
 %right ":" "?"
 %left "||"
 %left "&&"
@@ -292,6 +293,9 @@ expr
       }
       | "[]" {
 	 $$={t: "array", val:[], ln:@1.first_line};
+      }
+      | "Sommet" expr {
+	 $$={t:"SOMMET", arg:$2, ln:@1.first_line};
       }
       ;
 
