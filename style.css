@@ -14,10 +14,18 @@ div#editor {
 }
 
 div#show {
-   top: 0px;
+   top: 4vh;
    left: 50vw;
    width: calc(50vw - 4px);
-   height: calc(50vh - 4px);
+   height: calc(46vh - 2px);
+   overflow: hidden;
+}
+
+div#tabs {
+   top:0;
+   left:50vw;
+   width: calc(50vw - 4px);
+   height: calc(4vh - 2px);
 }
 
 div#misc{

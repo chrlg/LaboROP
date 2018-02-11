@@ -62,7 +62,7 @@ function parseTabulation(str){
 	 startLine=false;  // on génère potentiellement des §{/§}.   
 	 var m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
 	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
-	 if(str[m]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
+	 if(str[0]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
 	    continue;
 	 }
 	 var expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
@@ -229,7 +229,14 @@ function evaluateLVal(lv, direct){
 	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
 	    return [w.marques, lv.f];
 	 }
-      }else if(v.t!="struct"){ // Autre chose sans champ
+      }
+      else if(v.t=="Arete"){
+         return [v.marques, lv.f]; // Arete, dans une variable (et non en tant que paire)
+      }
+      else if(v.t=="Arc"){
+         return [v.marques, lv.f];
+      }
+      else if(v.t!="struct"){ // Autre chose sans champ
 	 e[i]=={t:"struct", f:{}};
       }
       return [o[0][o[1]].f, lv.f];

@@ -45,8 +45,6 @@ function messageFromWorker(event){
    }
    if(event.data.termine!==undefined){
       $m.append("<i>Program terminé avec le code "+event.data.termine+"</i>");
-      if(event.data.tree) console.log(event.data.tree);
-      console.log(event.data);
    }
 
    for(var i=0; i<event.data.length; i++){
@@ -94,9 +92,15 @@ function Terminate(){
 }
 
 function showGraph(str){
+   window.lastGraph=str;
    try{
       v = Viz(str);
       $("#show").html(v);
+      let sw=$("#show").width() / $("#show svg").width();
+      let sh=$("#show").height() / $("#show svg").height();
+      let s=sw;
+      if(sh<s) s=sh;
+      if(s<1) $("#show svg").css("transform-origin", "0 0").css("transform", "scale("+s+")");
    }catch(e){
       console.log("Viz", str);
       console.log(e);
