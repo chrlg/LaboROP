@@ -119,6 +119,7 @@ function init(){
                                  exec:loadLocal});
 
    editor.getSession().on('change', oneditorChange);
+   editor.setOption("showInvisibles", true);
    editor.setValue(ex2, -1);
    oneditorChange();
 
