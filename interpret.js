@@ -183,8 +183,8 @@ function evaluateArc(o, ln){
       if(_arcs[i].i==s1 && _arcs[i].a==s2) return _arcs[i];
       if(o[5][0]=="-" && _arcs[i].a==s1 && _arcs[i].i==s2) return _arcs[i];
    }
-   throw {error:"type", name:"Arc ou arête inexistant", 
-      msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
+   return NULL;
+   //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
 }
 
 const _binaryOp = ["+", "-", "*", "/", "%", "**"];
