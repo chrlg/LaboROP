@@ -45,6 +45,8 @@ function messageFromWorker(event){
    }
    if(event.data.termine!==undefined){
       $m.append("<i>Program terminé avec le code "+event.data.termine+"</i>");
+      if(event.data.tree) console.log(event.data.tree);
+      console.log(event.data);
    }
 
    for(var i=0; i<event.data.length; i++){

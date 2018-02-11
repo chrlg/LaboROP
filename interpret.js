@@ -1052,14 +1052,14 @@ onmessage = function (e){
       var str=parseTabulation(e.data);
       var out = grlang.parse(str);
       interpret(out);
-      postMessage({termine: 0});
+      postMessage({termine: 0, tree:out});
    }catch(e){
       console.log(e);
       if(e.error) {
 	 if(e.error=="exit") {
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
 	       msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
-	    else postMessage({termine: e.val});
+	    else postMessage({termine: e.val, tree:out});
 	 }
 	 else postMessage(e);
       }

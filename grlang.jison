@@ -73,6 +73,7 @@
 "while"			return "while"
 "if"			return "if"
 "else"			return "else"
+"elif"                  return "elif"
 "continue"		return "continue"
 "break"			return "break"
 "in"			return "in"
@@ -190,8 +191,19 @@ instruction
       | if expr ":" blocOuSingle ";" {
 	 $$ = { t:"if", cond:$2, do:$4, else:[], ln:@1.first_line };
       }
-      | if expr ":" blocOuSingle ";" "else" ":" blocOuSingle ";" {
-         $$ = { t:"if", cond:$2, do:$4, else:$8, ln:@1.first_line};
+      | if expr ":" blocOuSingle ";" elifs {
+         $$ = { t:"if", cond:$2, do:$4, else:$6, ln:@1.first_line};
+      }
+      ;
+elifs
+      : "elif" expr ":" blocOuSingle ";" {
+         $$ = [{ t:"if", cond:$2, do:$4, else:[], ln:@1.first_line}];
+      }
+      | "elif" expr ":" blocOuSingle ";" elifs {
+         $$ = [{ t:"if", cond:$2, do:$4, else:$6, ln:@1.first_line}];
+      }
+      | "else" ":" blocOuSingle ";" {
+         $$ = $3;
       }
       ;
 
