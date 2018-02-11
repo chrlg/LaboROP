@@ -4,6 +4,21 @@ var Range;
 var errorMarker=false;
 var lastError;
 
+var saveData = (function () {
+   var a=$("<a></a>");
+   $("body").append(a);
+   a.css("display", "none");
+   return function (fileName) {
+        var val=editor.getValue(),
+            blob = new Blob([val], {type: "octet/stream"}),
+            url = window.URL.createObjectURL(blob);
+        a.attr("href", url);
+        a.attr("download", fileName);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+}());
+
 function messageFromWorker(event){
    var $m=$("#misc");
    if(errorMarker){
@@ -58,6 +73,18 @@ function realEditorChange(){
    $("#misc").empty();
 }
 
+function saveCode(){
+   localStorage.setItem("laborop_code", editor.getValue());
+   realEditorChange();
+}
+
+function saveLocal(){
+   saveData("konigsberg.rop");
+}
+
+function loadLocal(){
+}
+
 function Terminate(){
    timeout=false;
    worker.terminate();
@@ -83,7 +110,11 @@ function init(){
    editor.$blockScrolling = Infinity;
    editor.getSession().setTabSize(3);
    editor.commands.addCommand({name:"CompileEtExec", bindKey:{win:"Ctrl-s", mac:"Command-s"}, 
-                                 exec:realEditorChange});
+                                 exec:saveCode});
+   editor.commands.addCommand({name:"EnregistreLocalement", bindKey:{win:"Ctrl-q", mac:"Command-q"}, 
+                                 exec:saveLocal});
+   editor.commands.addCommand({name:"Charge", bindKey:{win:"Ctrl-l", mac:"Command-l"},
+                                 exec:loadLocal});
 
    editor.getSession().on('change', oneditorChange);
    editor.setValue(ex2, -1);
@@ -128,11 +159,57 @@ for essai in range(0,1000):
    print ("essai #",essai," n=",n, " nmax=",nmax)
 `;
 
-var ex2=`#
-for chou in range(0,3):
-   for chevre in range(0,3):
-      for loup in range(0,3):
-         for passeur in range(0,3):
-            print(chou,chevre,loup,passeur)
+var ex2=`println("Hello World") # Affiche un message avec saut de ligne à la fin
 
+def unefonction(unparametre):
+   print("Le parametre est ", unparametre, " et son carré est ", unparametre*unparametre)
+   println()
+   
+unefonction(12)
+
+Sommet A
+Sommet B
+Arc (A,B)
+Arc (A,C)
+# Pour un graphe non orienté, la syntaxe est Arete [A,B]
+
+print("Liste des sommets : ")
+# sommets() est la liste des sommets du graphe
+for x in sommets(): print(x, " ")
+println()
+
+print("Liste des arcs : ")
+# arcs() est la liste des arcs du graphe
+# particularité du langage, un arcs est une paire (a,b) et doit donc être stocké dans une "variable"
+# qui est une paire. Ici, cette boucle for définit donc à chaque itération 3 objets différents
+# x, un sommet, y, un autre sommet, et (x,y) un arc.
+for (x,y) in arcs(): print((x,y), " ")
+println()
+
+# Les arcs et les sommets peuvent avoir des attributs si vous leur en donnez
+A.unpremierattribut="coucou"
+(A,B).unattribut=10
+(A,C).unattribut=20
+
+# La fonction "random", utilisée avec une liste en paramètre, retourne un élément au hasard de cette liste
+println("Un sommet au hasard : ", random(sommets()))
+println("Un sommet au hasard : ", random(sommets()))
+println("Un sommet au hasard : ", random(sommets()))
+println("Un sommet au hasard : ", random(sommets()))
+println("Un sommet au hasard : ", random(sommets()))
+println("Un sommet au hasard : ", random(sommets()))
+
+print("10 arcs au hasard : ")
+for i in range(0, 10):
+   print(random(arcs()))
+println()
+
+# La fonction random accepte un 2e paramètre, qui est une condition de filtrage
+print("10 arcs au hasard, parmis ceux avec unatribut>15 :")
+for i in range(0,10):
+   print(random(arcs(), unattribut>15))
+println()
 `;
+
+var fromls=localStorage.getItem("laborop_code");
+if(fromls) ex2=fromls;

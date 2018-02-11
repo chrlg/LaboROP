@@ -111,7 +111,7 @@ id
       }
       ;
 
-instruction
+instructionNoColon
       : Sommet listeExpr {
 	 $$ = { t:"SOMMET", args:$2, ln:@1.first_line} ;
       }
@@ -151,21 +151,6 @@ instruction
       | ID '(' listeExpr ')' {
 	 $$ = { t:"call", f:$1, args:$3, ln:@1.first_line};
       }
-      | for lvalue "in" expr ":" blocOuSingle {
-	 $$ = { t:"foreach", compteur:$2, range:$4, do:$6, ln:@1.first_line};
-      }
-      | for lvalue "in" "range" "(" expr "," expr rangeStep ")" ":" blocOuSingle {
-	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$12, step:$9, ln:@1.first_line};
-      }
-      | while expr ":" blocOuSingle {
-	 $$ = { t:"while", cond:$2, do:$4, ln:@1.first_line };
-      }
-      | if expr ":" blocOuSingle {
-	 $$ = { t:"if", cond:$2, do:$4, else:[], ln:@1.first_line };
-      }
-      | if expr ";" blocOuSingle ";" else blocOuSingle {
-	 $$ = { t:"if", cond:$2, do:$4, sinon:$7, ln:@1.first_line };
-      }
       | break {
 	 $$ = {t:"break", ln:@1.first_line};
       }
@@ -186,6 +171,27 @@ instruction
       }
       | "$" {
 	 $$ = {t:"$", i:$1};
+      }
+      ;
+
+instruction
+      : instructionNoColon ";" {
+         $$ = $1;
+      }
+      | for lvalue "in" expr ":" blocOuSingle ";" {
+	 $$ = { t:"foreach", compteur:$2, range:$4, do:$6, ln:@1.first_line};
+      }
+      | for lvalue "in" "range" "(" expr "," expr rangeStep ")" ":" blocOuSingle ";" {
+	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$12, step:$9, ln:@1.first_line};
+      }
+      | while expr ":" blocOuSingle ";" {
+	 $$ = { t:"while", cond:$2, do:$4, ln:@1.first_line };
+      }
+      | if expr ":" blocOuSingle ";" {
+	 $$ = { t:"if", cond:$2, do:$4, else:[], ln:@1.first_line };
+      }
+      | if expr ":" blocOuSingle ";" "else" ":" blocOuSingle ";" {
+         $$ = { t:"if", cond:$2, do:$4, else:$8, ln:@1.first_line};
       }
       ;
 
@@ -328,10 +334,16 @@ llvalue
       ;
 
 blocOuSingle
-      : instruction {
+      : instructionNoColon {
 	 $$ = [$1];
       }
-      | ";" "BEGIN" listInst "END" {
+      | bloc {
+         $$ = $1;
+      }
+      ;
+
+bloc
+      : ";" "BEGIN" listInst "END" {
 	 $$ = $3;
       }
       ;
@@ -343,14 +355,14 @@ listInst
       | ";" listInst {
 	 $$=$2;
       }
-      | instruction ";" listInst {
-	 $$ = $3;
+      | instruction listInst {
+	 $$ = $2;
 	 $$.unshift($1);
       }
       ;
 
 definition
-      : "def" ID listArgs ":" blocOuSingle {
+      : "def" ID listArgs ":" bloc ";" {
 	 $$ = {t:"DEF", nom: $2, args:$3, insts: $5, ln:@1.first_line};
       }
       ;
@@ -378,12 +390,12 @@ listeInstOuDef
       : EOF {
 	 $$ = [];
       }
-      | instruction ";" listeInstOuDef {
-	 $$ = $3;
+      | instruction listeInstOuDef {
+	 $$ = $2;
 	 $$.unshift($1);
       } 
-      | definition ";" listeInstOuDef {
-	 $$ = $3;
+      | definition listeInstOuDef {
+	 $$ = $2;
 	 $$.unshift($1);
       } 
       | ";" listeInstOuDef {

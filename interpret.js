@@ -62,7 +62,7 @@ function parseTabulation(str){
 	 startLine=false;  // on génère potentiellement des §{/§}.   
 	 var m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
 	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
-	 if(str[0]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
+	 if(str[m]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
 	    continue;
 	 }
 	 var expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
@@ -887,6 +887,27 @@ function preRandom(args){
    }
 }
 
+function prePremier(args, ln){
+   if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
+         msg:"Mauvais nombre d'arguments pour premier", ln:ln};
+   var l=evaluate(args[0]);
+   if(l.t!="array") throw {error:"type", name:"Erreur de type",
+         msg:"'premier' attend un argument de type tableau", ln:args[0].ln};
+   if(l.val.length<=0) return NULL;
+   else return l.val[0];
+}
+
+function preDernier(args, ln){
+   if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
+         msg:"Mauvais nombre d'arguments pour dernier", ln:ln};
+   var l=evaluate(args[0]);
+   if(l.t!="array") throw {error:"type", name:"Erreur de type",
+         msg:"'dernier' attend un argument de type tableau", ln:args[0].ln};
+   if(l.val.length<=0) return NULL;
+   else return l.val[l.val.length-1];
+}
+
+
 function prePrint(args){
    _strChange=true;
    function printRec(o){
@@ -938,10 +959,19 @@ function prePrintln(a){
 function preM(){
    var M={t:"array", val:[]};
    var k=Object.keys(_grapheEnv);
-   for(var i=0; i<k.length; i++){
+   for(let i=0; i<k.length; i++){
       M.val[i]={t:"array", val:[]};
-      for(var j=0; j<k.length; j++){
+      for(let j=0; j<k.length; j++){
 	 M.val[i].val[j]=0;
+         for(let ai=0; ai<_arcs.length; ai++){
+            console.log(_arcs[ai].i.name, _arcs[ai].a.name, k[i], k[j]);
+            if(_arcs[ai].i.name == k[i] && _arcs[ai].a.name==k[j]) {;}
+            else if(isOrient()) continue;
+            else if(_arcs[ai].a.name==k[i] && _arcs[ai].i.name==k[j]) {;}
+            else continue;
+            console.log("a", ai);
+            M.val[i].val[j]++;
+         }
       }
    }
    return M;
@@ -956,6 +986,7 @@ function preU(){
 }
 
 function preArcs(args, ln){
+   if(args.length==0) return {t:"array", val:_arcs};
    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction arcs/aretes attend un et un seul argument", ln:ln};
    var a=evaluate(args[0]);
@@ -978,14 +1009,21 @@ function preArcs(args, ln){
    return {t:"array", val:rep};
 }
 
+function preSommets(args, ln){
+   if(args.length!=0) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction sommets s'utilise sans arguments", ln:ln};
+   return {t:"array", val:Object.values(_grapheEnv)};
+}
+
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
    _predefEnv={};
    _predefEnv["M"]={t: "predvar", f:preM};
-   _predefEnv["X"]={t: "predvar", f:preX};
+   _predefEnv["GX"]={t: "predvar", f:preX};
    _predefEnv["Oriente"]=UNDEFINED;
-   _predefEnv["U"]={t: "predvar", f:preU};
+   _predefEnv["GU"]={t: "predvar", f:preU};
+   _predefEnv["sommets"]={t:"predfn", f:preSommets};
    _predefEnv["True"]=TRUE;
    _predefEnv["False"]=FALSE;
    _predefEnv["pi"]={t:"number", val:Math.PI};

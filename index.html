@@ -1,44 +1,16 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-   <script src="http://ayalti.info/lib/jquery.js"></script>
-   <script src="http://ayalti.info/lib/ace-builds-master/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-   <script src="http://ayalti.info/lib/viz-lite.js"></script>
+   <script src="lib/jquery.js"></script>
+   <script src="lib/ace-builds-master/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+   <script src="lib/viz-lite.js"></script>
    <script src="grlang.js"></script>
    <script src="script.js" charset="utf-8"></script>
    <link href="style.css" rel="stylesheet" type="text/css">
    <title>Laboratoire ROP</title>
 </head>
 <body>
-<div class=mainbox id=editor># Sommets du graphe
-Sommet A
-Sommet B,C
-
-v="A"
-Arete [v,B] # si v est une variable existante et est une chaine, le nom est 
-# le contenu de la variable
-Arete [A,B]
-U += [A,D] # Notez que le sommet D est implicitement déclaré
-Gamma(A) += C
-Gamma(A) += C
-Arete [B,D]
-Arete [C,D]
-
-def unessai():
-   x=12
-   y=12.5
-   z=8.2E10
-   for (a,b) in U:
-      (a,b).passe=0
-   s=random(X) 
-   while True: 
-      (a,b) = random(Filtre(Gamma(s), passe==0)) 
-      if (a,b)==Null: break 
-      (a,b).passe=1 
-      s=b
-
-unessai()
-
+<div class=mainbox id=editor>
 </div>
 <div class=mainbox id=show></div>
 <div class=mainbox id=misc></div>
