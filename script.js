@@ -4,21 +4,6 @@ var Range;
 var errorMarker=false;
 var lastError;
 
-var saveData = (function () {
-   var a=$("<a></a>");
-   $("body").append(a);
-   a.css("display", "none");
-   return function (fileName) {
-        var val=editor.getValue(),
-            blob = new Blob([val], {type: "octet/stream"}),
-            url = window.URL.createObjectURL(blob);
-        a.attr("href", url);
-        a.attr("download", fileName);
-        a.click();
-        window.URL.revokeObjectURL(url);
-    };
-}());
-
 function messageFromWorker(event){
    var $m=$("#misc");
    if(errorMarker){
@@ -74,15 +59,13 @@ function realEditorChange(){
 }
 
 function saveCode(){
-   localStorage.setItem("laborop_code", editor.getValue());
+   currentFile.code = editor.getValue();
+   saveFiles();
    realEditorChange();
 }
 
-function saveLocal(){
-   saveData("konigsberg.rop");
-}
-
-function loadLocal(){
+function runCode(){
+   readEditorChange();
 }
 
 function Terminate(){
@@ -115,12 +98,10 @@ function init(){
    editor.setShowPrintMargin(false);
    editor.$blockScrolling = Infinity;
    editor.getSession().setTabSize(3);
-   editor.commands.addCommand({name:"CompileEtExec", bindKey:{win:"Ctrl-s", mac:"Command-s"}, 
+   editor.commands.addCommand({name:"Save&Run", bindKey:{win:"Ctrl-s", mac:"Command-s"}, 
                                  exec:saveCode});
-   editor.commands.addCommand({name:"EnregistreLocalement", bindKey:{win:"Ctrl-q", mac:"Command-q"}, 
-                                 exec:saveLocal});
-   editor.commands.addCommand({name:"Charge", bindKey:{win:"Ctrl-l", mac:"Command-l"},
-                                 exec:loadLocal});
+   editor.commands.addCommand({name:"Run", bindKey:{win:"Ctrl-q", mac:"Command-q"}, 
+                                 exec:runCode});
 
    editor.getSession().on('change', oneditorChange);
    editor.setOption("showInvisibles", true);
@@ -189,6 +170,18 @@ function initFiles(){
          currentFilename=listFiles[i].name;
          currentFile=listFiles[i];
          editor.setValue(currentFile.code, -1);
+         saveFiles();
+         initFiles();
+      });
+
+      btDel.click(function(){
+         if(listFiles[i]===currentFile){
+            alert("Fichier en cours d'édition");
+            return;
+         }
+         var sur=confirm("Supprimer le fichier "+listFiles[i].name);
+         if(!sur) return;
+         listFiles.splice(i, 1);
          saveFiles();
          initFiles();
       });
