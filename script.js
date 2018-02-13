@@ -55,7 +55,7 @@ function messageFromWorker(event){
 
 var timeout=false;
 function oneditorChange(e){
-   if(e.lines.length<2) return;
+   if(e && e.lines.length<2) return;
    if(timeout){
       clearTimeout(timeout);
       timeout=false;
@@ -96,9 +96,9 @@ function showGraph(str){
    try{
       v = Viz(str);
       $("#show").html(v);
-      let sw=$("#show").width() / $("#show svg").width();
-      let sh=$("#show").height() / $("#show svg").height();
-      let s=sw;
+      var sw=$("#show").width() / $("#show svg").width();
+      var sh=$("#show").height() / $("#show svg").height();
+      var s=sw;
       if(sh<s) s=sh;
       if(s<1) $("#show svg").css("transform-origin", "0 0").css("transform", "scale("+s+")");
    }catch(e){
@@ -124,99 +124,152 @@ function init(){
 
    editor.getSession().on('change', oneditorChange);
    editor.setOption("showInvisibles", true);
-   editor.setValue(ex2, -1);
+   editor.setValue(currentFile.code, -1);
    oneditorChange();
 
    setInterval(function(){
       if(worker) worker.postMessage("tick");
    }, 1000);
+
+   // Tabs
+   $("#tabs button").click(function(e){
+      let t=$(this).attr("data-target");
+      $(".show").removeClass("selected");
+      $("#"+t).addClass("selected");
+      $("#tabs button").removeClass("selected");
+      $(this).addClass("selected");
+   });
+
+   // Fichiers
+   initFiles();
 }
 
 $(init);
 
+function initFiles(){
+   $("#files").empty();
+   let table=$("<table></table>").appendTo($("#files"));
+   for(let i=0; i<listFiles.length; i++){
+      let tr=$("<tr></tr>").appendTo(table);
+      let spanName=$("<span>"+listFiles[i].name+"</span>");
+      if(listFiles[i].name==currentFilename) spanName.css("color", "red");
+      let inputName=$("<input />").val(listFiles[i].name).hide();
+      $("<td>").appendTo(tr).append(spanName).append(inputName);
+      let btOpen=$("<button>Ouvrir</button>");
+      let btCopy=$("<button>Copier</button>");
+      let btRename=$("<button>Renommer</button>");
+      let btDel=$("<button>Supprimer</button>");
+      $("<td>").appendTo(tr).append(btOpen);
+      $("<td>").appendTo(tr).append(btCopy);
+      $("<td>").appendTo(tr).append(btRename);
+      $("<td>").appendTo(tr).append(btDel);
 
-// DEBUG
-var ex1=`#
-Arete [A,B]
-Arete [A,B]
-Arete [A,C]
-Arete [A,C]
-Arete [A,D]
-Arete [B,D]
-Arete [C,D]
+      btRename.click(function(){
+         spanName.hide();
+         inputName.show();
+      });
 
-def unchemin():
-   for [x,y] in U:
-      [x,y].passe=0
-   s=random(X)
-   n=0
-   while True:
-      [x,y]=random(aretes(s), passe==0)
-      if [x,y]==null: break
-      s=y
-      [x,y].passe=1
-      n++
-   return n
+      inputName.keyup(function(e){
+         if(e.keyCode===13){
+            if(inputName.val()=="") return;
+            for(let i=0; i<listFiles.length; i++){
+               if(listFiles[i].name==inputName.val()){
+                  alert("Ce fichier existe déjà");
+                  return;
+               }
+            }
+            currentFile.name=inputName.val();
+            currentFilename=currentFile.name;
+            saveFiles();
+            initFiles();
+         }
+      });
 
-nmax=0
-for essai in range(0,1000):
-   n=unchemin()
-   if n>nmax:
-      nmax=n
-   print ("essai #",essai," n=",n, " nmax=",nmax)
-`;
+      btOpen.click(function(){
+         currentFilename=listFiles[i].name;
+         currentFile=listFiles[i];
+         editor.setValue(currentFile.code, -1);
+         saveFiles();
+         initFiles();
+      });
+   }
 
-var ex2=`println("Hello World") # Affiche un message avec saut de ligne à la fin
-
-def unefonction(unparametre):
-   print("Le parametre est ", unparametre, " et son carré est ", unparametre*unparametre)
-   println()
+   let tr=$("<tr>").appendTo(table);
+   let inputNew=$("<input />");
+   $("<td>").appendTo(tr).append(inputNew);
+   let btNew=$("<button>Créer nouveau</button>")
+   $("<td colspan=4>").appendTo(tr).append(btNew);
    
-unefonction(12)
+   btNew.click(function(){
+      if(inputNew.val()==""){
+         alert("Saisissez un nom d'abord");
+         return;
+      }
+      for(let i=0; i<listFiles.length; i++){
+         if(listFiles[i].name==inputNew.val()){
+            alert("Fichier déjà existant");
+            return;
+         }
+      }
+      currentFile={name:inputNew.val(), code:""};
+      editor.setValue("", -1);
+      listFiles.push(currentFile);
+      currentFilename=inputNew.val();
+      saveFiles();
+      initFiles();
+   });
+}
 
-Sommet A
-Sommet B
-Arc (A,B)
-Arc (A,C)
-# Pour un graphe non orienté, la syntaxe est Arete [A,B]
 
-print("Liste des sommets : ")
-# sommets() est la liste des sommets du graphe
-for x in sommets(): print(x, " ")
-println()
+var listFiles = localStorage.getItem("laborop_files");
+function saveFiles(){
+   localStorage.setItem("laborop_files", JSON.stringify(listFiles));
+   localStorage.setItem("laborop_currentFilename", currentFilename);
+}
 
-print("Liste des arcs : ")
-# arcs() est la liste des arcs du graphe
-# particularité du langage, un arcs est une paire (a,b) et doit donc être stocké dans une "variable"
-# qui est une paire. Ici, cette boucle for définit donc à chaque itération 3 objets différents
-# x, un sommet, y, un autre sommet, et (x,y) un arc.
-for (x,y) in arcs(): print((x,y), " ")
-println()
+// Liste de mes fichiers
+if(!listFiles){ // Si je n'en ai pas encore, je crée une liste vide
+   listFiles=[];
+   saveFiles();
+}
+else{
+   listFiles=JSON.parse(listFiles);
+}
 
-# Les arcs et les sommets peuvent avoir des attributs si vous leur en donnez
-A.unpremierattribut="coucou"
-(A,B).unattribut=10
-(A,C).unattribut=20
+// Si un code "unique" laborop_code existe, je le converti en un fichier "premierLabo"
+let fromls=localStorage.getItem("laborop_code");
+if(fromls){
+   listFiles.push({name:"Premier Labo", code:fromls});
+   saveFiles();
+   localStorage.removeItem("laborop_code");
+}
 
-# La fonction "random", utilisée avec une liste en paramètre, retourne un élément au hasard de cette liste
-println("Un sommet au hasard : ", random(sommets()))
-println("Un sommet au hasard : ", random(sommets()))
-println("Un sommet au hasard : ", random(sommets()))
-println("Un sommet au hasard : ", random(sommets()))
-println("Un sommet au hasard : ", random(sommets()))
-println("Un sommet au hasard : ", random(sommets()))
+// Fichier en cour d'édition
+var NOW = new Date();
+var NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"/"+(NOW.getHours())+":"+(NOW.getMinutes());
+var currentFilename = localStorage.getItem("laborop_currentFilename");
+if(!currentFilename){
+   if(listFiles.length>0){ // S'il n'y a pas de fichier en cours, mais qu'il y a des fichiers, on prend le 1er
+      currentFilename = listFiles[0].name;
+   }else{ // Sinon, on l'appelle "nouveau"
+      currentFilename="Nouveau "+NOWSTR;
+      listFiles.push({name:currentFilename, code:""});
+   }
+   saveFiles();
+}
 
-print("10 arcs au hasard : ")
-for i in range(0, 10):
-   print(random(arcs()))
-println()
+var currentFile=false;
+for(let i=0; i<listFiles.length; i++){
+   if(listFiles[i].name==currentFilename){
+      currentFile=listFiles[i];
+      break;
+   }
+}
 
-# La fonction random accepte un 2e paramètre, qui est une condition de filtrage
-print("10 arcs au hasard, parmis ceux avec unatribut>15 :")
-for i in range(0,10):
-   print(random(arcs(), unattribut>15))
-println()
-`;
+if(currentFile===false){ // Peut arriver s'il y avait un currentFilename, mais dont le fichier a été effacé
+   currentFilename="Nouveau "+NOWSTR;
+   currentFile={name:currentFilename, code:""};
+   listFiles.push(currentFile);
+   saveFiles();
+}
 
-var fromls=localStorage.getItem("laborop_code");
-if(fromls) ex2=fromls;

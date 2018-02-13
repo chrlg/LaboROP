@@ -11,8 +11,10 @@
 </head>
 <body>
 <div class=mainbox id=editor></div>
-<div class=mainbox id=tabs><button data-target=show>Graphe</button><button data-target=matrix>Matrice</button><button data-target=files>Fichiers</button></div>
-<div class=mainbox id=show></div>
+<div class=mainbox id=tabs><button class="selected" data-target=show>Graphe</button><button data-target=matrix>Matrice</button><button data-target=files>Fichiers</button></div>
+<div class="mainbox show selected" id="show"></div>
+<div class="mainbox show" id="matrix">MATRIX</div>
+<div class="mainbox show" id="files">FILES</div>
 <div class=mainbox id=misc></div>
 
 <script>

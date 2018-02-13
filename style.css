@@ -13,12 +13,17 @@ div#editor {
    height: calc(100vh - 4px);
 }
 
-div#show {
+div.show {
    top: 4vh;
    left: 50vw;
    width: calc(50vw - 4px);
    height: calc(46vh - 2px);
    overflow: hidden;
+   display:none;
+}
+
+div.show.selected {
+   display:inline-block;
 }
 
 div#tabs {
@@ -26,6 +31,22 @@ div#tabs {
    left:50vw;
    width: calc(50vw - 4px);
    height: calc(4vh - 2px);
+}
+
+#tabs button {
+   height: calc(4vh - 2px);
+   border-left: solid 1px black;
+   border-radius:0;
+   box-shadow:none;
+}
+#tabs button.selected {
+   background-color: #888;
+}
+#tabs button:hover {
+   background-color: #aa4;
+}
+#tabs button.selected:hover {
+   background-color: #880;
 }
 
 div#misc{

@@ -1,31 +1,50 @@
-# Sommets du graphe
-Sommet A
-Sommet A
-Sommet Gamma(A)
-Sommet "B\"C" # les noms des sommets peuvent être donnés sous forme de chaine
-Sommet B,C
-X += "C\nD" # méthode alternative
+# Création des sommets
+# Pour chaque combinaison possible de quadruplet (passeur, femme, mari, amant)
+# on crée un sommet. Si toutefois il est légal
+for passeur in range(0,3):
+   for femme in range(0,3):
+      for mari in range(0,3):
+         for amant in range(0,3):
+            # Le mari et l'amant ne peuvent se trouver ensemble sans le passeur
+            if mari==amant and passeur!=amant: continue
+            # la femme et l'amant ne peuvent se trouver ensemble dans le passeur
+            if femme==amant and passeur!=amant: continue
+            # La barque n'a qu'une place, en dehors de celle du passeur
+            nb=0
+            if femme==1: nb++
+            if mari==1: nb++
+            if amant==1: nb++
+            if nb>1: continue
+            # Personne ne peut se trouver dans la barque sans le passeur
+            if nb>0 and passeur!=1: continue
+            Sommet "S"+passeur+femme+mari+amant
 
-v="A"
-Arete [v,B] # si v est une variable existante et est une chaine, le nom est 
-# le contenu de la variable
-Arete [A,B]
-U += [A,D] # Notez que le sommet D est implicitement déclaré
-Gamma(A) += C
-Gamma(A) += C
-Arete [B,D]
-Arete [C,D]
 
-def unessai:
-   x=12
-   y=12.5
-   z=.8E10
-   for (a,b) in U:
-      (a,b).passe=0
-   s=random(X)
-   while True:
-      (a,b) = random(Filtre(Gamma(s), passe==0))
-      if (a,b)==Null: break
-      (a,b).passe=1
-      s=b
+# Création des arêtes
+# Pour chaque paire de sommet possible, on crée une arête si le passage d'un sommet
+# à l'autre est une possibilité élémentaire
+# On note que [s1, s2] et [s2, s1] sont les mêmes. Inutile de les créer 2 fois
+# On note par ailleurs que chaque action élémentaire consiste à entrer ou sortir 
+# de la barque, et donc qu'un des deux sommets est forcément un sommet pour lequel
+# le passeur est dans la barque.
+# Ces deux "notes" impliquent donc que je peux arbitrairement décider que c'est s1
+# qui est le sommet où le passeur est dans la barque, et s2 celui où il n'y est pas
+for s1 in sommets():
+   if s1[1]!="1":continue # Si le passeur n'est pas dans la barque, je suis en train de recréer une arête déjà créée
+   for s2 in sommets():
+      if s2[1]=="1": continue # Le passeur doit obligatoirement bouger à chaque action
+      nb=0 # On compte le nombre de personnes qui ont bougé (hors passeur)
+      if s1[2]!=s2[2]: # La femme a bougé
+         nb++
+         if s1[2]!="1" || s2[2]!=s2[1]: continue # Si elle bouge ça doit être en accompagnant le passeur
+      if s1[3]!=s2[3]: # Le mari a bougé
+         nb++
+         if s1[3]!="1" || s2[3]!=s2[1]: continue
+      if s1[4]!=s2[4]: # l'amant a bougé
+         nb++
+         if s1[4]!="1" || s2[4]!=s2[1]: continue
+      if nb>1: continue # Si plus d'une personne (hors passeur bouge) ce n'est pas une action élémentaire
+      Arete [s1,s2]
 
+
+print(M)

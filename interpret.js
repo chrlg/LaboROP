@@ -769,6 +769,7 @@ function interpretWithEnv(tree, isloop){
 	 continue;
       }
       if(tree[i].t=="ARETE"){
+         console.log("dbg", tree[i]);
 	 creerArete(tree[i].left, tree[i].right);
 	 continue;
       }
