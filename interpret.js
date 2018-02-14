@@ -322,7 +322,7 @@ function evaluate(expr){
 	 }
          if(a.t=="matrix"){
             for(let i=0; i<a.val.length; i++){
-               for(let j=0; j<a.val.length; i++){
+               for(let j=0; j<a.val.length; j++){
                   if(a.val[i][j] != b.val[i][j]) return false;
                }
             }
@@ -430,7 +430,7 @@ function evaluate(expr){
                let R={t:"matrix", val:new Array(a.val.length)};
                for(let i=0; i<a.val.length; i++){
                   R.val[i]=new Array(a.val.length).fill(0);
-                  for(let j=0; j<a.val.length; i++){
+                  for(let j=0; j<a.val.length; j++){
                      R.val[i][j] = a.val[i][j] + b.val;
                   }
                }
@@ -462,10 +462,27 @@ function evaluate(expr){
             throw {error:"type", name:"Erreur de type", msg:"", ln:expr.ln};
          }
       }
-      // Cas particulier pour * : et non paresseux
+
+      // Cas particulier pour *
       if(expr.t=="*"){
+         // Et non paresseurx
          if(a.t=="boolean" && b.t=="boolean") return (a.val&&b.val)?TRUE:FALSE;
+
+         // Multiplication matricielle
+         if(a.t=="matrix" && b.t=="matrix"){
+            let R={t:"matrix", val:new Array(a.val.length)};
+            for(let i=0; i<a.val.length; i++){
+               R.val[i]=new Array(a.val.length).fill(0);
+               for(let j=0; j<a.val.length; j++){
+                  for(let k=0; k<a.val.length; k++){
+                     R.val[i][j] += a.val[i][k]*b.val[k][j];
+                  }
+               }
+            }
+            return R;
+         }
       }
+
       if(a.t!="number" || b.t!="number")
 	 throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
       if(expr.t=="+") return {t:"number", val:a.val+b.val};
