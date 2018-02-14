@@ -187,7 +187,7 @@ function evaluateArc(o, ln){
    //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
 }
 
-const _binaryOp = ["+", "-", "*", "/", "%", "**"];
+const _binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 // Retourne la référence (une paire "objet/index" mutable) vers une l-value
 // Ou un quadruplet pour les arcs et aretes
 function evaluateLVal(lv, direct){
@@ -440,6 +440,7 @@ function evaluate(expr){
    if(_binaryOp.indexOf(expr.t)>=0){
       var a=evaluate(expr.left);
       var b=evaluate(expr.right);
+
       // Cas particulier pour le + : on accepte aussi chaines et tableau, et booléens
       if(expr.t=="+"){
 	 if(a.t=="array"){
@@ -497,6 +498,21 @@ function evaluate(expr){
       // Cas particulier pour **
       if(expr.t=="**"){
          if(a.t=="matrix" && b.t=="number") return powMat(a, b.val);
+      }
+
+      // ".+" n'a de sens que sur les matrices
+      if(expr.t==".+"){
+         if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
+         if(a.t!="matrix" || b.t!="matrix")
+            throw {error:"type", name:"Erreur de type", 
+                   msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
+         let R=preZero();
+         for(let i=0; i<a.val.length; i++){
+            for(let j=0; j<a.val.length; j++){
+               R.val[i][j] = (a.val[i][j]!=0 || b.val[i][j]!=0)?1:0;
+            }
+         }
+         return R;
       }
 
       if(a.t!="number" || b.t!="number")

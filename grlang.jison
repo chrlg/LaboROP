@@ -43,6 +43,9 @@
 "and"			return "&&"
 "||"			return "||"
 "or"			return "||"
+".+"                    return ".+"
+".*"                    return ".*"
+".^"                    return ".^"
 
 "[]"			return "[]"
 
@@ -96,9 +99,9 @@
 %left "&&"
 %left "=" "==" "!="
 %left "<" ">" "<=" ">="
-%left '+' '-'
-%left '*' '/' "%"
-%left "**"
+%left '.+' '+' '-'
+%left '.*' '*' '/' "%"
+%left "**" ".^"
 %right "++" "--" "!"
 %left "++" "--"
 %left "."
@@ -273,6 +276,15 @@ expr
       }
       | expr "**" expr {
 	 $$ = {t:"**", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr ".+" expr {
+	 $$ = {t:".+", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr ".*" expr {
+	 $$ = {t:".*", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr ".^" expr {
+	 $$ = {t:".^", left:$1, right:$3, ln:@2.first_line};
       }
       | expr "++" {
 	 $$ = {t:"++", left:$1, right:undefined, ln:@2.first_line};
