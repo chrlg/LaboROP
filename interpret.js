@@ -320,6 +320,14 @@ function evaluate(expr){
 	    }
 	    return true;
 	 }
+         if(a.t=="matrix"){
+            for(let i=0; i<a.val.length; i++){
+               for(let j=0; j<a.val.length; i++){
+                  if(a.val[i][j] != b.val[i][j]) return false;
+               }
+            }
+            return true;
+         }
 	 if(a.t=="struct"){
 	    for(var f in a.f) if(b.f[f]===undefined) return false;
 	    for(var f in b.f) if(a.f[f]===undefined) return false;
@@ -416,8 +424,29 @@ function evaluate(expr){
 	    var val=a.val.slice();
 	    val.push(b);
 	    return {t:"array", val:val};
-	    // TODO: matrices
 	 }
+         if(a.t=="matrix"){
+            if(b.t=="number"){ // M + x = addition de x à tous les coefs de M
+               let R={t:"matrix", val:new Array(a.val.length)};
+               for(let i=0; i<a.val.length; i++){
+                  R.val[i]=new Array(a.val.length).fill(0);
+                  for(let j=0; j<a.val.length; i++){
+                     R.val[i][j] = a.val[i][j] + b.val;
+                  }
+               }
+               return R;
+            }
+            if(b.t=="matrix"){
+               let R={t:"matrix", val:new Array(a.val.length)};
+               for(let i=0; i<a.val.length; i++){
+                  R.val[i]=new Array(a.val.length).fill(0);
+                  for(let j=0; j<a.val.length; j++){
+                     R.val[i][j] = a.val[i][j] + b.val[i][j];
+                  }
+               }
+               return R;
+            }
+         }
 	 if(a.t=="string"){
 	    if(b.t=="string") return {t:"string", val:a.val+b.val};
 	    if(b.t=="number") return {t:"string", val:a.val+b.val};
@@ -769,7 +798,6 @@ function interpretWithEnv(tree, isloop){
 	 continue;
       }
       if(tree[i].t=="ARETE"){
-         console.log("dbg", tree[i]);
 	 creerArete(tree[i].left, tree[i].right);
 	 continue;
       }
@@ -934,6 +962,16 @@ function prePrint(args){
 	    }
 	    _str+="]";
 	 }
+         else if(o.t=="matrix"){
+            for(let i=0; i<o.val.length; i++){
+               _str+="[";
+               for(let j=0; j<o.val[i].length; j++){
+                  if(j>0) _str+=" ";
+                  _str+=o.val[i][j];
+               }
+               _str+="]\n";
+            }
+         }
 	 else if(o.t=="struct"){
 	    _str+="{";
 	    var first=true;
@@ -965,22 +1003,39 @@ function prePrintln(a){
 }
 
 function preM(){
-   var M={t:"array", val:[]};
+   var M={t:"matrix", val:[]};
    var k=Object.keys(_grapheEnv);
    for(let i=0; i<k.length; i++){
-      M.val[i]={t:"array", val:[]};
+      M.val[i]=new Array(k.length).fill(0);
       for(let j=0; j<k.length; j++){
-	 M.val[i].val[j]=0;
+	 M.val[i][j]=0;
          for(let ai=0; ai<_arcs.length; ai++){
-            console.log(_arcs[ai].i.name, _arcs[ai].a.name, k[i], k[j]);
             if(_arcs[ai].i.name == k[i] && _arcs[ai].a.name==k[j]) {;}
             else if(isOrient()) continue;
             else if(_arcs[ai].a.name==k[i] && _arcs[ai].i.name==k[j]) {;}
             else continue;
-            console.log("a", ai);
-            M.val[i].val[j]++;
+            M.val[i][j]++;
          }
       }
+   }
+   return M;
+}
+
+function preId(){
+   var M={t:"matrix", val:[]};
+   var k=Object.keys(_grapheEnv);
+   for(let i=0; i<k.length; i++){
+      M.val[i]=new Array(k.length).fill(0);
+      M.val[i][i]=1;
+   }
+   return M;
+}
+
+function preZero(){
+   var M={t:"matrix", val:[]};
+   var k=Object.keys(_grapheEnv);
+   for(let i=0; i<k.length; i++){
+      M.val[i]=new Array(k.length).fill(0);
    }
    return M;
 }
@@ -1003,14 +1058,13 @@ function preArcs(args, ln){
    var rep=[];
    for(var i=0; i<_arcs.length; i++){
       if(_arcs[i].i==a) rep.push(_arcs[i]);
-      else if(_arcs[i].a==a) {
-	 if(_arcs[i].t=="Arete"){ // Dans le cas précis de arete, on inverse les sommets
-	    // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
-	    // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
-	    var pivot=_arcs[i].i;
-	    _arcs[i].i=_arcs[i].a;
-	    _arcs[i].a=pivot;
-	 }
+      else if(_arcs[i].a==a && _arcs[i].t=="Arete") {
+	 // Dans le cas précis de arete, on inverse les sommets
+	 // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
+	 // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
+	 var pivot=_arcs[i].i;
+	 _arcs[i].i=_arcs[i].a;
+	 _arcs[i].a=pivot;
 	 rep.push(_arcs[i]);
       }
    }
@@ -1028,6 +1082,8 @@ function interpret(tree){
    _arcs=[];
    _predefEnv={};
    _predefEnv["Adj"]={t: "predvar", f:preM};
+   _predefEnv["Id"]={t: "predvar", f:preId};
+   _predefEnv["Zero"]={t: "predvar", f:preZero};
    _predefEnv["GX"]={t: "predvar", f:preX};
    _predefEnv["Oriente"]=UNDEFINED;
    _predefEnv["GU"]={t: "predvar", f:preU};
