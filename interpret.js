@@ -1027,7 +1027,7 @@ function interpret(tree){
    _grapheEnv={};
    _arcs=[];
    _predefEnv={};
-   _predefEnv["M"]={t: "predvar", f:preM};
+   _predefEnv["Adj"]={t: "predvar", f:preM};
    _predefEnv["GX"]={t: "predvar", f:preX};
    _predefEnv["Oriente"]=UNDEFINED;
    _predefEnv["GU"]={t: "predvar", f:preU};
