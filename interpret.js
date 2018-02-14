@@ -260,6 +260,28 @@ function evaluateLVal(lv, direct){
 }
 
 
+function multMat(a, b){
+   let R={t:"matrix", val:new Array(a.val.length)};
+   for(let i=0; i<a.val.length; i++){
+      R.val[i]=new Array(a.val.length).fill(0);
+      for(let j=0; j<a.val.length; j++){
+         for(let k=0; k<a.val.length; k++){
+            R.val[i][j] += a.val[i][k]*b.val[k][j];
+         }
+      }
+   }
+   return R;
+}
+
+function powMat(a, k){
+   if(k==0) return preId();
+   if(k==1) return a;
+   var H=powMat(a, Math.trunc(k/2));
+   var HH=multMat(H,H);
+   if(k%2) return multMat(HH,a);
+   return HH;
+}
+
 // EXPRESSIONS
 function evaluate(expr){
    // Les valeurs natives. 
@@ -469,18 +491,12 @@ function evaluate(expr){
          if(a.t=="boolean" && b.t=="boolean") return (a.val&&b.val)?TRUE:FALSE;
 
          // Multiplication matricielle
-         if(a.t=="matrix" && b.t=="matrix"){
-            let R={t:"matrix", val:new Array(a.val.length)};
-            for(let i=0; i<a.val.length; i++){
-               R.val[i]=new Array(a.val.length).fill(0);
-               for(let j=0; j<a.val.length; j++){
-                  for(let k=0; k<a.val.length; k++){
-                     R.val[i][j] += a.val[i][k]*b.val[k][j];
-                  }
-               }
-            }
-            return R;
-         }
+         if(a.t=="matrix" && b.t=="matrix") return multMat(a,b);
+      }
+
+      // Cas particulier pour **
+      if(expr.t=="**"){
+         if(a.t=="matrix" && b.t=="number") return powMat(a, b.val);
       }
 
       if(a.t!="number" || b.t!="number")
