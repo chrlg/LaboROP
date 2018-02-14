@@ -179,9 +179,27 @@ function initFiles(){
             alert("Fichier en cours d'édition");
             return;
          }
-         var sur=confirm("Supprimer le fichier "+listFiles[i].name);
+         var sur=confirm("Supprimer le fichier "+listFiles[i].name+ " ?");
          if(!sur) return;
          listFiles.splice(i, 1);
+         saveFiles();
+         initFiles();
+      });
+
+      btCopy.click(function(){
+         let orgname=listFiles[i].name;
+         let newname="";
+         for(let cnt=1; ; cnt++){
+            let exist=false;
+            newname=orgname+" ("+cnt+")";
+            for(let j=0; j<listFiles.length; j++){
+               if(listFiles[j].name==newname) exist=true;
+            }
+            if(exist) continue;
+            break;
+         }
+         newfile={name:newname, code: listFiles[i].code};
+         listFiles.push(newfile);
          saveFiles();
          initFiles();
       });
