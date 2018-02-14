@@ -273,12 +273,36 @@ function multMat(a, b){
    return R;
 }
 
+function boolMultMat(a,b){
+   let R=preZero();
+   for(let i=0; i<a.val.length; i++){
+      for(let j=0; j<a.val.length; j++){
+         for(let k=0; k<a.val.length; k++){
+            if(a.val[i][k]!=0 && b.val[k][j]!=0){
+               R.val[i][j]=1;
+               break;
+            }
+         }
+      }
+   }
+   return R;
+}
+
 function powMat(a, k){
    if(k==0) return preId();
    if(k==1) return a;
    var H=powMat(a, Math.trunc(k/2));
    var HH=multMat(H,H);
    if(k%2) return multMat(HH,a);
+   return HH;
+}
+
+function boolPowMat(a,k){
+   if(k==0) return preId();
+   if(k==1) return a;
+   var H=boolPowMat(a, Math.trunc(k/2));
+   var HH=boolMultMat(H,H);
+   if(k%2) return boolMultMat(HH,a);
    return HH;
 }
 
@@ -500,7 +524,12 @@ function evaluate(expr){
          if(a.t=="matrix" && b.t=="number") return powMat(a, b.val);
       }
 
-      // ".+" n'a de sens que sur les matrices
+      if(expr.t==".^"){
+         if(a.t=="matrix" && b.t=="number") return boolPowMat(a, b.val);
+         if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0)?1:0};
+      }
+
+      // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
       if(expr.t==".+"){
          if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
          if(a.t!="matrix" || b.t!="matrix")
@@ -513,6 +542,15 @@ function evaluate(expr){
             }
          }
          return R;
+      }
+
+      // ".*" sur matrices et nombres
+      if(expr.t==".*"){
+         if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
+         if(a.t!="matrix" || b.t!="matrix")
+            throw {error:"type", name:"Erreur de type", 
+                   msg:"Types "+a.t+","+b.t+" incompatibles pour .*", ln:expr.ln};
+         return boolMultMat(a,b);
       }
 
       if(a.t!="number" || b.t!="number")
