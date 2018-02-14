@@ -218,10 +218,9 @@ function evaluateLVal(lv, direct){
       var o=evaluateLVal(lv.o); // référence ver a
       var e=o[0];  // Environnement de a
       var i=o[1];  // Nom de a dans cet environnement
-      var v=e[i];  // Valeur de a (en gros, ce que donnerait evaluate)
+      let v=getRef(o);
 
       if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
-
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
 	 if(o.length==2) return [v.marques, lv.f]; // Sommet
 	 if(o.length==6) {
@@ -237,24 +236,43 @@ function evaluateLVal(lv, direct){
          return [v.marques, lv.f];
       }
       else if(v.t!="struct"){ // Autre chose sans champ
-	 e[i]=={t:"struct", f:{}};
+         throw {error:"type", name:"Pas une structure", 
+            msg:"tentative d'accéder à un champ d'un objet de type "+v.t, ln:lv.ln};
       }
       return [o[0][o[1]].f, lv.f];
    }
 
    else if(lv.t=="index"){ // a[12]=
       var o=evaluateLVal(lv.tab); // o=référence vers a
-      var v=o[0][o[1]]; // valeur (evaluate(lv.tab))
+      let v=getRef(o); // valeur (evaluate(lv.tab))
       if(v===undefined) o[0][o[1]] = {t:"array", val:[]}; // Une création de variable
-      else if(o[0]==_grapheEnv) throw{error:"env", name:"Les sommets ne sont pas des tableaux", msg:"", ln:lv.ln};
-      else if(v.t!="array"){ // Une variable qui était autre chose qu'un tableau, et devient un tableau
-	 o[0][o[1]]={t:"array", val:[]};
-      }
+      else if(o[0]==_grapheEnv) 
+         throw{error:"env", name:"Les sommets ne sont pas des tableaux", msg:"", ln:lv.ln};
+      else if(v.t!="array") // Une variable qui était autre chose qu'un tableau, et devient un tableau
+         throw{error:"type", name:"Pas un tableau", msg:"Un "+v.t+" n'est pas un tableau",ln:lv.ln};
       var i=evaluate(lv.index);
       if(i===undefined || i.t!="number"){
 	 throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
       }
       return [ o[0][o[1]].val, i.val ];
+   }
+   else if(lv.t=="mindex"){ // M[1,2]=...
+      let o=evaluateLVal(lv.mat); 
+      let v=getRef(o);
+      if(v===undefined) o[0][o[1]] = preZero(); // Création implicite d'une matrice nulle
+      else if(v.t!="matrix") throw{error:"type", name:"Erreur de type",
+                                 msg:"Pas une matrice", ln:lv.ln};
+      let i=evaluate(lv.i);
+      let j=evaluate(lv.j);
+      if(i===undefined || i.t!="number"){ 
+         throw {error:"type", name:"Index de ligne invalide",
+                msg:"Un élément de type "+i.t+" n'est pas un index de ligne valide", ln:lv.i.ln};
+      }
+      if(j===undefined || j.t!="number"){ 
+         throw {error:"type", name:"Index de colonne invalide",
+                msg:"Un élément de type "+j.t+" n'est pas un index de colonne valide", ln:lv.j.ln};
+      }
+      return [ o[0][o[1]].val[i.val], j.val ];
    }
    else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
 }
@@ -325,19 +343,6 @@ function evaluate(expr){
 	    msg: ""+expr.name+" est une fonction", ln:expr.ln};
       if(e.t=="predvar") return e.f();
       return e;
-   }
-
-   // Gamma d'un sommet
-   if(expr.t=="Gamma"){
-      var v=evaluate(expr.arg);
-      if(v.t!="Sommet") throw {error:"type", name:"Argument invalide pour Gamma",
-	    msg:"Argument de type "+v.t+" invalide pour Gamma. Sommet attendu.", ln:expr.ln};
-      var rep=[];
-      for(var i=0; i<_arcs.length; i++){
-	 if(_arcs[i].i==v) rep.push(_arcs[i].a);
-	 if(isOrient()===false && _arcs[i].a==v) rep.push(_arcs[i].i);
-      }
-      return {t:"array", val:rep};
    }
 
    // Comparaison (égalité)
@@ -447,7 +452,7 @@ function evaluate(expr){
       else if(expr.right) op=evaluateLVal(expr.right);
       else throw {error:"interne", name:"++ ou -- sans opérande", msg:"", ln:expr.ln};
       if(op.length!=2) throw {error:"type", name:"++ ou -- utilisé sur arc ou arête", msg:"", ln:expr.ln};
-      var v=op[0][op[1]];
+      let v=getRef(op);
       if(!v) throw {error:"env", name:"Variable non définie", msg:"", ln:expr.ln};
       if(v.t!="number") throw {error:"type", name:"Erreur de type", 
 	    msg:"++ ou -- attend un nombre et a été utilisé sur un "+v.t, ln:expr.ln};
@@ -595,6 +600,24 @@ function evaluate(expr){
       if(tab.t=="string") return {t:"string", val:tab.val[idx.val]};
       if(tab.t=="Sommet") return {t:"string", val:tab.name[idx.val]};
    }
+   if(expr.t=="mindex"){
+      let i=evaluate(expr.i);
+      let j=evaluate(expr.j);
+      let M=evaluate(expr.mat);
+      if(M.t!="matrix") throw {error:"type", name:"Erreur de type",
+         msg:"Utilisation d'un "+M.t+" comme une matrice", ln:expr.ln};
+      if(i.t!="number") throw {error:"type", name:"Erreur de type",
+         msg:"Indice de ligne non entier", ln:expr.i.ln};
+      if(j.t!="number") throw {error:"type", name:"Erreur de type",
+         msg:"Indice de colonne non entier", ln:expr.j.ln};
+      return {t:"number", val:M.val[i.val][j.val]};
+   }
+   if(expr.t=="array"){
+      return JSON.parse(JSON.stringify(expr));
+   }
+   if(expr.t=="struct"){
+      return JSON.parse(JSON.stringify(expr));
+   }
    console.log("Cannot evaluate", expr);
 }
 
@@ -655,10 +678,6 @@ function interpIncrement(ins){
       if(ins.right.t=="arc") return creerArc(ins.right.left, ins.right.right);
       throw {error:"type", name:"Erreur de type", msg: "Argument invalide pour U+=", ln:ins.ln};
    }
-   if(ins.left.t=="Gamma"){
-      if(isOrient() || isOrient()===undefined) return creerArc(ins.left.arg, ins.right);
-      else return creerArete(ins.left.arg, ins.right);
-   }
    if(ins.left.t=="id"){
       
       if(_localEnv[ins.left.name]===undefined) throw {error:"variable", name:"Variable non définie", 
@@ -671,6 +690,12 @@ function interpIncrement(ins){
 function interpPlusPlus(ins){
    if(ins.left.t=="id"){
    }
+}
+
+function getRef(ref){
+   // Cas matriciel
+   if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
+   return ref[0][ref[1]];
 }
 
 function setRef(ref, val, ln){
@@ -692,8 +717,13 @@ function setRef(ref, val, ln){
    // Copy "profonde" pour les tableaux et structures
    if(ref[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
 	    msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
-   if(val.t=="array" || val.t=="struct"){
+   if(val.t=="array" || val.t=="struct" || val.t=="matrix"){
       ref[0][ref[1]] = JSON.parse(JSON.stringify(val));
+   }
+   else if(typeof ref[0][0]=="number" && typeof ref[1]=="number"){
+      if(val.t!="number") throw {error:"type", name:"Erreur de type",
+               msg:"Un coefficient matriciel est un scalaire", ln:ln};
+      ref[0][ref[1]] = val.val;
    }
    // Inutile de copier pour number, boolean, string
    // Et on veut garder la référence pour Sommet, Arete et Arc
@@ -890,12 +920,6 @@ function interpretWithEnv(tree, isloop){
       }
       if(tree[i].t=="Arc"){
 	 creerArc(tree[i].left, tree[i].right);
-	 continue;
-      }
-      if(tree[i].t=="ArcOuArete"){
-	 if(isOrient()) creerArc(tree[i].left, tree[i].right);
-	 else if(isOrient()===false) creerArete(tree[i].left, tree[i].right);
-	 else throw {error:"exec", name:"Notation ambigue", msg:"Vous ne pouvez utiliser cette notation sans avoir fixé l'orientation du graphe", ln:tree[i].ln};
 	 continue;
       }
       if(tree[i].t=="="){

@@ -48,6 +48,7 @@
 ".^"                    return ".^"
 
 "[]"			return "[]"
+"{}"                    return "{}"
 
 "="			return "="
 "["			return "["
@@ -71,7 +72,6 @@
 "Sommet"		return "Sommet"
 "Arete"			return "Arete"
 "Arc"			return "Arc"
-"Gamma"			return "Gamma"
 "def"			return "def"
 "for"			return "for"
 "while"			return "while"
@@ -125,9 +125,6 @@ instructionNoColon
       }
       | Arc "(" expr "," expr ")" {
 	 $$ = { t:"Arc", left:$3, right:$5, ln:@1.first_line};
-      }
-      | "Gamma" "(" expr ")" "+=" expr {
-	 $$ = { t:"ArcOuArete", left:$3, right:$6, ln:@1.first_line};
       }
       | llvalue "=" expr {
 	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
@@ -319,11 +316,11 @@ expr
       | ID '(' listeExpr ')' {
 	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
       }
-      | "Gamma" "(" expr ")" {
-	 $$={t: "Gamma", arg: $3, ln:@1.first_line};
-      }
       | "[]" {
 	 $$={t: "array", val:[], ln:@1.first_line};
+      }
+      | "{}" {
+         $$={t:"struct", f:[], ln:@1.first_line};
       }
       | "Sommet" expr {
 	 $$={t:"SOMMET", arg:$2, ln:@1.first_line};
@@ -344,7 +341,10 @@ lvalue
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
       }
       | lvalue "[" expr "]" {
-	 $$={t:"index", tab:$1, index:$3, ln:@2.firt_line};
+	 $$={t:"index", tab:$1, index:$3, ln:@2.first_line};
+      }
+      | lvalue "[" expr "," expr "]" {
+         $$={t:"mindex", mat:$1, i:$3, j:$5, ln:@2.first_line};
       }
       ;
 
