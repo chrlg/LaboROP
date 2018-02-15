@@ -412,6 +412,18 @@ function evaluate(expr){
       else return FALSE;
    }
 
+   // xor
+   if(expr.t=="xor"){
+      let a=evaluate(expr.left);
+      let b=evaluate(expr.right);
+      if(a.t!="boolean" || b.t!="boolean")
+	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+      if(a.val && !b.val) return TRUE;
+      if(!a.val && b.val) return TRUE;
+      return FALSE;
+   }
+
+
    // Comparaison (inégalité)
    // Uniquement pour des valeurs scalaires
    if(expr.t=="<" || expr.t==">" || expr.t=="<=" || expr.t==">="){

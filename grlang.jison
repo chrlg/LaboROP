@@ -43,6 +43,8 @@
 "and"			return "&&"
 "||"			return "||"
 "or"			return "||"
+"xor"                   return "xor"
+"^^"                    return "xor"
 ".+"                    return ".+"
 ".*"                    return ".*"
 ".^"                    return ".^"
@@ -96,6 +98,7 @@
 %left "Sommet"
 %right ":" "?"
 %left "||"
+%left "xor"
 %left "&&"
 %left "=" "==" "!="
 %left "<" ">" "<=" ">="
@@ -196,6 +199,7 @@ instruction
          $$ = { t:"if", cond:$2, do:$4, else:$6, ln:@1.first_line};
       }
       ;
+
 elifs
       : "elif" expr ":" blocOuSingle ";" {
          $$ = [{ t:"if", cond:$2, do:$4, else:[], ln:@1.first_line}];
@@ -303,6 +307,9 @@ expr
       }
       | expr "||" expr {
 	 $$ = {t:"||", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "xor" expr {
+         $$ = {t:"xor", left:$1, right:$3, ln:@2.first_line};
       }
       | "!" expr {
 	 $$ = {t:"!", right:$2, ln:@1.first_line};
