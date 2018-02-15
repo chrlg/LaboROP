@@ -777,14 +777,14 @@ function interpAffect(ins){
    var v=evaluate(ins.right);
    if(!v) throw {error:"type", name:"Valeur invalide", msg:"Valeur undefined invalide", ln:ins.right.ln};
    // Si c'est un tuple, il doit correspondre au nombre de lvalues. Sinon, il doit n'y avoir qu'une lvalue
-   if(v.t=="tuple" && v.vals.length != ins.left.length) throw {error:"type", name:"Nombre d'expressions invalide",
+   if(v.t=="tuple" && v.v.length != ins.left.length) throw {error:"type", name:"Nombre d'expressions invalide",
 	 msg:"Les nombres de valeurs à droite et à gauche du '=' ne correspondent pas", ln:ins.ln};
    if(v.t!="tuple" && ins.left.length!=1) throw {error:"type", name:"Nombre d'expressions invalide",
 	 msg:"Une seule expression pour remplir plusieurs destinations", ln:ins.ln};
    // Affectation de chaque lvalue
-   for(var i=0; i<ins.left.length; i++){
-      var o=evaluateLVal(ins.left[i]);
-      if(v.t=="tuple") setRef(o, v.vals[i], ins.left[i].ln);
+   for(let i=0; i<ins.left.length; i++){
+      let o=evaluateLVal(ins.left[i]);
+      if(v.t=="tuple") setRef(o, v.v[i], ins.left[i].ln);
       else setRef(o, v, ins.left[i].ln);
    }
 }
