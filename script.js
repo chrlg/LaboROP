@@ -29,7 +29,7 @@ function messageFromWorker(event){
       return;
    }
    if(event.data.termine!==undefined){
-      $m.append("<i>Program terminé avec le code "+event.data.termine+"</i>");
+      $m.append("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
    }
 
    for(var i=0; i<event.data.length; i++){

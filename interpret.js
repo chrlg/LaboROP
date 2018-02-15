@@ -18,6 +18,7 @@ var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _gr
               // mais on a aussi besoin, globalement, d'une liste d'arcs
 var _str=""; // Chaine "stdout" à envoyer à la console
 var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
+var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
 var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 var _grapheChange=false; // true ssi le graphe a changé depuis la dernière fois qu'il a été affiché
 
@@ -280,22 +281,25 @@ function evaluateLVal(lv, direct){
 
 function multMat(a, b){
    let R={t:"matrix", val:new Array(a.val.length)};
-   for(let i=0; i<a.val.length; i++){
-      R.val[i]=new Array(a.val.length).fill(0);
-      for(let j=0; j<a.val.length; j++){
-         for(let k=0; k<a.val.length; k++){
+   let n=a.val.length;
+   for(let i=0; i<n; i++){
+      R.val[i]=new Array(n).fill(0);
+      for(let j=0; j<n; j++){
+         for(let k=0; k<n; k++){
             R.val[i][j] += a.val[i][k]*b.val[k][j];
          }
       }
    }
+   _opCnt += 2*n*n*n;
    return R;
 }
 
 function boolMultMat(a,b){
    let R=preZero();
-   for(let i=0; i<a.val.length; i++){
-      for(let j=0; j<a.val.length; j++){
-         for(let k=0; k<a.val.length; k++){
+   let n=a.val.length;
+   for(let i=0; i<n; i++){
+      for(let j=0; j<n; j++){
+         for(let k=0; k<n; k++){
             if(a.val[i][k]!=0 && b.val[k][j]!=0){
                R.val[i][j]=1;
                break;
@@ -303,6 +307,7 @@ function boolMultMat(a,b){
          }
       }
    }
+   _opCnt += 2*n*n*n;
    return R;
 }
 
@@ -358,6 +363,7 @@ function evaluate(expr){
 		  msg:"Tentative d'utiliser l'opérateur de comparaison avec une valeur multiple",
 		  ln:expr.ln};
       function isEq(a,b){
+         _opCnt++;
 	 if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
 	 if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
 	 if(a.t!=b.t) return false;
@@ -369,6 +375,7 @@ function evaluate(expr){
 	    for(var i=0; i<a.val.length; i++){
 	       if(!isEq(a.val[i], b.val[i])) return false;
 	    }
+            _opCnt += a.val.length-1;
 	    return true;
 	 }
          if(a.t=="matrix"){
@@ -377,6 +384,7 @@ function evaluate(expr){
                   if(a.val[i][j] != b.val[i][j]) return false;
                }
             }
+            _opCnt += a.val*length*a.val*length-1;
             return true;
          }
 	 if(a.t=="struct"){
@@ -426,6 +434,7 @@ function evaluate(expr){
 	 valb=b.name;
       }else throw {error:"type", name:"Type invalide pour une comparaison",
 	 msg:"Tentative de comparer deux valeurs de type "+a.t, ln:expr.ln};
+      _opCnt++;
       if(expr.t=="<") return (vala<valb)?TRUE:FALSE;
       else if(expr.t==">") return (vala>valb)?TRUE:FALSE;
       else if(expr.t==">=") return (vala>=valb)?TRUE:FALSE;
@@ -461,6 +470,7 @@ function evaluate(expr){
       else newVal.val--;
 
       setRef(op, newVal, expr.ln);
+      _opCnt++;
 
       if(expr.left) return v;
       else return newVal;
@@ -486,6 +496,7 @@ function evaluate(expr){
                      R.val[i][j] = a.val[i][j] + b.val;
                   }
                }
+               _opCnt += a.val.length*a.val.length;
                return R;
             }
             if(b.t=="matrix"){
@@ -496,6 +507,7 @@ function evaluate(expr){
                      R.val[i][j] = a.val[i][j] + b.val[i][j];
                   }
                }
+               _opCnt += a.val.length*a.val.length;
                return R;
             }
          }
@@ -518,7 +530,10 @@ function evaluate(expr){
       // Cas particulier pour *
       if(expr.t=="*"){
          // Et non paresseurx
-         if(a.t=="boolean" && b.t=="boolean") return (a.val&&b.val)?TRUE:FALSE;
+         if(a.t=="boolean" && b.t=="boolean") {
+            _opCnt++;
+            return (a.val&&b.val)?TRUE:FALSE;
+         }
 
          // Multiplication matricielle
          if(a.t=="matrix" && b.t=="matrix") return multMat(a,b);
@@ -536,7 +551,10 @@ function evaluate(expr){
 
       // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
       if(expr.t==".+"){
-         if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
+         if(a.t=="number" && b.t=="number") {
+            _opCnt++;
+            return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
+         }
          if(a.t!="matrix" || b.t!="matrix")
             throw {error:"type", name:"Erreur de type", 
                    msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
@@ -546,12 +564,16 @@ function evaluate(expr){
                R.val[i][j] = (a.val[i][j]!=0 || b.val[i][j]!=0)?1:0;
             }
          }
+         _opCnt += a.val.length*a.val.length;
          return R;
       }
 
       // ".*" sur matrices et nombres
       if(expr.t==".*"){
-         if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
+         if(a.t=="number" && b.t=="number") {
+            _opCnt++;
+            return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
+         }
          if(a.t!="matrix" || b.t!="matrix")
             throw {error:"type", name:"Erreur de type", 
                    msg:"Types "+a.t+","+b.t+" incompatibles pour .*", ln:expr.ln};
@@ -560,6 +582,7 @@ function evaluate(expr){
 
       if(a.t!="number" || b.t!="number")
 	 throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
+      _opCnt++;
       if(expr.t=="+") return {t:"number", val:a.val+b.val};
       if(expr.t=="-") return {t:"number", val:a.val-b.val};
       if(expr.t=="*") return {t:"number", val:a.val*b.val};
@@ -568,6 +591,17 @@ function evaluate(expr){
       if(expr.t=="**") return {t:"number", val:a.val**b.val};
       throw {error:"interne", name:"Erreur interne", msg:"Hein?", ln:expr.ln};
    }
+
+   // "!"
+   if(expr.t=="!"){
+      var a=evaluate(expr.right);
+      if(a.t!="boolean")
+         throw {error:"type", name:"Valeur non booléenne",
+            msg:"L'opérateur ! s'utilise sur un argument booléen", ln:expr.ln};
+      if(a.val) return FALSE;
+      return TRUE;
+   }
+
 
    if(expr.t=="call"){
       var v=interpCall(expr);
@@ -672,8 +706,8 @@ function creerSommets(liste){
 }
 
 function interpIncrement(ins){
-   if(ins.left.t=="id" && ins.left.name=="X") return creerSommets([ins.right]);
-   if(ins.left.t=="id" && ins.left.name=="U"){
+   if(ins.left.t=="id" && ins.left.name=="GX") return creerSommets([ins.right]);
+   if(ins.left.t=="id" && ins.left.name=="GU"){
       if(ins.right.t=="arete") return creerArete(ins.right.left, ins.right.right);
       if(ins.right.t=="arc") return creerArc(ins.right.left, ins.right.right);
       throw {error:"type", name:"Erreur de type", msg: "Argument invalide pour U+=", ln:ins.ln};
@@ -687,10 +721,6 @@ function interpIncrement(ins){
    console.log("Cannot do +=", ins);
 }
 
-function interpPlusPlus(ins){
-   if(ins.left.t=="id"){
-   }
-}
 
 function getRef(ref){
    // Cas matriciel
@@ -1188,6 +1218,21 @@ function preSommets(args, ln){
    return {t:"array", val:Object.values(_grapheEnv)};
 }
 
+function preLen(args, ln){
+   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction len s'utilise avec un et un seul argument", ln:ln};
+   let a=evaluate(args[0]);
+   if(a.t=="array") return {t:"number", val:a.val.length};
+   if(a.t=="matrix") return {t:"number", val:a.val.length};
+   if(a.t=="string") return {t:"number", val:a.val.length};
+   throw {error:"type", name:"Erreur de type", 
+      msg:"Mauvais type "+a.t+" pour la fonction len", ln:ln};
+}
+
+function preOpCnt(){
+   return {t:"number", val:_opCnt};
+}
+
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
@@ -1198,7 +1243,9 @@ function interpret(tree){
    _predefEnv["GX"]={t: "predvar", f:preX};
    _predefEnv["Oriente"]=UNDEFINED;
    _predefEnv["GU"]={t: "predvar", f:preU};
+   _predefEnv["OpCount"]={t:"predvar", f:preOpCnt};
    _predefEnv["sommets"]={t:"predfn", f:preSommets};
+   _predefEnv["len"]={t:"predfn", f:preLen};
    _predefEnv["True"]=TRUE;
    _predefEnv["False"]=FALSE;
    _predefEnv["pi"]={t:"number", val:Math.PI};
@@ -1227,7 +1274,7 @@ onmessage = function (e){
       var str=parseTabulation(e.data);
       var out = grlang.parse(str);
       interpret(out);
-      postMessage({termine: 0, tree:out});
+      postMessage({termine: 0, opcnt:_opCnt});
    }catch(e){
       console.log(e);
       if(e.error) {
