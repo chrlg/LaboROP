@@ -602,7 +602,6 @@ function evaluate(expr){
       return TRUE;
    }
 
-
    if(expr.t=="call"){
       var v=interpCall(expr);
       if(v===undefined || v.t=="empty") throw {error:"type", name:"Pas de valeur de retour",
