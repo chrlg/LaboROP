@@ -193,6 +193,9 @@ instruction
       | for lvalue "in" "range" "(" expr "," expr rangeStep ")" ":" blocOuSingle ";" {
 	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$12, step:$9, ln:@1.first_line};
       }
+      | "for" lvalue "in" "range" "(" expr ")" ":" blocOuSingle ";" {
+         $$ = { t:"for", compteur:$2, start:{t:"number", val:0}, end:$6, step:false, do:$9, ln:@1.first_line};
+      }
       | while expr ":" blocOuSingle ";" {
 	 $$ = { t:"while", cond:$2, do:$4, ln:@1.first_line };
       }

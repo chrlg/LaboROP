@@ -173,6 +173,8 @@ de toutes façons définir une variable de même nom qu'un sommet)
         pratique pour les profs, pour faire des cours et documents. Après
         tout, pour qui n'a pas peur de taper du code plutôt que de cliquer
         partout, ce langage est un éditeur de graphe rudimentaire mais efficace
+      - Le "range(n)" avait été oublié (équivalent à range(0,n), lui même
+        équivalent à range(0,n,1))
    * Améliorations à la demande d'étudiants
       - pass 
         même si ça ne fait pas ce que l'étudiant qui l'a demandé

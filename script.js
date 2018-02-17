@@ -45,20 +45,21 @@ function messageFromWorker(event){
    }
 }
 
-var timeout=false;
 function oneditorChange(e){
-   if(e && e.lines.length<2) return;
-   if(timeout){
-      clearTimeout(timeout);
-      timeout=false;
-   }
-   timeout = setTimeout(realEditorChange, 200);
+   if(e.lines.length<2) return;
+   if(e.action!="insert") return;
+   let str=editor.session.getLine(e.start.row);
+   if(str[0]==" ") return;
+   if(str.indexOf(":")>=0) return;
+   realEditorChange();
 }
 
+var timeout=false;
 function realEditorChange(){
    if(worker) worker.terminate();
+   if(timeout) clearTimeout(timeout);
    worker=false;
-   worker = new Worker("interpret.js#"+Math.random());
+   worker = new Worker("interpret.js");
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
    timeout=setTimeout(Terminate, 20000);
@@ -77,7 +78,7 @@ function runCode(){
 
 function Terminate(){
    timeout=false;
-   worker.terminate();
+   if(worker) worker.terminate();
    worker=false;
 }
 
@@ -126,7 +127,7 @@ function init(){
    editor.getSession().on('change', oneditorChange);
    editor.setOption("showInvisibles", true);
    editor.setValue(currentFile.code, -1);
-   oneditorChange();
+   realEditorChange();
 
    setInterval(function(){
       if(worker) worker.postMessage("tick");
