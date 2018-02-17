@@ -82,6 +82,7 @@
 "elif"                  return "elif"
 "continue"		return "continue"
 "break"			return "break"
+"pass"                  return "pass"
 "in"			return "in"
 "global"		return "global"
 "return"		return "return"
@@ -161,6 +162,9 @@ instructionNoColon
       }
       | continue {
 	 $$ = {t:"continue", ln:@1.first_line};
+      }
+      | pass {
+         $$ = {t:"pass", ln:@1.first_line};
       }
       | return {
 	 $$ = {t:"return", val:undefined, ln:@1.first_line};

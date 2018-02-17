@@ -1013,6 +1013,9 @@ function interpretWithEnv(tree, isloop){
 	       ln:tree[i].ln};
 	 return "continue";
       }
+      if(tree[i].t=="pass"){
+         continue;
+      }
       if(tree[i].t=="return"){
 	 interpReturn(tree[i]);
 	 return "return";
