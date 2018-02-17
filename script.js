@@ -4,6 +4,13 @@ var Range;
 var errorMarker=false;
 var lastError;
 
+var _grlg = {
+   svgw:false,
+   svgh:false,
+   zoomlv:0,
+   zoommin:false
+};
+
 function messageFromWorker(event){
    var $m=$("#misc");
    if(errorMarker){
@@ -74,16 +81,29 @@ function Terminate(){
    worker=false;
 }
 
+function zoomGraph(){
+   let targetscale = 1.1**_grlg.zoomlv;
+   let targetw = _grlg.svgw*targetscale;
+   let targeth = _grlg.svgh*targetscale;
+   let winw = $("#show").width();
+   let winh = $("#show").height();
+   _grlg.zoommin = (targetw<winw && targeth<winh);
+   if (targetw<winw) targetw=winw;
+   if (targeth<winh) targeth=winh;
+   $("#show svg").width(targetw).height(targeth);
+}
+
 function showGraph(str){
    window.lastGraph=str;
    try{
       v = Viz(str);
       $("#show").html(v);
-      var sw=$("#show").width() / $("#show svg").width();
-      var sh=$("#show").height() / $("#show svg").height();
-      var s=sw;
-      if(sh<s) s=sh;
-      if(s<1) $("#show svg").css("transform-origin", "0 0").css("transform", "scale("+s+")");
+      _grlg.svgw = $("#show svg").width();
+      _grlg.svgh = $("#show svg").height();
+      _grlg.zoommin = false;
+      $("#show svg").width($("#show").width());
+      $("#show svg").height($("#show").height());
+      zoomGraph();
    }catch(e){
       console.log("Viz", str);
       console.log(e);
@@ -123,6 +143,22 @@ function init(){
 
    // Fichiers
    initFiles();
+
+   // Zoom dans show
+   $("#show").bind("mousewheel", function(e){
+      if(!e.altKey) return;
+      let ow=$("#show svg").width();
+      let oh=$("#show svg").height();
+      let ee=e.originalEvent;
+      if(ee.deltaY<0) {
+         _grlg.zoomlv++;
+         zoomGraph();
+      }else if(ee.deltaY>0 && !_grlg.zoommin){
+         _grlg.zoomlv--;
+         zoomGraph();
+      }
+      e.preventDefault();
+   });
 }
 
 $(init);
@@ -233,12 +269,12 @@ function initFiles(){
 
 
 var listFiles, currentFilename, currentFile;
+function saveFiles(){
+   localStorage.setItem("laborop_files", JSON.stringify(listFiles));
+   localStorage.setItem("laborop_currentFilename", currentFilename);
+}
 function initStorage(){
    listFiles = localStorage.getItem("laborop_files");
-   function saveFiles(){
-      localStorage.setItem("laborop_files", JSON.stringify(listFiles));
-      localStorage.setItem("laborop_currentFilename", currentFilename);
-   }
 
    // Liste de mes fichiers
    if(!listFiles){ // Si je n'en ai pas encore, je crée une liste vide
