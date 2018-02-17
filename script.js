@@ -66,14 +66,16 @@ function realEditorChange(){
    $("#misc").empty();
 }
 
-function saveCode(){
+function saveCode(e, f, g){
    currentFile.code = editor.getValue();
    saveFiles();
    realEditorChange();
+   return true;
 }
 
 function runCode(){
-   readEditorChange();
+   realEditorChange();
+   return true;
 }
 
 function Terminate(){
@@ -111,6 +113,13 @@ function showGraph(str){
    }
 }
 
+function showTab(t){
+   $(".show").removeClass("selected");
+   $("#"+t).addClass("selected");
+   $("#tabs button").removeClass("selected");
+   $("#tabs button[data-target='"+t+"']").addClass("selected");
+}
+
 function init(){
    Range = ace.require('ace/range').Range;
    editor = ace.edit("editor");
@@ -119,10 +128,47 @@ function init(){
    editor.setShowPrintMargin(false);
    editor.$blockScrolling = Infinity;
    editor.getSession().setTabSize(3);
-   editor.commands.addCommand({name:"Save&Run", bindKey:{win:"Ctrl-s", mac:"Command-s"}, 
-                                 exec:saveCode});
-   editor.commands.addCommand({name:"Run", bindKey:{win:"Ctrl-q", mac:"Command-q"}, 
-                                 exec:runCode});
+   // Hors sujet :
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["alt-e"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["alt-shift-e"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["alt-0"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-s"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-shift-/"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-["];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-]"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["alt-shift-x"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-u"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-shift-u"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-up"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-down"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-shift-up"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-shift-down"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-shift-left"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-shift-right"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-right"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-left"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-l"];
+   delete editor.keyBinding.$defaultHandler.commandKeyBinding["ctrl-alt-a"];
+
+   editor.commands.addCommand({name:"ShowGraph", bindKey:{win:"alt-g",mac:"Alt-g"},
+         exec:()=>{showTab("show");}});
+   editor.commands.addCommand({name:"ShowMatrix", bindKey:{win:"alt-m",mac:"Alt-m"},
+         exec:()=>{showTab("matrix");}});
+   editor.commands.addCommand({name:"ShowFiles", bindKey:{win:"alt-f",mac:"Alt-f"},
+         exec:()=>{showTab("files");}});
+   editor.commands.addCommand({name:"Save&Run", 
+         bindKey:{win:"Ctrl-s", mac:"Command-s"}, exec:saveCode});
+   editor.commands.addCommand({name:"Run", 
+         bindKey:{win:"Alt-r", mac:"Command-Alt-r"}, exec:runCode});
+   editor.commands.addCommand({name: "showKeyboardShortcuts",
+         bindKey: {win: "Ctrl-Alt-h", mac: "Command-Alt-h"},
+         exec: function(editor) {
+            ace.config.loadModule("ace/ext/keybinding_menu", function(module) {
+               module.init(editor);
+               editor.showKeyboardShortcuts()
+            })
+         }
+   });
 
    editor.getSession().on('change', oneditorChange);
    editor.setOption("showInvisibles", true);
@@ -136,10 +182,7 @@ function init(){
    // Tabs
    $("#tabs button").click(function(e){
       let t=$(this).attr("data-target");
-      $(".show").removeClass("selected");
-      $("#"+t).addClass("selected");
-      $("#tabs button").removeClass("selected");
-      $(this).addClass("selected");
+      showTab(t);
    });
 
    // Fichiers
