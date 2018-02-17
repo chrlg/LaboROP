@@ -3,18 +3,18 @@ body{
 }
 
 div.mainbox {
-   border-top: solid 1px black;
-   padding: 1px;
    position: absolute;
    display: inline-block;
    margin: 0;
+   padding: 0;
+   border: 0;
 }
 
 div#editor {
    top:0px;
    left:0px;
-   width: calc(50vw - 4px);
-   height: calc(100vh - 4px);
+   width: 50vw;
+   height: 100vh;
 }
 
 div#ecrandroit {
@@ -25,26 +25,39 @@ div#ecrandroit {
    padding:0;
    margin:0;
    height:100vh;
-   left:calc(50vw + 4px);
-   width:calc(50vw - 4px);
+   left:calc(50vw + 6px);
+   width:calc(50vw - 6px);
+}
+
+div#hautdroit{
+   position:absolute;
+   top: 4vh;
+   left: 0;
+   width: 100%;
+   height: 46vh;
+   border:0;
+   padding:0;
+   margin:0;
+   overflow: hidden;
 }
 
 div.show {
-   top: 4vh;
-   left: 0;
-   width: calc(100% - 2px);
-   height: calc(46vh - 2px);
-   overflow: scroll;
+   position:absolute;
+   top:0;
+   width:100%;
+   height:100%;
+   left:0;
    display:none;
+   overflow:auto;
 }
 
 #svgcont {
-   overflow:scroll;
+   overflow:auto;
    width:100%;
-   height:100%;
    display:inline-block;
    position: absolute;
-   top:0;
+   top:1px;
+   bottom:0;
    left:0;
    padding:0;
    margin:0;
@@ -74,10 +87,26 @@ div#splithandle{
    width:4px;
    background-color:black;
    display:inline-block;
-   border:0;
+   border-top:0;
+   border-bottom:0;
+   border-left: solid 1px white;
+   border-right: solid 1px white;
    padding:0;
    margin:0;
    cursor:col-resize;
+}
+
+div#splithandled {
+   position:absolute;
+   left:0;
+   width:100%;
+   top:50vh;
+   height:4px;
+   background-color:black;
+   border:0;
+   margin:0;
+   padding:0;
+   cursor:row-resize;
 }
 
 div.show.selected {
@@ -87,8 +116,13 @@ div.show.selected {
 div#tabs {
    top:0;
    left:0;
-   width: calc(100% - 2px);
-   height: calc(4vh - 2px);
+   width: 100%;
+   height: 4vh;
+   margin:0;
+   padding:0;
+   border-color: black;
+   border-style: solid;
+   border-width: 0 0 1px 0;
 }
 
 #tabs button {
@@ -108,11 +142,14 @@ div#tabs {
 }
 
 div#misc{
-   top: 50vh;
+   top: calc(50vh + 4px);
    left: 0;
-   width: calc(100% - 2px);
-   height: calc(50vh - 4px);
+   width: 100%;
+   bottom:0;
    overflow: scroll;
+   padding: 0;
+   margin: 0;
+   border:0;
 }
 
 pre.console{

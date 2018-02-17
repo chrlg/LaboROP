@@ -145,17 +145,19 @@ function init(){
    initFiles();
 
    // Zoom dans show
-   $("#svgcont").bind("mousewheel", function(e){
+   $("#svgcont").bind("mousewheel DOMMouseScroll", function(e){
       if(!e.altKey) return;
       let ee=e.originalEvent;
-      if(ee.deltaY<0) {
+      let delta=ee.detail?ee.detail:ee.deltaY;
+      if(delta<0){
          _grlg.zoomlv++;
          zoomGraph();
-      }else if(ee.deltaY>0 && !_grlg.zoommin){
+      }else if(delta>0){
          _grlg.zoomlv--;
          zoomGraph();
       }
       e.preventDefault();
+      return false;
    });
 }
 
@@ -325,24 +327,36 @@ initStorage();
 
 
 function splitMove(){
-   function changeSplit(r){
-      let svw=100*r;
-      $("#editor").css("width", "calc("+svw+"vw - 4px)");
-      $("#ecrandroit").css("left", "calc("+svw+"vw + 4px)");
-      $("#ecrandroit").css("width", "calc("+(100-svw)+"vw - 4px)");
+   function changeSplit(svw){
+      $("#editor").css("width", ""+svw+"vw");
       $("#splithandle").css("left", ""+svw+"vw");
+      $("#ecrandroit").css("left", "calc("+svw+"vw + 6px)");
+      $("#ecrandroit").css("width", "calc("+(100-svw)+"vw - 6px)");
    }
-   var xinit=false;
+   function changeSplitD(svh){
+      $("#hautdroit").css("height", ""+(svh-4)+"vh");
+      $("#splithandled").css("top", ""+svh+"vh");
+      $("#misc").css("top", "calc("+svh+"vh + 4px)");
+   }
+
+   var winit=false, hinit=false;;
    $("#splithandle").mousedown(function(e){
-      xinit=$("body").width();
+      winit=$("body").width();
       e.preventDefault();
+      return false;
+   });
+   $("#splithandled").mousedown(function(e){
+      hinit=$("#ecrandroit").height();
+      e.preventDefault();
+      return false;
    });
    $(document).mousemove(function(e){
-      if(!xinit) return;
-      changeSplit(e.clientX / xinit);
+      if(winit) changeSplit(e.clientX*100.0 / winit);
+      else if(hinit) changeSplitD(e.clientY*100.0 / hinit);
    });
    $(document).mouseup(function(e){
-      xinit=false;
+      winit=false;
+      hinit=false;
    });
 }
 $(splitMove);

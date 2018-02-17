@@ -10,19 +10,23 @@
    <title>Laboratoire ROP</title>
 </head>
 <body>
-<div class=mainbox id=editor></div>
-<div id=splithandle></div>
-<div id=ecrandroit>
-<div class=mainbox id=tabs><button class="selected" data-target=show>Graphe</button><button data-target=matrix>Matrice</button><button data-target=files>Fichiers</button></div>
-<div class="mainbox show selected" id="show">
-<div id="svgcont"></div>
-<a id=saveimage href="#">⇩</a>
-</div>
-<div class="mainbox show" id="matrix">MATRIX</div>
-<div class="mainbox show" id="files">FILES</div>
-<div class=mainbox id=misc></div>
-</div>
-
-<script>
-</script>
+   <div class=mainbox id=editor></div>
+   <div id=splithandle></div>
+   <div id=ecrandroit>
+      <div class=mainbox id=tabs>
+         <button class="selected" data-target=show>Graphe</button>
+         <button data-target=matrix>Matrice</button>
+         <button data-target=files>Fichiers</button>
+      </div>
+      <div id="hautdroit">
+         <div class="mainbox show selected" id="show">
+            <div id="svgcont"></div>
+            <a id=saveimage href="#">⇩</a>
+         </div>
+         <div class="mainbox show" id="matrix">MATRIX</div>
+         <div class="mainbox show" id="files">FILES</div>
+      </div>
+      <div id=splithandled></div>
+      <div class=mainbox id=misc></div>
+   </div>
 </body>
