@@ -1,0 +1,188 @@
+########################### Version 0 (avant premier TP)
+
+28/9/2017 : Chaine de syntaxe complète (lexico/syntaxe/semantique/exec)
+
+1/10/2017 : Environnement, variables locales/gloales. Les sommets et
+arcs sont maintenant des variables d'un environnement "spécial"
+(plus globales que les variales locales ; moins que les globales et 
+prédéfinies. Mais surtout "protégées" : dans tout environnement, on ne peut
+de toutes façons définir une variable de même nom qu'un sommet)
+
+1/10/2017 : 
+   * Appels de fonctions, return
+   * If
+   * ++
+   * fonctions prédéfinies (print), et constantes prédéfinies
+
+2/10/2017 :
+   * break, continue
+   * opérateurs binaires sur les booléens et nombres
+   * Protection (très grossière) contre les boucles infinies
+
+3/10/2017 :
+   * Affectation
+   * Création arcs et sommets
+   * print sur types complexes (structures, sommets, etc)
+   * l'affectation peut se faire vers toute l-value, cad non seulement les
+     variables (x=...), mais aussi les éléments d'un tableau (t[i]=...), 
+     les champs d'une structure (s.f=...), etc.
+   * la protection des sommets (interdiction d'avoir des variables du même nom
+     concerne tout usage de l-value, pas seulement l'affectation. Donc ++,
+     +=, etc)
+
+5/10/2017 :
+   * for (en fait un foreach)
+
+6/10/2017 :
+   * optimisation spécifique pour for ... in range(...)
+   * opérateurs de comparaison
+   * random
+   * les fonctions qui retournent des arêtes les réordonnent d'abord de façon 
+     à faire apparaître en premier le sommet de référence, s'il y a un
+     sommet de référence
+   * ++ et -- sont des expressions et des instructions cad utilisable 
+     autant comme ligne de code seule, x++, que au sein du calcul d'une valeur,
+     comme x=f(n++)
+
+8/10/2017 :
+   * opérateurs binaires sur d'autres éléments que des nombres (eg, 
+     chaine+nombre = concaténation de la chaine et de la représentation
+     du nombre)
+   * opérateurs booléens paresseux. A && B => B n'est pas évalué si A
+     est faux de toutes façons
+
+21/10/2017 :
+   * Améliorations de l'interface : scroll dans la console, sauvegarde des
+     données, MAJ automatique du graphe, ...
+   * println
+   * Interprétation en tâche de fond (worker) : un programme long n'empêche
+     pas d'éditer le code 
+   * Implémentation de toutes les solutions des labos de l'années. Première
+     version de l'interprète, qui, en théorie, permet donc de faire 
+     tous les TP... à condition de programmer comme moi
+
+24/10/2017 :
+   * Utilisation des sommets comme chaîne de caractère (selon le contexte)
+   * Sauvegarde par Ctrl+S
+   * Utilisation des chaînes (et donc sommets), cf point 1, comme tableau
+     En gros il est possibles d'écrire str[1] pour avoir le 2e caractère
+     et donc MonSommet[1] pour avoir le deuxième caractère du nom du sommet
+     MonSommet
+   * Accès aux champs des structures (hors sommets). Une structure se déclare
+     implicitement, par le simple fait d'écrire nouvellevariable.champ=valeur
+
+29/1/2018 : 
+   * Fin implémentation et tests de toutes les solutions (après traduction)
+     des étudiants de S5
+   * Déploiement énib
+   * Sauvegarde dans LocalStorage
+
+################## Version 1 (débuggage et développement pendant l'utilisation
+# par les étudiants de S6P)
+
+11/2/2018 :
+   * Correction de bugs
+      - Certaines tabulations font planter l'interprète (problème pas encore
+        100% réglé d'ailleurs)
+      - Le else ne fonctionnait pas dans certains cas
+   * Ajouts prévus
+      - Matrice d'adjacence calculée en tâche de fond (la variable Adj
+        contient toujours la matrice d'adjacence correspondant au graphe 
+        actuel. De même Id, contient l'identité)
+      - (A,B) au lieu de lever une erreur si l'arc (A,B) n'existe pas, 
+         vaut null. (cela permet de tester facilement l'existence d'un arc)
+   * Améliorations à la demande d'étudiants
+      - elif
+      - espaces, tabulations, retour charriots, ... visibles dans l'éditeur
+      - il est possible d'accéder aux champs d'un arc désigné par une
+        variable, et pas par une paire.
+        Autrefois, la syntaxe, d'inspiration plus mathématique qu'informatique,
+        imposait qu'une variable désignant un arc soit obligatoirement de 
+        la forme (x,y), x et y désignant alors en même temps les sommets
+        Cette syntaxe mathématique coexiste maintenant avec un usage plus
+        classique en informatique. Donc on peut maintenant écrire
+        for (x,y) in arcs(): (x,y).marque=0
+        Comme 
+        for a in arcs(): a.marque=0
+
+13/2/2018 :
+   * Ajouts
+      - Le graphe est redimensionné pour tenir dans la zone de graphe (sinon
+        il dépassait bêtement, du moins sur les navigateurs de l'enib)
+      - Les fichiers sont toujours (temporairement) stockés dans le localStorage
+        mais on peut en avoir plusieurs maintenant
+      - Suppression de fichiers
+      - Conversion automatique du stockage unique des vieilles versions
+        en un fichier "Premier labo"
+
+14/2/2018 :
+   * Changements et ajouts
+      - Copie de fichiers
+      - Un type (interne, puisque le language n'est pas typé) matrice existe
+        explicitement (autrefois une matrice n'était qu'un tableau de tableau).
+        Cela permet de définir des opérations spécifiques pour les matrics
+        (Un "+" sur un tableau est une concaténation. Alors qu'un "+" sur
+        une matrice est l'addition de matrice).
+        Et d'optimiser un peu de très lourd code sur les opérateurs linéaires
+      - Addition, multiplication matricielle
+      - Puissance matricielle
+      - Opérateurs matriciels booléens .+ .* et .^
+      - Accès aux coefficients d'une matrice par la syntaxe M[i,j] 
+        (quand c'était des tableaux, M[i][j] fonctionnait sans que je n'ai
+        rien eu à faire pour, si ce n'est implémenter les tableaux)
+
+15/2/2018
+   * Changements et ajouts
+      - fonction prédéfinie len
+      - comptage des opérations, et variable prédéfinie OpCount
+   * Correction de bugs
+      - not (!)
+   * Améliorations à la demande d'étudiants
+      - xor
+      - retour de valeur multiple pour les fonctions. Il est donc possible
+        d'écrire
+        def f():
+            return 12,"coucou",13
+        Et ensuite d'appeler
+        a,str,b = f()
+        qui affectera à la fois a (à 12), str (à "coucou") et b (à 13)
+        C'est pour l'instant réservé au seul retour de fonction. Il ne
+        s'agit donc pas d'une implémentation complète d'un type "tuple"
+        permettant d'écrire
+        a,b,c=12,13,14
+        Mais bon, en même temps, ce n'est que dans les fonctions que c'est
+        vraiment pratique. Et je préfère ne pas compliquer le langage en
+        faisant apparaître un nouveau type visible (c'est un nouveau type
+        tuple, mais interne, invisible)
+
+17/2/2018 :
+   * Ajouts et modifications
+      - On peut maintenant déplacer la séparation de l'écran à la souris
+        (c'est surtout utile pour les profs, avec leur projecteur 
+        800x600)
+      - C'était pas une si bonne idée que ça de faire tenir tout le graphe
+        dans la fenêtre (on ne voit rien quand on a 81 sommets sans arcs,
+        ou au contraire un graphe complet).
+        Mais en même temps le graphe qui dépasse c'est pas génial non plus.
+        Maintenant on peut donc zoomer comme on préfère dans le graphe
+        (alt+molette de la souris), et "scroller" s'il est plus grand que 
+        la fenêtre (molette pour le scroll vertical. Shift+molette pour le
+        scroll horizontal)
+      - Un bouton pour sauvegarder une image du graphe (dans le coin en haut à 
+        droite ; invisible sauf quand on y met la souris). C'est surtout
+        pratique pour les profs, pour faire des cours et documents. Après
+        tout, pour qui n'a pas peur de taper du code plutôt que de cliquer
+        partout, ce langage est un éditeur de graphe rudimentaire mais efficace
+   * Améliorations à la demande d'étudiants
+      - pass 
+        même si ça ne fait pas ce que l'étudiant qui l'a demandé
+        croit que ça fait. pass, en gros, ça ne fait juste rien. C'est 
+        l'équivalant C, C++, Java de {;}.
+        C'est juste pratique dans les séquences de if/elif/else pour dire
+        "dans ce cas, rien"
+        if a==1: print(1)
+        elif a==2: print(2)
+        elif a==3: pass
+        else: print("ni 1, ni 2 ni 3")
+        "pass" n'a donc rien à voir avec les boucles, et aucun rapport avec
+        break et continue
