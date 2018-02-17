@@ -232,55 +232,83 @@ function initFiles(){
 }
 
 
-var listFiles = localStorage.getItem("laborop_files");
-function saveFiles(){
-   localStorage.setItem("laborop_files", JSON.stringify(listFiles));
-   localStorage.setItem("laborop_currentFilename", currentFilename);
-}
+var listFiles, currentFilename, currentFile;
+function initStorage(){
+   listFiles = localStorage.getItem("laborop_files");
+   function saveFiles(){
+      localStorage.setItem("laborop_files", JSON.stringify(listFiles));
+      localStorage.setItem("laborop_currentFilename", currentFilename);
+   }
 
-// Liste de mes fichiers
-if(!listFiles){ // Si je n'en ai pas encore, je crée une liste vide
-   listFiles=[];
-   saveFiles();
-}
-else{
-   listFiles=JSON.parse(listFiles);
-}
+   // Liste de mes fichiers
+   if(!listFiles){ // Si je n'en ai pas encore, je crée une liste vide
+      listFiles=[];
+      saveFiles();
+   }
+   else{
+      listFiles=JSON.parse(listFiles);
+   }
 
-// Si un code "unique" laborop_code existe, je le converti en un fichier "premierLabo"
-let fromls=localStorage.getItem("laborop_code");
-if(fromls){
-   listFiles.push({name:"Premier Labo", code:fromls});
-   saveFiles();
-   localStorage.removeItem("laborop_code");
-}
+   // Si un code "unique" laborop_code existe, je le converti en un fichier "premierLabo"
+   let fromls=localStorage.getItem("laborop_code");
+   if(fromls){
+      listFiles.push({name:"Premier Labo", code:fromls});
+      saveFiles();
+      localStorage.removeItem("laborop_code");
+   }
 
-// Fichier en cour d'édition
-var NOW = new Date();
-var NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"/"+(NOW.getHours())+":"+(NOW.getMinutes());
-var currentFilename = localStorage.getItem("laborop_currentFilename");
-if(!currentFilename){
-   if(listFiles.length>0){ // S'il n'y a pas de fichier en cours, mais qu'il y a des fichiers, on prend le 1er
-      currentFilename = listFiles[0].name;
-   }else{ // Sinon, on l'appelle "nouveau"
+   // Fichier en cour d'édition
+   var NOW = new Date();
+   var NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"/"+(NOW.getHours())+":"+(NOW.getMinutes());
+   currentFilename = localStorage.getItem("laborop_currentFilename");
+   if(!currentFilename){
+      if(listFiles.length>0){ // S'il n'y a pas de fichier en cours, mais qu'il y a des fichiers, on prend le 1er
+         currentFilename = listFiles[0].name;
+      }else{ // Sinon, on l'appelle "nouveau"
+         currentFilename="Nouveau "+NOWSTR;
+         listFiles.push({name:currentFilename, code:""});
+      }
+      saveFiles();
+   }
+
+   currentFile=false;
+   for(let i=0; i<listFiles.length; i++){
+      if(listFiles[i].name==currentFilename){
+         currentFile=listFiles[i];
+         break;
+      }
+   }
+
+   if(currentFile===false){ // Peut arriver s'il y avait un currentFilename, mais dont le fichier a été effacé
       currentFilename="Nouveau "+NOWSTR;
-      listFiles.push({name:currentFilename, code:""});
-   }
-   saveFiles();
-}
-
-var currentFile=false;
-for(let i=0; i<listFiles.length; i++){
-   if(listFiles[i].name==currentFilename){
-      currentFile=listFiles[i];
-      break;
+      currentFile={name:currentFilename, code:""};
+      listFiles.push(currentFile);
+      saveFiles();
    }
 }
 
-if(currentFile===false){ // Peut arriver s'il y avait un currentFilename, mais dont le fichier a été effacé
-   currentFilename="Nouveau "+NOWSTR;
-   currentFile={name:currentFilename, code:""};
-   listFiles.push(currentFile);
-   saveFiles();
-}
+initStorage();
 
+
+function splitMove(){
+   function changeSplit(r){
+      let svw=100*r;
+      $("#editor").css("width", "calc("+svw+"vw - 4px)");
+      $("#ecrandroit").css("left", "calc("+svw+"vw + 4px)");
+      $("#ecrandroit").css("width", "calc("+(100-svw)+"vw - 4px)");
+      $("#splithandle").css("left", ""+svw+"vw");
+   }
+   var xinit=false;
+   $("#splithandle").mousedown(function(e){
+      xinit=$("body").width();
+      e.preventDefault();
+   });
+   $(document).mousemove(function(e){
+      if(!xinit) return;
+      changeSplit(e.clientX / xinit);
+   });
+   $(document).mouseup(function(e){
+      xinit=false;
+   });
+}
+$(splitMove);
