@@ -175,6 +175,8 @@ de toutes façons définir une variable de même nom qu'un sommet)
         partout, ce langage est un éditeur de graphe rudimentaire mais efficace
       - Le "range(n)" avait été oublié (équivalent à range(0,n), lui même
         équivalent à range(0,n,1))
+      - Le code n'est plus exécuté à chaque ligne, mais seulement sur ctrl+s
+        ou sur alt+r pour exécuter sans sauvegarder
    * Améliorations à la demande d'étudiants
       - pass 
         même si ça ne fait pas ce que l'étudiant qui l'a demandé
