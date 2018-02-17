@@ -38,6 +38,34 @@ div.show {
    display:none;
 }
 
+#svgcont {
+   overflow:scroll;
+   width:100%;
+   height:100%;
+   display:inline-block;
+   position: absolute;
+   top:0;
+   left:0;
+   padding:0;
+   margin:0;
+   border:0;
+}
+
+#show {
+   overflow:hidden;
+}
+
+#saveimage {
+   position:absolute;
+   top:0;
+   right:2ex;
+   opacity:0;
+}
+
+#saveimage:hover {
+   opacity:1;
+}
+
 div#splithandle{
    position:absolute;
    top:0;

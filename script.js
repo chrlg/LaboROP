@@ -85,25 +85,25 @@ function zoomGraph(){
    let targetscale = 1.1**_grlg.zoomlv;
    let targetw = _grlg.svgw*targetscale;
    let targeth = _grlg.svgh*targetscale;
-   let winw = $("#show").width();
-   let winh = $("#show").height();
+   let winw = $("#svgcont").width();
+   let winh = $("#svgcont").height();
    _grlg.zoommin = (targetw<winw && targeth<winh);
    if (targetw<winw) targetw=winw;
    if (targeth<winh) targeth=winh;
-   $("#show svg").width(targetw).height(targeth);
+   $("#svgcont svg").width(targetw).height(targeth);
 }
 
 function showGraph(str){
    window.lastGraph=str;
    try{
       v = Viz(str);
-      $("#show").html(v);
-      _grlg.svgw = $("#show svg").width();
-      _grlg.svgh = $("#show svg").height();
+      $("#svgcont").html(v);
+      _grlg.svgw = $("#svgcont svg").width();
+      _grlg.svgh = $("#svgcont svg").height();
       _grlg.zoommin = false;
-      $("#show svg").width($("#show").width());
-      $("#show svg").height($("#show").height());
       zoomGraph();
+      // Pour permettre aisément la sauvegarde (via bouton dans le coin)
+      $("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
    }catch(e){
       console.log("Viz", str);
       console.log(e);
@@ -145,10 +145,8 @@ function init(){
    initFiles();
 
    // Zoom dans show
-   $("#show").bind("mousewheel", function(e){
+   $("#svgcont").bind("mousewheel", function(e){
       if(!e.altKey) return;
-      let ow=$("#show svg").width();
-      let oh=$("#show svg").height();
       let ee=e.originalEvent;
       if(ee.deltaY<0) {
          _grlg.zoomlv++;
