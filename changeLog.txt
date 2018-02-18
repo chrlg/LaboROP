@@ -190,3 +190,12 @@ de toutes façons définir une variable de même nom qu'un sommet)
         else: print("ni 1, ni 2 ni 3")
         "pass" n'a donc rien à voir avec les boucles, et aucun rapport avec
         break et continue
+
+18/2/2018:
+   * Ajouts ou modifications
+      - Quelques fonctions mathématiques usuelles (sin, cos, ...)
+      - Les fichiers de l'interpréteur sont interdits de cache. De cette façon, vous
+        n'aurez pas à recharger interpret.js et grlang.jison pour vous assurer d'avoir
+        la dernière version.
+        Sauf que pour avoir la version qui ne va pas dans le cache... il vous faut d'abord
+        recharger (une dernière fois) interpret.js, grlang.jison, ...
