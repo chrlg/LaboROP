@@ -830,7 +830,7 @@ function interpCall(call){
    var fn=getEnv(call.f);
    if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
-   if(fn.t=="predfn") return fn.f(call.args, call.ln);
+   if(fn.t=="predfn") return fn.f(call.args, call.ln, call.f);
    if(fn.t!="DEF") throw {error:"type", name:"Pas une fonction",
 	    msg:"Tentative d'appeler "+call.f+", qui n'est pas une fonction", ln:call.ln};
    if(fn.args.length != call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
@@ -1243,6 +1243,28 @@ function preLen(args, ln){
       msg:"Mauvais type "+a.t+" pour la fonction len", ln:ln};
 }
 
+function preMaths1(args, ln, fname){
+   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction "+fname+" s'utilise avec un et un seul argument", ln:ln};
+   let a=evaluate(args[0]);
+   if(a.t!="number") throw {error:"type", name:"Mauvais type", 
+      msg:"La fonction "+fname+" s'utilise avec un argument numérique", ln:ln};
+   if(fname=="sqrt") return {t:"number", val:Math.sqrt(a.val)};
+   if(fname=="sqr") return {t:"number", val:a.val*a.val};
+   if(fname=="exp") return {t:"number", val:Math.exp(a.val)};
+   if(fname=="log") return {t:"number", val:Math.log(a.val)};
+   if(fname=="log10") return {t:"number", val:Math.log10(a.val)};
+   if(fname=="log2") return {t:"number", val:Math.log2(a.val)};
+   if(fname=="sin") return {t:"number", val:Math.sin(a.val)};
+   if(fname=="cos") return {t:"number", val:Math.cos(a.val)};
+   if(fname=="tan") return {t:"number", val:Math.tan(a.val)};
+   if(fname=="asin") return {t:"number", val:Math.asin(a.val)};
+   if(fname=="acos") return {t:"number", val:Math.acos(a.val)};
+   if(fname=="atan") return {t:"number", val:Math.atan(a.val)};
+   if(fname=="abs") return {t:"number", val:Math.abs(a.val)};
+   throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
+}
+
 function preOpCnt(){
    return {t:"number", val:_opCnt};
 }
@@ -1269,6 +1291,19 @@ function interpret(tree){
    _predefEnv["arcs"]={t:"predfn", f:preArcs};
    _predefEnv["aretes"]={t:"predfn", f:preArcs};
    _predefEnv["null"]=NULL;
+   _predefEnv["sqrt"]={t:"predfn", f:preMaths1};
+   _predefEnv["sqr"]={t:"predfn", f:preMaths1};
+   _predefEnv["exp"]={t:"predfn", f:preMaths1};
+   _predefEnv["log"]={t:"predfn", f:preMaths1};
+   _predefEnv["log10"]={t:"predfn", f:preMaths1};
+   _predefEnv["log2"]={t:"predfn", f:preMaths1};
+   _predefEnv["sin"]={t:"predfn", f:preMaths1};
+   _predefEnv["cos"]={t:"predfn", f:preMaths1};
+   _predefEnv["tan"]={t:"predfn", f:preMaths1};
+   _predefEnv["asin"]={t:"predfn", f:preMaths1};
+   _predefEnv["acos"]={t:"predfn", f:preMaths1};
+   _predefEnv["atan"]={t:"predfn", f:preMaths1};
+   _predefEnv["abs"]={t:"predfn", f:preMaths1};
    _globalEnv={};
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
