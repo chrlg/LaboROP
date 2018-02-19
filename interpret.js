@@ -110,13 +110,23 @@ function updateGraphe(){
    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
    // été générés de toutes façons avec leurs arcs)
    // (Note: servira plus tard pour les attributs)
-   for(var e in _grapheEnv){
-      gr+=(""+e+";");
+   for(let e in _grapheEnv){
+      let attr="";
+      let col=_grapheEnv[e].marques.color;
+      if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`,
+      gr+=(""+e+attr+";");
    }
    // Arcs ou aretes
    for(var i=0; i<_arcs.length; i++){
-      if(orient) gr+=""+_arcs[i].i.name +"->"+_arcs[i].a.name+";";
-      else gr+=""+_arcs[i].i.name+"--"+_arcs[i].a.name+";";
+      let attr="";
+      let col=_arcs[i].marques.color;
+      let val=_arcs[i].marques.val;
+      let label=_arcs[i].marques.label;
+      if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
+      if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
+      else if(val && val.t=="number") attr=attr+`[label="${""+val.val}"]`;
+      if(orient) gr+=""+_arcs[i].i.name +"->"+_arcs[i].a.name+attr+";";
+      else gr+=""+_arcs[i].i.name+"--"+_arcs[i].a.name+attr+";";
    }
    gr+="}\n";
    // Envoie le graphe au thread principal, qui appelera dot avec
