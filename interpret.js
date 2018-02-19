@@ -384,7 +384,7 @@ function evaluate(expr){
                   if(a.val[i][j] != b.val[i][j]) return false;
                }
             }
-            _opCnt += a.val*length*a.val*length-1;
+            _opCnt += a.val.length*a.val.length-1;
             return true;
          }
 	 if(a.t=="struct"){
