@@ -365,6 +365,22 @@ function initStorage(){
       listFiles.push(currentFile);
       saveFiles();
    }
+
+   // Solution Labo2
+   let sol2=false;
+   for(let i=0; i<listFiles.length; i++){
+      if(listFiles[i].name=="Labo2 - solu prof") sol2=listFiles[i];
+   }
+   if(!sol2) {
+      sol2={name:"Labo2 - solu prof", version:0};
+      listFiles.push(sol2);
+   }
+
+   if(sol2.version < sol2version){
+      sol2.version=sol2version;
+      sol2.code = sol2code;
+   }
+   saveFiles();
 }
 
 initStorage();
