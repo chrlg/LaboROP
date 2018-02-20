@@ -1356,12 +1356,10 @@ onmessage = function (e){
    }
    try{
       var str=parseTabulation(e.data);
-      console.log("tab", str);
       var out = grlang.parse(str);
       interpret(out);
       postMessage({termine: 0, opcnt:_opCnt});
    }catch(e){
-      console.log(e);
       if(e.error) {
 	 if(e.error=="exit") {
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",

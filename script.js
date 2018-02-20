@@ -11,6 +11,7 @@ var _grlg = {
    zoommin:false
 };
 
+var timeout=false;
 function messageFromWorker(event){
    if(event.data.error){
       let e=event.data;
@@ -21,6 +22,8 @@ function messageFromWorker(event){
       if(e.msg) $e.append("<pre>"+e.msg+"</pre>");
       errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
       lastError = e;
+      worker=false;
+      if(timeout) clearTimeout(timeout); timeout=false;
       return;
    }
    if(event.data.print){
@@ -33,6 +36,8 @@ function messageFromWorker(event){
    }
    if(event.data.termine!==undefined){
       $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
+      worker=false;
+      if(timeout) clearTimeout(timeout); timeout=false;
    }
 }
 
@@ -45,7 +50,6 @@ function oneditorChange(e){
    realEditorChange();
 }
 
-var timeout=false;
 function realEditorChange(){
    if(worker) worker.terminate();
    if(timeout) clearTimeout(timeout);
