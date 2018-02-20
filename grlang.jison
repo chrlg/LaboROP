@@ -1,3 +1,4 @@
+/* © C. Le Gal 2017-2018 */
 %lex
 
 %{
@@ -134,10 +135,10 @@ instructionNoColon
 	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
       }
       | lvalue "+=" expr {
-	 $$ = { t:"+=", left: $1, right: $3, ln:@2.first_line};
+	 $$ = { t:"=", left: [$1], right: {t:"+", left:$1, right:$3, ln:@2.first_line}, ln:@2.first_line};
       }
       | lvalue "-=" expr {
-	 $$ = { t:"-=", left: $1, right: $3, ln:@2.first_line};
+	 $$ = { t:"=", left: [$1], right: {t:"-", left:$1, right:$3, ln:@2.first_line}, ln:@2.first_line};
       }
       | lvalue "++" {
 	 $$ = { t:"++", left: $1, ln:@2.first_line};
@@ -178,8 +179,19 @@ instructionNoColon
       | exit '(' expr ')' {
 	 $$ = {t:"exit", arg:$3, ln:@1.first_line};
       }
+      | "BEGIN" manySemis "END" {
+         $$ = {t:"pass"};
+      }
       | "$" {
 	 $$ = {t:"$", i:$1};
+      }
+      ;
+manySemis
+      : {
+         $$=false;
+      }
+      | ";" manySemis {
+         $$=false;
       }
       ;
 
@@ -339,6 +351,18 @@ expr
       | "Sommet" expr {
 	 $$={t:"SOMMET", arg:$2, ln:@1.first_line};
       }
+      | lvalue "[" borne ":" borne "]" {
+         $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
+      }
+      ;
+
+borne
+      : expr {
+         $$=$1;
+      }
+      | {
+         $$=false;
+      }
       ;
 
 lvalue
@@ -451,3 +475,4 @@ program
 
 %%
 
+// © C. Le Gal 2017-2018

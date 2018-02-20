@@ -1,3 +1,4 @@
+// © C. Le Gal, 2017-2018
 importScripts("grlang.js");
 
 // Les environnements
@@ -233,7 +234,8 @@ function evaluateLVal(lv, direct){
 
       if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
-	 if(o.length==2) return [v.marques, lv.f]; // Sommet
+         let vv=_grapheEnv[v.name];
+	 if(o.length==2) return [vv.marques, lv.f]; // Sommet
 	 if(o.length==6) {
 	    var w=evaluateArc(o, lv.ln);
 	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
@@ -469,7 +471,7 @@ function evaluate(expr){
       var ref=evaluateLVal(expr);
       if(ref.length!=6) throw {error:"interne", name:"Erreur interne", msg:"L-Value d'une arête mal évaluée",
 	 ln:expr.ln};
-      var v=evaluateArc(ref);
+      var v=evaluateArc(ref, expr.ln);
       if(v===undefined) throw {error:"type", name:"Arc ou arête inexistant", msg:"", ln:expr.ln};
       if(v.t=="null") return v;
       if(v.t=="Arc" || v.t=="Arete") return v;
@@ -672,6 +674,25 @@ function evaluate(expr){
    }
    if(expr.t=="struct"){
       return JSON.parse(JSON.stringify(expr));
+   }
+   if(expr.t=="subarray"){
+      let tab=evaluate(expr.tab);
+      if(tab.t!="array")
+         throw {error:"type", name:"Pas un tableau", msg:"Utilisation de [...] sur un objet non indexable", ln:expr.ln};
+      let b0=0;
+      let b1=false;
+      if(expr.indexinf){
+         let idinf=evaluate(expr.indexinf);
+         if(idinf.t!="number") throw {error:"type", name:"Index de tableau non entier", msg:"", ln:expr.indexinf.ln};
+         b0 = idinf.val;
+      }
+      if(expr.indexsup){
+         let idsup=evaluate(expr.indexsup);
+         if(idsup.t!="number") throw {error:"type", name:"Index de tableau non entier", msg:"", ln:expr.indexinf.ln};
+         b1 = idsup.val;
+      }
+      if(b1===false) return {t:"array", val:tab.val.slice(b0)};
+      else return {t:"array", val:tab.val.slice(b0, b1)};
    }
    console.log("Cannot evaluate", expr);
 }
@@ -952,7 +973,7 @@ function regularCheck(){
    }
    if(_strChange){
       _strChange=false;
-      _str=_str.slice(-5000);
+      _str=_str.slice(-10000);
       postMessage({print: _str});
    }
 }
@@ -1222,8 +1243,8 @@ function preArcs(args, ln){
       msg:"La fonction arcs/aretes attend un argument de type Sommet", ln:args[0].ln};
    var rep=[];
    for(var i=0; i<_arcs.length; i++){
-      if(_arcs[i].i==a) rep.push(_arcs[i]);
-      else if(_arcs[i].a==a && _arcs[i].t=="Arete") {
+      if(_arcs[i].i.name==a.name) rep.push(_arcs[i]);
+      else if(_arcs[i].a.name==a.name && _arcs[i].t=="Arete") {
 	 // Dans le cas précis de arete, on inverse les sommets
 	 // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
 	 // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
@@ -1237,9 +1258,13 @@ function preArcs(args, ln){
 }
 
 function preSommets(args, ln){
-   if(args.length!=0) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction sommets s'utilise sans arguments", ln:ln};
-   return {t:"array", val:Object.values(_grapheEnv)};
+   if(args.length==0) return {t:"array", val:Object.values(_grapheEnv)};
+   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction sommets s'utilise avec 0 ou 1 argument", ln:ln};
+   let num=evaluate(args[0]);
+   if(num.t!="number") throw {error:"args", name:"Mauvais type d'argument",
+      msg:"L'argument de la fonction sommets, s'il y en a, doit être entier", ln:ln};
+   return Object.values(_grapheEnv)[num.val];
 }
 
 function preLen(args, ln){
@@ -1331,6 +1356,7 @@ onmessage = function (e){
    }
    try{
       var str=parseTabulation(e.data);
+      console.log("tab", str);
       var out = grlang.parse(str);
       interpret(out);
       postMessage({termine: 0, opcnt:_opCnt});

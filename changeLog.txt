@@ -199,3 +199,8 @@ de toutes façons définir une variable de même nom qu'un sommet)
         la dernière version.
         Sauf que pour avoir la version qui ne va pas dans le cache... il vous faut d'abord
         recharger (une dernière fois) interpret.js, grlang.jison, ...
+
+19/2/2018:
+   * Ajouts ou modifications
+      - Vous pouvez maintenant ajouter un attribut "color" à un sommet, arc ou arête
+        Dans ce cas, il sera représenté avec cette couleur, et en gras, dans le graphe

@@ -12,23 +12,19 @@ var _grlg = {
 };
 
 function messageFromWorker(event){
-   var $m=$("#misc");
-   if(errorMarker){
-      editor.session.removeMarker(errorMarker);
-      errorMarker=false;
-   }
    if(event.data.error){
-      var e=event.data;
-      var ln=e.ln;
-      $m.append("<span>Line "+ln+" </span> : ");
-      $m.append("<b>"+e.name+"</b><br>");
-      if(e.msg) $("#misc").append("<pre>"+e.msg+"</pre>");
+      let e=event.data;
+      let ln=e.ln;
+      let $e=$("#errors");
+      $e.append("<span>Line "+ln+" </span> : ");
+      $e.append("<b>"+e.name+"</b><br>");
+      if(e.msg) $e.append("<pre>"+e.msg+"</pre>");
       errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
       lastError = e;
       return;
    }
    if(event.data.print){
-      $m.append("<pre class='console'>"+event.data.print+"</pre>");
+      $("#console").text(event.data.print);
       return;
    }
    if(event.data.graph){
@@ -36,12 +32,7 @@ function messageFromWorker(event){
       return;
    }
    if(event.data.termine!==undefined){
-      $m.append("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
-   }
-
-   for(var i=0; i<event.data.length; i++){
-      if(event.data[i]=="INVALID") $m.append("<span>###</span> ");
-      else $m.append("<b>"+event.data[i]+"</b> ");
+      $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
    }
 }
 
@@ -62,8 +53,15 @@ function realEditorChange(){
    worker = new Worker("interpret.js");
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
-   timeout=setTimeout(Terminate, 20000);
-   $("#misc").empty();
+   timeout=setTimeout(Terminate, 5000);
+   $("#console").empty();
+   $("#status").empty();
+   $("#errors").empty();
+   $("#svgcont").empty();
+   if(errorMarker){
+      editor.session.removeMarker(errorMarker);
+      errorMarker=false;
+   }
 }
 
 function saveCode(e, f, g){
@@ -82,6 +80,7 @@ function Terminate(){
    timeout=false;
    if(worker) worker.terminate();
    worker=false;
+   $("#status").html("<i>Programme en boucle, interrompu au bout de 5 secondes</i>");
 }
 
 function zoomGraph(){

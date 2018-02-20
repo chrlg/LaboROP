@@ -152,7 +152,7 @@ div#misc{
    border:0;
 }
 
-pre.console{
+pre#console{
    white-space: pre-wrap;
    word-wrap: break-word;
 }
