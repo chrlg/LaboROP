@@ -28,6 +28,8 @@ function messageFromWorker(event){
    }
    if(event.data.print){
       $("#console").text(event.data.print);
+      let $m=$("#misc")[0];
+      m.scrollTop=m.scrollHeight;
       return;
    }
    if(event.data.graph){

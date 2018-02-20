@@ -234,8 +234,7 @@ function evaluateLVal(lv, direct){
 
       if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
-         let vv=_grapheEnv[v.name];
-	 if(o.length==2) return [vv.marques, lv.f]; // Sommet
+	 if(o.length==2) return [v.marques, lv.f]; // Sommet
 	 if(o.length==6) {
 	    var w=evaluateArc(o, lv.ln);
 	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
@@ -789,12 +788,34 @@ function setRef(ref, val, ln){
       setRef(ref.slice(4), val, ln);
       return;
    }
-   // Copy "profonde" pour les tableaux et structures
    if(ref[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
 	    msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
-   if(val.t=="array" || val.t=="struct" || val.t=="matrix"){
-      ref[0][ref[1]] = JSON.parse(JSON.stringify(val));
+
+   // Copy "profonde" pour les tableaux et structures (mais récursive, car si un item contient un truc qui ne
+   // se copie pas, comme un sommet, y compris les attributs de ce sommet qui peuvent être toute une structure
+   // alors la copie profonde s'arrête à ces trucs
+   if(val.t=="array"){
+      let leftval=[];
+      ref[0][ref[1]] = {t:"array", val:leftval};
+      for(let i=0; i<val.val.length; i++){
+         setRef([leftval, i], val.val[i], ln);
+      }
+      return;
    }
+   if(val.t=="struct"){
+      let leftval={};
+      ref[0][ref[1]] = {t:"struct", f:leftval};
+      for(let x in val.f){
+         setRef([leftval, x], val.f[x], ln);
+      }
+      return;
+   }
+   // Copie profonde bourrin pour les matrices (les champs d'une matrice sont tous des scalaires)
+   if(val.t=="matrix"){
+      ref[0][ref[1]] = JSON.parse(JSON.stringify(val));
+      return;
+   }
+   // Case d'une matrice
    else if(typeof ref[0][0]=="number" && typeof ref[1]=="number"){
       if(val.t!="number") throw {error:"type", name:"Erreur de type",
                msg:"Un coefficient matriciel est un scalaire", ln:ln};
@@ -1246,8 +1267,8 @@ function preArcs(args, ln){
       msg:"La fonction arcs/aretes attend un argument de type Sommet", ln:args[0].ln};
    var rep=[];
    for(var i=0; i<_arcs.length; i++){
-      if(_arcs[i].i.name==a.name) rep.push(_arcs[i]);
-      else if(_arcs[i].a.name==a.name && _arcs[i].t=="Arete") {
+      if(_arcs[i].i==a) rep.push(_arcs[i]);
+      else if(_arcs[i].a==a && _arcs[i].t=="Arete") {
 	 // Dans le cas précis de arete, on inverse les sommets
 	 // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
 	 // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
