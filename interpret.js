@@ -234,6 +234,7 @@ function evaluateLVal(lv, direct){
 
       if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
+         if(lv.f=="color" || lv.f=="val" || lv.f=="label") _grapheChange=true;
 	 if(o.length==2) return [v.marques, lv.f]; // Sommet
 	 if(o.length==6) {
 	    var w=evaluateArc(o, lv.ln);
@@ -1324,6 +1325,14 @@ function preMaths1(args, ln, fname){
    throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
 }
 
+function preRefresh(args, ln){
+   if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction refresh s'utilise sans argument", ln:ln};
+   _grapheChange=true;
+   _strChange=true;
+   regularCheck();
+}
+
 function preOpCnt(){
    return {t:"number", val:_opCnt};
 }
@@ -1346,6 +1355,7 @@ function interpret(tree){
    _predefEnv["pi"]={t:"number", val:Math.PI};
    _predefEnv["random"]={t:"predfn", f:preRandom};
    _predefEnv["print"]={t:"predfn", f:prePrint};
+   _predefEnv["refresh"]={t:"predfn", f:preRefresh};
    _predefEnv["println"]={t:"predfn", f:prePrintln};
    _predefEnv["arcs"]={t:"predfn", f:preArcs};
    _predefEnv["aretes"]={t:"predfn", f:preArcs};

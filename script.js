@@ -24,12 +24,14 @@ function messageFromWorker(event){
       lastError = e;
       worker=false;
       if(timeout) clearTimeout(timeout); timeout=false;
+      let $m=$("#misc")[0];
+      $m.scrollTop=$m.scrollHeight;
       return;
    }
    if(event.data.print){
       $("#console").text(event.data.print);
       let $m=$("#misc")[0];
-      m.scrollTop=m.scrollHeight;
+      $m.scrollTop=$m.scrollHeight;
       return;
    }
    if(event.data.graph){
@@ -40,6 +42,8 @@ function messageFromWorker(event){
       $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
       worker=false;
       if(timeout) clearTimeout(timeout); timeout=false;
+      let $m=$("#misc")[0];
+      $m.scrollTop=$m.scrollHeight;
    }
 }
 
