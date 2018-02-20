@@ -694,7 +694,7 @@ function evaluate(expr){
       if(b1===false) return {t:"array", val:tab.val.slice(b0)};
       else return {t:"array", val:tab.val.slice(b0, b1)};
    }
-   console.log("Cannot evaluate", expr);
+   console.trace("Cannot evaluate", expr);
 }
 
 // Fonction interne d'ajout de sommet
@@ -773,6 +773,9 @@ function getRef(ref){
 function setRef(ref, val, ln){
    // Cas des arcs et arêtes
    if(ref.length==6){
+      if(ref[0]==_grapheEnv || ref[2]==_grapheEnv){ // Arc constitué d'un sommet immutable
+         throw {error:"env", name:"Surdéfinition d'un arc", msg:"Impossible d'écraser l'arc ou l'arête ("+ref[1]+","+ref[3]+")", ln:ln};
+      }
       if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
 	 setRef(ref.slice(0,2), val, ln);
 	 setRef(ref.slice(2,4), val, ln);
