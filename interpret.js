@@ -114,7 +114,7 @@ function updateGraphe(){
    for(let e in _grapheEnv){
       let attr="";
       let col=_grapheEnv[e].marques.color;
-      if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`,
+      if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
       gr+=(""+e+attr+";");
    }
    // Arcs ou aretes
