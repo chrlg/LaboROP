@@ -1420,6 +1420,29 @@ function preImport(args, ln){
    _modules[e.val]=true;
 }
 
+function prePop(args, ln){
+   if(args.length!=1 && args.length!=2) throw {error:"args", name:"Mauvais nombre d'arguments", 
+      msg:"pop(tableau [,indice]) s'utilise avec deux arguments", ln:ln};
+   let ref=evaluateLVal(args[0]);
+   let lvv=ref[0][ref[1]];
+   if(lvv.t!="array") throw {error:"type", name:"Mauvais type pour pop", 
+      msg:"Le premier argument de pop est obligatoirement un tableau", ln:args[0].ln};
+   let index=lvv.val.length-1;
+   if(args.length==2){
+      let argidx=evaluate(args[1]);
+      if(argidx.t!="number") throw {error:"args", name:"Mauvais type pour pop", 
+         msg:"Le deuxième argument de pop, s'il existe, est un entier (indice de retrait)", ln:args[1].ln};
+      index = argidx.val;
+   }
+   let r=lvv.val.splice(index,1);
+   if(r.length==0) {
+      if(lvv.val.length==0) throw {error:"exec", name:"Tableau vide", msg:"", ln:ln};
+      throw {error:"exec", name:"Index invalide",
+         msg:"L'élement d'index "+index+" n'existe pas", ln:ln};
+   }
+   return r[0];
+}
+
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
@@ -1457,6 +1480,7 @@ function interpret(tree){
    _predefEnv["atan"]={t:"predfn", f:preMaths1};
    _predefEnv["abs"]={t:"predfn", f:preMaths1};
    _predefEnv["import"]={t:"predfn", f:preImport};
+   _predefEnv["pop"]={t:"predfn", f:prePop};
    _globalEnv={};
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
