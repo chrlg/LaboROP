@@ -1041,6 +1041,19 @@ function regularCheck(ultimate){
    }
 }
 
+function interpPlusEgal(tree){
+   let lv=evaluateLVal(tree.left);
+   if(lv.t=="array"){ // Pour les tableaux on fait une modification in situ
+      lvv = lv[0][lv[1]];
+      let r=evaluate(tree.right);
+      if(r.t=="array") lvv.val = lvv.val.concat(r.val);
+      else lvv.val.push(r);
+   }else{ // Pour les autres (pour l'instant) on transforme ça en a=a+b
+      let r=evaluate({t:"+", left:tree.left, right:tree.right, ln:tree.ln});
+      setRef(lv, r, tree.ln);
+   }
+}
+
 // LISTE D'INSTRUCTIONS
 function interpretWithEnv(tree, isloop){
    for(var i=0; i<tree.length; i++){
@@ -1118,6 +1131,11 @@ function interpretWithEnv(tree, isloop){
 	 interpExit(tree[i].arg);
 	 return "exit";
       }
+      if(tree[i].t=="+="){
+         interpPlusEgal(tree[i]);
+         continue;
+      }
+
       if(tree[i].t=="$"){
 	 console.log(eval(tree[i].i.slice(1)));
 	 continue;
