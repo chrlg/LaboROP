@@ -64,6 +64,18 @@ div.show {
    border:0;
 }
 
+#canvascont {
+   overflow:auto;
+   width:100%;
+   display:inline-block;
+   position:absolute;
+   top:1px;
+   bottom:0;
+   padding:0;
+   margin:0;
+   border:0;
+}
+
 #show {
    overflow:hidden;
 }

@@ -3,6 +3,7 @@ var worker;
 var Range;
 var errorMarker=false;
 var lastError;
+var timeoutLen=60000;
 
 var _grlg = {
    svgw:false,
@@ -35,7 +36,15 @@ function messageFromWorker(event){
       return;
    }
    if(event.data.graph){
+      $("#svgcont").show();
+      $("#canvascont").hide();
       showGraph(event.data.graph);
+      return;
+   }
+   if(event.data.mapgr){
+      $("#svgcont").hide();
+      $("#canvascont").show();
+      showMap(event.data.mapgr);
       return;
    }
    if(event.data.termine!==undefined){
@@ -63,7 +72,7 @@ function realEditorChange(){
    worker = new Worker("interpret.js");
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
-   timeout=setTimeout(Terminate, 5000);
+   timeout=setTimeout(Terminate, timeoutLen);
    $("#console").empty();
    $("#status").empty();
    $("#errors").empty();
@@ -90,7 +99,7 @@ function Terminate(){
    timeout=false;
    if(worker) worker.terminate();
    worker=false;
-   $("#status").html("<i>Programme en boucle, interrompu au bout de 5 secondes</i>");
+   $("#status").html("<i>Programme en boucle, interrompu au bout de "+(timeoutLen/1000)+" secondes</i>");
 }
 
 function zoomGraph(){
@@ -117,8 +126,31 @@ function showGraph(str){
       // Pour permettre aisément la sauvegarde (via bouton dans le coin)
       $("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
    }catch(e){
-      console.log("Viz", str);
       console.log(e);
+   }
+}
+
+function showMap(lines){
+   let cv=$("#canvascont canvas")[0];
+   let ctx=cv.getContext("2d");
+   ctx.clearRect(0, 0, 1000, 1000);
+   ctx.strokeStyle="#000";
+   for(let i=0; i<lines.length; i++){
+      let L=lines[i];
+      if(L.length>4) continue;
+      ctx.beginPath();
+      ctx.moveTo(L[0], L[1]);
+      ctx.lineTo(L[2], L[3]);
+      ctx.stroke();
+   }
+   for(let i=0; i<lines.length; i++){
+      let L=lines[i];
+      if(L.length<5) continue;
+      ctx.beginPath();
+      ctx.strokeStyle=L[4];
+      ctx.moveTo(L[0], L[1]);
+      ctx.lineTo(L[2], L[3]);
+      ctx.stroke();
    }
 }
 

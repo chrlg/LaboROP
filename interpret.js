@@ -10,10 +10,12 @@ importScripts("grlang.js");
 // _envStack est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
 var _predefEnv = {};
 var _grapheEnv = {};
+var _grapheMode = "dot"; // Défaut : rendu avec graphviz
 var _globalEnv = {};
 var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
 var _numSommet=0, _numArc=0; // Compteur sommets et arcs
+var _modules = {}; // Modules importés
 
 var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
               // mais on a aussi besoin, globalement, d'une liste d'arcs
@@ -132,6 +134,37 @@ function updateGraphe(){
    gr+="}\n";
    // Envoie le graphe au thread principal, qui appelera dot avec
    postMessage({graph:gr});
+}
+
+// Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
+// ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
+function updateMap(){
+   let gr=[];
+   let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
+   for(let n in _grapheEnv){
+      let s=_grapheEnv[n];
+      let x=s.marques.x.val;
+      let y=s.marques.y.val;
+      if(x<xmin) xmin=x;
+      if(x>xmax) xmax=x;
+      if(y<ymin) ymin=y;
+      if(y>ymax) ymax=y;
+   }
+   for(let i=0; i<_arcs.length; i++){
+      let s1=_arcs[i].i;
+      let s2=_arcs[i].a;
+      let x1=s1.marques.x.val;
+      let x2=s2.marques.x.val;
+      let y1=s1.marques.y.val;
+      let y2=s2.marques.y.val;
+      x1=(x1-xmin)*1000.0/(xmax-xmin);
+      x2=(x2-xmin)*1000.0/(xmax-xmin);
+      y1=(y1-ymin)*1000.0/(ymax-ymin);
+      y2=(y2-ymin)*1000.0/(ymax-ymin);
+      if(_arcs[i].marques.color) gr.push([x1,y1,x2,y2,_arcs[i].marques.color.val]);
+      else gr.push([x1,y1,x2,y2]);
+   }
+   postMessage({mapgr:gr});
 }
 
 
@@ -990,11 +1023,12 @@ function interpExit(arg){
 }
 
 
-function regularCheck(){
+function regularCheck(ultimate){
    _instrCnt=0;
    if(_grapheChange){
       _grapheChange=false;
-      updateGraphe();
+      if(_grapheMode=="dot") updateGraphe();
+      else if(_grapheMode=="map" && ultimate) updateMap();
    }
    if(_strChange){
       _strChange=false;
@@ -1337,6 +1371,33 @@ function preOpCnt(){
    return {t:"number", val:_opCnt};
 }
 
+function importGraphe(g){
+   for(let i=0; i<g[0].length; i++){
+      let x={t:"number", val:g[0][i][0]};
+      let y={t:"number", val:g[0][i][1]};
+      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
+   }
+   for(let i=0; i<g[1].length; i++){
+      let s1=_grapheEnv["S"+g[1][i][0]];
+      let s2=_grapheEnv["S"+g[1][i][1]];
+      _arcs.push({t:"Arete", i:s1, a:s2, marques:{}});
+   }
+   _grapheChange=true;
+   _grapheMode="map";
+}
+
+function preImport(args, ln){
+   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction import s'utilise avec un argument", ln:ln};
+   let e=evaluate(args[0]);
+   if(e.t!="string") throw {error:"args", name:"Mauvais type d'argument",
+      msg:"La fonction import attent une chaîne", ln:ln};
+   if(_modules[e.val]) return ; // Déjà importé
+   console.log("importing...");
+   importScripts("mod_"+e.val+".js");
+   _modules[e.val]=true;
+}
+
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
@@ -1373,11 +1434,12 @@ function interpret(tree){
    _predefEnv["acos"]={t:"predfn", f:preMaths1};
    _predefEnv["atan"]={t:"predfn", f:preMaths1};
    _predefEnv["abs"]={t:"predfn", f:preMaths1};
+   _predefEnv["import"]={t:"predfn", f:preImport};
    _globalEnv={};
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
    interpretWithEnv(tree, false, false);
-   regularCheck();
+   regularCheck(true);
 }
 
 onmessage = function (e){
@@ -1402,8 +1464,12 @@ onmessage = function (e){
 	 }
 	 else postMessage(e);
       }
-      else {
+      else if(e.msg){
 	 postMessage({error: "syntax", name: "Erreur de syntaxe", msg: e.msg, ln: e.line+1, err:e});
+      }
+      else {
+         console.trace(e);
+         postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e)});
       }
    }
 }
