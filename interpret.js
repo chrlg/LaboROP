@@ -540,9 +540,13 @@ function evaluate(expr){
       // Cas particulier pour le + : on accepte aussi chaines et tableau, et booléens
       if(expr.t=="+"){
 	 if(a.t=="array"){
-	    var val=a.val.slice();
-	    val.push(b);
-	    return {t:"array", val:val};
+            if(b.t=="array"){ // Concaténation
+               return {t:"array", val:a.val.concat(b.val)};
+            }else{
+               let val=a.val.slice(); // Copie
+               val.push(b);
+               return {t:"array", val:val};
+            }
 	 }
          if(a.t=="matrix"){
             if(b.t=="number"){ // M + x = addition de x à tous les coefs de M
