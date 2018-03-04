@@ -135,6 +135,7 @@ function showMap(lines){
    let ctx=cv.getContext("2d");
    ctx.clearRect(0, 0, 1000, 1000);
    ctx.strokeStyle="#000";
+   ctx.lineWidth=1;
    for(let i=0; i<lines.length; i++){
       let L=lines[i];
       if(L.length>4) continue;
@@ -143,6 +144,7 @@ function showMap(lines){
       ctx.lineTo(L[2], L[3]);
       ctx.stroke();
    }
+   ctx.lineWidth=3;
    for(let i=0; i<lines.length; i++){
       let L=lines[i];
       if(L.length<5) continue;

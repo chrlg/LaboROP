@@ -35,7 +35,7 @@ const NULL={t:"null"};
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
-   var hh=h;
+   let hh=h;
    hh.msg=e;
    if(hh.token && hh.token=="INVALID"){
       hh.error="lexico";
@@ -56,20 +56,20 @@ grlang.yy.parseError = function(e, h){
 // Ce qui permettra à l'analyseur syntaxique de fonction comme pour un langage normal. En traitant §{ et §} comme
 // le begin/end de pascal ou le { } de C/C++/Java/etc
 function parseTabulation(str){
-   var out=""; // Variable contenant le code transformé
-   var startLine=true; // Indique si on vient de commencer une ligne (au début, c'est forcément le cas)
-   var indents=[0]; // Nombre d'espace en début de ligne pour le bloc courant
-   var ln=1; // Numéro de ligne
+   let out=""; // Variable contenant le code transformé
+   let startLine=true; // Indique si on vient de commencer une ligne (au début, c'est forcément le cas)
+   let indents=[0]; // Nombre d'espace en début de ligne pour le bloc courant
+   let ln=1; // Numéro de ligne
    str+="§;\n§;\n"; // Juste pour forcer à finir tous les blocs commencés
    while(str!=""){
       if(startLine){ // Si on vient de commencer une ligne (on vient de commencer le fichier ou de voir un retour charriot)
 	 startLine=false;  // on génère potentiellement des §{/§}.   
-	 var m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
+	 let m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
 	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
 	 if(str[0]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
 	    continue;
 	 }
-	 var expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
+	 let expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
 	 if(m==expected) continue; // C'est le même, donc rien à faire de spécial. Ni §{ ni §}
 	 if(m>expected){ // Il y en a plus. Donc on vient de commencer un bloc indenté. 
 	    out+="§{"; // On génère un §{ pour l'analyseur syntaxique
@@ -95,7 +95,7 @@ function parseTabulation(str){
 	 startLine=true;
 	 continue;
       }else{ // Sinon, on se contente de prendre tout ce qui est jusqu'à la fin de la ligne et l'ajouter à la sortie
-	 var m=str.match(/^[^\n]+/)[0];
+	 let m=str.match(/^[^\n]+/)[0];
 	 out += m;
 	 str=str.slice(m.length);
 	 continue;
@@ -106,8 +106,8 @@ function parseTabulation(str){
 
 // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
 function updateGraphe(){
-   var gr="";
-   var orient = isOrient();
+   let gr="";
+   let orient = isOrient();
    if(orient) gr+="digraph{";
    else gr+="graph{";
    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
@@ -120,7 +120,7 @@ function updateGraphe(){
       gr+=(""+e+attr+";");
    }
    // Arcs ou aretes
-   for(var i=0; i<_arcs.length; i++){
+   for(let i=0; i<_arcs.length; i++){
       let attr="";
       let col=_arcs[i].marques.color;
       let val=_arcs[i].marques.val;
@@ -177,7 +177,7 @@ function isOrient(){
 // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
 function getEnv(sym){
    var envs=[_localEnv, _globalEnv, _grapheEnv, _predefEnv];
-   for(var i=0; i<envs.length; i++){
+   for(let i=0; i<envs.length; i++){
       if(envs[i][sym]!==undefined){
 	 if(envs[i][sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
 	 return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
@@ -224,7 +224,7 @@ function evaluateArc(o, ln){
       throw {error:"type", name:"Pas un arc ou une arête", 
 	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
    }
-   for(var i=0; i<_arcs.length; i++){
+   for(let i=0; i<_arcs.length; i++){
       if(_arcs[i].i==s1 && _arcs[i].a==s2) return _arcs[i];
       if(o[5][0]=="-" && _arcs[i].a==s1 && _arcs[i].i==s2) return _arcs[i];
    }
@@ -252,17 +252,17 @@ function evaluateLVal(lv, direct){
    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
       if(lv.t=="arete" && isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
       if(lv.t=="arc" && !isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
-      var a=getIdlv(lv.initial);
-      var b=getIdlv(lv.terminal);
-      var cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
-      var c=getIdlv(cn);
+      let a=getIdlv(lv.initial);
+      let b=getIdlv(lv.terminal);
+      let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
+      let c=getIdlv(cn);
       return [a, lv.initial, b, lv.terminal, c, cn];
    }
 
    else if(lv.t=="field") { // a.f=
-      var o=evaluateLVal(lv.o); // référence ver a
-      var e=o[0];  // Environnement de a
-      var i=o[1];  // Nom de a dans cet environnement
+      let o=evaluateLVal(lv.o); // référence ver a
+      let e=o[0];  // Environnement de a
+      let i=o[1];  // Nom de a dans cet environnement
       let v=getRef(o);
 
       if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
@@ -376,37 +376,39 @@ function boolPowMat(a,k){
 
 // EXPRESSIONS
 function evaluate(expr){
+   // JIT
+   if(expr.l!==undefined) return expr.l();
+
    // Les valeurs natives. 
    if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
+      expr.l=function(){return expr;};
       return expr;
    }
 
    // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
    // (le langage interdit donc les pointeurs de fonctions)
    if(expr.t=="id"){
-      var e=getEnv(expr.name);
-      if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
-      if(e.t=="predfn") throw {error:"type", name:"Variable incorrecte", 
+      if(_predefEnv[expr.name]){
+         if(_predefEnv[expr.name].t == "predvar") expr.l = _predefEnv[expr.name].f;
+         else if(_predefEnv[expr.name].t == "predfn") throw {error:"type", name:"Variable incorrecte", 
 	    msg: "Tentative d'utiliser la fonction prédéfinie "+expr.name+ " comme une variable",
 	    ln:expr.ln};
-      if(e.t=="DEF") throw {error:"type", name:"Variable incorrecte",
-	    msg: ""+expr.name+" est une fonction", ln:expr.ln};
-      if(e.t=="predvar") return e.f();
-      return e;
+         else expr.l=function(){return _predefEnv[expr.name];};
+      }
+      else if(_grapheEnv[expr.name]) expr.l=function(){return _grapheEnv[expr.name];}
+      else if(_localEnv[expr.name]!==undefined && _localEnv[expr.name].t!="global") expr.l=function(){return _localEnv[expr.name]};
+      else if(_globalEnv[expr.name]!==undefined){
+         if(_globalEnv[expr.name].t=="DEF") throw {error:"type", name:"Variable incorrecte", msg: ""+expr.name+" est une fonction", ln:expr.ln};
+         expr.l=function(){return _globalEnv[expr.name];};
+      }
+      else throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
+      return expr.l();
    }
 
    // Comparaison (égalité)
    // Pour les valeurs scalaires, compare la valeur. Pour les sommets et arcs, la référence suffit
    // Pour les vecteurs et structures : comparaison récursive
    if(expr.t=="==" || expr.t=="!="){
-      var a=evaluate(expr.left);
-      var b=evaluate(expr.right);
-      if(a.t=="global" || a.t=="predvar" || a.t=="predfn" || a.t=="DEF")
-	    throw {error:"exec", name:"Erreur interne", msg:""+a.t+" dans ==", ln:expr.ln};
-      if(a.t=="tuple")
-	    throw {error:"type", name:"Valeurs multiples", 
-		  msg:"Tentative d'utiliser l'opérateur de comparaison avec une valeur multiple",
-		  ln:expr.ln};
       function isEq(a,b){
          _opCnt++;
 	 if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
@@ -417,7 +419,7 @@ function evaluate(expr){
 	 if(a.t=="boolean" || a.t=="number" || a.t=="string") return a.val==b.val;
 	 if(a.t=="array"){
 	    if(a.val.length!=b.val.length) return false;
-	    for(var i=0; i<a.val.length; i++){
+	    for(let i=0; i<a.val.length; i++){
 	       if(!isEq(a.val[i], b.val[i])) return false;
 	    }
             _opCnt += a.val.length-1;
@@ -433,39 +435,65 @@ function evaluate(expr){
             return true;
          }
 	 if(a.t=="struct"){
-	    for(var f in a.f) if(b.f[f]===undefined) return false;
-	    for(var f in b.f) if(a.f[f]===undefined) return false;
-	    for(var f in a.f) if(!isEq(a.f[f], b.f[f])) return false;
+	    for(let f in a.f) if(b.f[f]===undefined) return false;
+	    for(let f in b.f) if(a.f[f]===undefined) return false;
+	    for(let f in a.f) if(!isEq(a.f[f], b.f[f])) return false;
 	    return true;
 	 }
       }
-      if(isEq(a, b)) return (expr.t=="==")?TRUE:FALSE;
-      else return (expr.t=="==")?FALSE:TRUE;
+      if(expr.t=="==") expr.l=function(){ 
+         if(isEq(evaluate(expr.left), evaluate(expr.right))) return TRUE;
+         else return FALSE;
+      }
+      else expr.l=function(){
+         if(isEq(evaluate(expr.left), evaluate(expr.right))) return FALSE;
+         else return TRUE;
+      }
+      return expr.l();
    }
 
    // and / or
-   if(expr.t=="&&" || expr.t=="||"){
-      var a=evaluate(expr.left);
-      if(a.t!="boolean")
-	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
-      if(a.val && expr.t=="||") return TRUE;
-      if(!a.val && expr.t=="&&") return FALSE;
-      var b=evaluate(expr.right);
-      if(b.t!="boolean")
-	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
-      if(b.val) return TRUE;
-      else return FALSE;
+   if(expr.t=="&&"){
+      expr.l=function(){
+         let a=evaluate(expr.left);
+         if(a.t!="boolean")
+            throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
+         if(!a.val) return FALSE;
+         let b=evaluate(expr.right);
+         if(b.t!="boolean")
+            throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+         if(b.val) return TRUE;
+         else return FALSE;
+      }
+      return expr.l();
+   }
+   if(expr.t=="||"){
+      expr.l=function(){
+         let a=evaluate(expr.left);
+         if(a.t!="boolean")
+            throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
+         if(a.val) return TRUE;
+         let b=evaluate(expr.right);
+         if(b.t!="boolean")
+            throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+         if(b.val) return TRUE;
+         else return FALSE;
+      }
+      return expr.l();
    }
 
    // xor
    if(expr.t=="xor"){
-      let a=evaluate(expr.left);
-      let b=evaluate(expr.right);
-      if(a.t!="boolean" || b.t!="boolean")
-	 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
-      if(a.val && !b.val) return TRUE;
-      if(!a.val && b.val) return TRUE;
-      return FALSE;
+      expr.l=function(){
+         let a=evaluate(expr.left);
+         let b=evaluate(expr.right);
+         if(a.t!="boolean" || b.t!="boolean")
+            throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+         if(a.val && !b.val) return TRUE;
+         if(!a.val && b.val) return TRUE;
+         return FALSE;
+      }
+      return expr.l();
    }
 
 
@@ -770,8 +798,8 @@ function evalSommet(som, creer){
 
 // Ajoute des sommets dans l'environnement _grapheEnv
 function creerSommets(liste){
-   for(var i=0; i<liste.length; i++){
-      var ev=evalSommet(liste[i], false);
+   for(let i=0; i<liste.length; i++){
+      let ev=evalSommet(liste[i], false);
       // On a récupéré un sommet existant
       if(ev.t=="Sommet") throw {error:"env", name:"Sommet déjà existant", msg:"Le sommet "+ev.name+" existe déjà", ln:liste[i].ln};
       // Un nom de sommet inexistant
@@ -930,8 +958,8 @@ function interpCall(call){
 	    msg:"Appel de "+call.f+" avec "+call.args.length+" argument(s) alors que "+
 	        fn.args.length+" sont attendus", ln:call.ln};
    var newEnv = {};
-   for(var i=0; i<call.args.length; i++){
-      var v=evaluate(call.args[i]);
+   for(let i=0; i<call.args.length; i++){
+      let v=evaluate(call.args[i]);
       newEnv[fn.args[i]] = v;
    }
    newEnv["*"]={t:"empty"};
@@ -977,9 +1005,9 @@ function interpFor(ins){
 	 msg:"La fin d'un range doit être un nombre", ln:ins.end.ln};
    if(step===undefined || step.t!="number") throw {error:"type", name:"Bornes du for non numériques",
 	 msg:"Le pas d'un range doit être un nombre", ln:ins.step.ln};
-   for(var i=start.val; i<end.val; i+=step.val){
+   for(let i=start.val; i<end.val; i+=step.val){
       setRef(comptRef, {t:"number", val:i});
-      var b=interpretWithEnv(ins.do, true);
+      let b=interpretWithEnv(ins.do, true);
       if(b=="break") break;
       if(b=="return") return "return";
    }
@@ -994,9 +1022,9 @@ function interpForeach(ins){
              ln:ins.range.ln};
    }
    var comptRef=evaluateLVal(ins.compteur);
-   for(var i=0; i<range.val.length; i++){
+   for(let i=0; i<range.val.length; i++){
       setRef(comptRef, range.val[i], ins.compteur.ln);
-      var b=interpretWithEnv(ins.do, true);
+      let b=interpretWithEnv(ins.do, true);
       if(b=="break") break;
       if(b=="return") return "return";
    }
@@ -1043,8 +1071,8 @@ function regularCheck(ultimate){
 
 function interpPlusEgal(tree){
    let lv=evaluateLVal(tree.left);
-   if(lv.t=="array"){ // Pour les tableaux on fait une modification in situ
-      lvv = lv[0][lv[1]];
+   let lvv = lv[0][lv[1]];
+   if(lvv.t=="array"){ // Pour les tableaux on fait une modification in situ
       let r=evaluate(tree.right);
       if(r.t=="array") lvv.val = lvv.val.concat(r.val);
       else lvv.val.push(r);
@@ -1056,91 +1084,91 @@ function interpPlusEgal(tree){
 
 // LISTE D'INSTRUCTIONS
 function interpretWithEnv(tree, isloop){
-   for(var i=0; i<tree.length; i++){
+   for(let ti of tree){
       if(_instrCnt++>1000000) regularCheck();
-      if(tree[i].t=="SOMMET"){
-	 creerSommets(tree[i].args);
+      if(ti.t=="SOMMET"){
+	 creerSommets(ti.args);
 	 continue;
       }
-      if(tree[i].t=="ARETE"){
-	 creerArete(tree[i].left, tree[i].right);
+      if(ti.t=="ARETE"){
+	 creerArete(ti.left, ti.right);
 	 continue;
       }
-      if(tree[i].t=="Arc"){
-	 creerArc(tree[i].left, tree[i].right);
+      if(ti.t=="Arc"){
+	 creerArc(ti.left, ti.right);
 	 continue;
       }
-      if(tree[i].t=="="){
-	 interpAffect(tree[i]);
+      if(ti.t=="="){
+	 interpAffect(ti);
 	 continue;
       }
-      if(tree[i].t=="++" || tree[i].t=="--"){
-	 evaluate(tree[i]);
+      if(ti.t=="++" || ti.t=="--"){
+	 evaluate(ti);
 	 continue;
       }
-      if(tree[i].t=="foreach"){
-         var b=interpForeach(tree[i]);
+      if(ti.t=="foreach"){
+         let b=interpForeach(ti);
 	 if(b=="return") return "return";
          continue;
       }
-      if(tree[i].t=="for"){
-	 var b=interpFor(tree[i]);
+      if(ti.t=="for"){
+	 var b=interpFor(ti);
 	 if(b=="return") return "return";
 	 continue;
       }
-      if(tree[i].t=="if"){
-	 var b=interpIf(tree[i], isloop);
+      if(ti.t=="if"){
+	 var b=interpIf(ti, isloop);
 	 if(isloop && b=="break") return "break";
 	 if(isloop && b=="continue") return "continue";
 	 if(b=="return") return "return";
 	 continue;
       }
-      if(tree[i].t=="while"){
-	 var b=interpWhile(tree[i]);
+      if(ti.t=="while"){
+	 var b=interpWhile(ti);
 	 if(b=="return") return "return";
 	 continue;
       }
-      if(tree[i].t=="call"){
-	 interpCall(tree[i]);
+      if(ti.t=="call"){
+	 interpCall(ti);
 	 continue;
       }
-      if(tree[i].t=="DEF"){
-	 interpDef(tree[i]);
+      if(ti.t=="DEF"){
+	 interpDef(ti);
 	 continue;
       }
-      if(tree[i].t=="break"){
+      if(ti.t=="break"){
 	 if(!isloop) throw {error:"exec", name:"Break en dehors d'une boucle",
 	       msg:"'break' ne peut être utilisé que dans une boucle for ou while",
-	       ln:tree[i].ln};
+	       ln:ti.ln};
 	 return "break";
       }
-      if(tree[i].t=="continue"){
+      if(ti.t=="continue"){
 	 if(!isloop) throw {error:"exec", name:"continue en dehors d'une boucle",
 	       msg:"'continue' ne peut être utilisé que dans une boucle for ou while",
-	       ln:tree[i].ln};
+	       ln:ti.ln};
 	 return "continue";
       }
-      if(tree[i].t=="pass"){
+      if(ti.t=="pass"){
          continue;
       }
-      if(tree[i].t=="return"){
-	 interpReturn(tree[i]);
+      if(ti.t=="return"){
+	 interpReturn(ti);
 	 return "return";
       }
-      if(tree[i].t=="exit"){
-	 interpExit(tree[i].arg);
+      if(ti.t=="exit"){
+	 interpExit(ti.arg);
 	 return "exit";
       }
-      if(tree[i].t=="+="){
-         interpPlusEgal(tree[i]);
+      if(ti.t=="+="){
+         interpPlusEgal(ti);
          continue;
       }
 
-      if(tree[i].t=="$"){
-	 console.log(eval(tree[i].i.slice(1)));
+      if(ti.t=="$"){
+	 console.log(eval(ti.i.slice(1)));
 	 continue;
       }
-      console.log("Can't do ", tree[i]);
+      console.log("Can't do ", ti);
    }
    return false;
 }
@@ -1399,10 +1427,19 @@ function importGraphe(g){
       let y={t:"number", val:g[0][i][1]};
       _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
    }
-   for(let i=0; i<g[1].length; i++){
-      let s1=_grapheEnv["S"+g[1][i][0]];
-      let s2=_grapheEnv["S"+g[1][i][1]];
-      _arcs.push({t:"Arete", i:s1, a:s2, marques:{}});
+   for(let p of g[1]){
+      let s1=_grapheEnv["S"+p[0]];
+      let s2=_grapheEnv["S"+p[1]];
+      let d={t:"number", val:0};
+      if(p.length==3) d.val=p[2];
+      else{
+         let x1=s1.marques.x;
+         let x2=s2.marques.x;
+         let y1=s1.marques.x;
+         let y2=s2.marques.x;
+         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+      }
+      _arcs.push({t:"Arete", i:s1, a:s2, marques:{val:d}});
    }
    _grapheChange=true;
    _grapheMode="map";
@@ -1465,7 +1502,7 @@ function interpret(tree){
    _predefEnv["println"]={t:"predfn", f:prePrintln};
    _predefEnv["arcs"]={t:"predfn", f:preArcs};
    _predefEnv["aretes"]={t:"predfn", f:preArcs};
-   _predefEnv["null"]=NULL;
+   _predefEnv["null"]={t:"predvar", f:function(){return NULL;}};
    _predefEnv["sqrt"]={t:"predfn", f:preMaths1};
    _predefEnv["sqr"]={t:"predfn", f:preMaths1};
    _predefEnv["exp"]={t:"predfn", f:preMaths1};
@@ -1497,8 +1534,8 @@ onmessage = function (e){
       return;
    }
    try{
-      var str=parseTabulation(e.data);
-      var out = grlang.parse(str);
+      let str=parseTabulation(e.data);
+      let out = grlang.parse(str);
       interpret(out);
       postMessage({termine: 0, opcnt:_opCnt});
    }catch(e){
