@@ -1,4 +1,9 @@
-_grapheEnv={"S":{t:"Sommet", name:"S", marques:{}}, "A":{t:"Sommet", name:"A", marques:{}}, "B":{t:"Sommet", name:"B", marques:{}}, "P":{t:"Sommet", name:"P", marques:{}}};
+for(let s in _grapheEnv) delete _grapheEnv[s];
+
+_grapheEnv.S={t:"Sommet", name:"S", marques:{}};
+_grapheEnv.A={t:"Sommet", name:"A", marques:{}};
+_grapheEnv.B={t:"Sommet", name:"B", marques:{}};
+_grapheEnv.P={t:"Sommet", name:"P", marques:{}};
 function ajoutArc(init, term, cap){
    _arcs.push({t:"Arc", i:_grapheEnv[init], a:_grapheEnv[term], marques:{capacite:{t:"number", val:cap}, label:{t:"string", val:""+cap}}});
 }

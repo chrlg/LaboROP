@@ -9,8 +9,9 @@ var _grlg = {
    svgw:false,
    svgh:false,
    zoomlv:0,
-   zoommin:false
 };
+
+var _graphes={};
 
 var timeout=false;
 function messageFromWorker(event){
@@ -38,7 +39,7 @@ function messageFromWorker(event){
    if(event.data.graph){
       $("#svgcont").show();
       $("#canvascont").hide();
-      showGraph(event.data.graph);
+      updateGraph(event.data);
       return;
    }
    if(event.data.mapgr){
@@ -68,6 +69,7 @@ function oneditorChange(e){
 function realEditorChange(){
    if(worker) worker.terminate();
    if(timeout) clearTimeout(timeout);
+   _grapheNames=[];
    worker=false;
    worker = new Worker("interpret.js");
    worker.onmessage = messageFromWorker;
@@ -77,6 +79,8 @@ function realEditorChange(){
    $("#status").empty();
    $("#errors").empty();
    $("#svgcont").empty();
+   $("#extragraph").empty();
+   _graphes={};
    if(errorMarker){
       editor.session.removeMarker(errorMarker);
       errorMarker=false;
@@ -108,26 +112,35 @@ function zoomGraph(){
    let targeth = _grlg.svgh*targetscale;
    let winw = $("#svgcont").width();
    let winh = $("#svgcont").height();
-   _grlg.zoommin = (targetw<winw && targeth<winh);
    if (targetw<winw) targetw=winw;
    if (targeth<winh) targeth=winh;
    $("#svgcont svg").width(targetw).height(targeth);
 }
 
-function showGraph(str){
-   window.lastGraph=str;
-   try{
-      v = Viz(str);
-      $("#svgcont").html(v);
-      _grlg.svgw = $("#svgcont svg").width();
-      _grlg.svgh = $("#svgcont svg").height();
-      _grlg.zoommin = false;
-      zoomGraph();
-      // Pour permettre aisément la sauvegarde (via bouton dans le coin)
-      $("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
-   }catch(e){
-      console.log(e);
-   }
+function updateGraph(gr){
+   let str=gr.graph;
+   let name=gr.name;
+   _graphes[name]=Viz(str);
+   if(name=="G") showGraph("G");
+   else createExtraGraph(name);
+}
+
+function createExtraGraph(name){
+   let $but=$("<button>"+name+"</button>");
+   $("#extragraph").append($but);
+   $but.click(function(){
+      showTab("show", $but);
+      showGraph(name);
+   });
+}
+
+function showGraph(name){
+   $("#svgcont").html(_graphes[name]);
+   _grlg.svgw = $("#svgcont svg").width();
+   _grlg.svgh = $("#svgcont svg").height();
+   zoomGraph();
+   // Pour permettre aisément la sauvegarde (via bouton dans le coin)
+   //$("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
 }
 
 function showMap(lines){
@@ -156,11 +169,12 @@ function showMap(lines){
    }
 }
 
-function showTab(t){
+function showTab(t, button=false){
    $(".show").removeClass("selected");
    $("#"+t).addClass("selected");
    $("#tabs button").removeClass("selected");
-   $("#tabs button[data-target='"+t+"']").addClass("selected");
+   if(button) button.addClass("selected");
+   else $("#tabs button[data-target='"+t+"']").addClass("selected");
 }
 
 function init(){
@@ -225,7 +239,10 @@ function init(){
    // Tabs
    $("#tabs button").click(function(e){
       let t=$(this).attr("data-target");
-      showTab(t);
+      showTab(t, $(this));
+   });
+   $("#tabs button[data-target='show']").click(function() {
+      if(_graphes["G"]) showGraph("G");
    });
 
    // Fichiers

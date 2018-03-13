@@ -16,7 +16,7 @@ var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
 var _numSommet=0, _numArc=0; // Compteur sommets et arcs
 var _modules = {}; // Modules importés
-var _graphes = [];
+var _graphes = {};
 
 var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
               // mais on a aussi besoin, globalement, d'une liste d'arcs
@@ -763,53 +763,62 @@ function evaluate(expr){
 }
 
 // Fonction interne d'ajout de sommet
-function addSommet(name){
-   _grapheEnv[name] = {t:"Sommet", name:name, marques:{}};
+function addSommet(name, sommets=_grapheEnv){
+   sommets[name] = {t:"Sommet", name:name, marques:{}};
 }
 
 // Récupère la valeur d'un sommet à partir d'une chaine ou d'une variable non identifiée
 // Si creer est true, crée le sommet s'il n'existe pas
 // Si le sommet n'existe pas, et n'a pas été créé, retourne le nom à la place
-function evalSommet(som, creer){
+function evalSommet(som, creer, sommets=_grapheEnv){
    var str=null;
    var S=null;
-   if(som.t=="id" && getEnv(som.name)===undefined) str=som.name; // Identifiant non existant, traité comme une chaine
-   else{
-      var ev=evaluate(som);
+   if(som.t=="id"){
+      if(sommets[som.name]!==undefined) return sommets[som.name]; // Sommet déjà existant (dans ce graphe)
+      if(getEnv(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
+   }
+
+   if(str===null){
+      var ev=evaluate(som); // Y compris un "id", mais qui peut être une variable de type chaine
       if(ev===undefined) throw {error:"type", name:"Sommet indéfini", msg: "", ln:som.ln};
       if(ev.t=="string") str=ev.val;
-      else if(ev.t=="Sommet") {S=ev; str=ev.name;}
+      else if(ev.t=="Sommet") str=ev.name; // Note : c'est forcément d'un autre graphe, sinon on ne serait plus là
       else throw {error:"type", name:"Ce n'est pas un sommet", msg:"Une expression de type '"+ev.t+"' n'est pas un sommet légal", ln:som.ln};
    }
-   if(S) return S;
    if(str===null) throw {error:"internal", name:"Sommet non défini", msg:"Erreur interne : le sommet est indéfini", ln:som.ln};
    if(!str.match(/^[A-Za-z0-9_]*$/)){
       throw{error: "type", name: "Nom de sommet illégal", 
 	    msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+str, ln: som.ln};
    }
-   if(_grapheEnv[str]) return _grapheEnv[str];
+   if(sommets[str]) return sommets[str];
    if(creer) {
-      addSommet(str);
-      return _grapheEnv[str];
+      addSommet(str, sommets);
+      return sommets[str];
    }
    return str;
 }
 
 
 // Ajoute des sommets dans l'environnement _grapheEnv
-function creerSommets(liste){
+function interpCreerSommets(ins){
+   let liste=ins.args;
+   let g=_grapheEnv;
+   if(ins.g){
+      if(!_graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
+      g=_graphes[ins.g].sommets;
+   }
    for(let i=0; i<liste.length; i++){
-      let ev=evalSommet(liste[i], false);
+      let ev=evalSommet(liste[i], false, g);
       // On a récupéré un sommet existant
       if(ev.t=="Sommet") throw {error:"env", name:"Sommet déjà existant", msg:"Le sommet "+ev.name+" existe déjà", ln:liste[i].ln};
       // Un nom de sommet inexistant
       if(typeof ev == "string") {
-	 addSommet(ev);
+	 addSommet(ev, g);
       }
       // Autre chose ?
       else throw {error:"interne", name:"Erreur interne", msg:"Ni string, ni sommet dans creerSommet\nev:"+ev+"\nev.t="+ev.t, ln:liste[i].ln};
    }
-   _grapheChange=true;
+   if(g===_grapheEnv) _grapheChange=true;
 }
 
 function getRef(ref){
@@ -893,33 +902,56 @@ function interpAffect(ins){
    }
 }
 
-function creerArete(left, right){
+function creerArete(ins){
+   let left=ins.left;
+   let right=ins.right;
    // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
-   if(isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: left.ln};
+   if(isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
    if(isOrient()===undefined) _predefEnv["Oriente"]=FALSE;
 
+   // Graphe concerné
+   let g=_grapheEnv;
+   let arcs=_arcs;
+   if(ins.g){
+      let graf=_graphes[ins.g];
+      if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
+      g=graf.sommets;
+      arcs=graf.arcs;
+   }
 
-   var l=evalSommet(left, true);
-   var r=evalSommet(right, true);
+   var l=evalSommet(left, true, g);
+   var r=evalSommet(right, true, g);
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
-   _arcs.push({t:"Arete", i:l, a:r, marques:{}});
-   _grapheChange=true;
+   arcs.push({t:"Arete", i:l, a:r, marques:{}});
+   if(g===_grapheEnv) _grapheChange=true;
 }
 
-function creerArc(left, right){
+function creerArc(ins){
+   let left=ins.left;
+   let right=ins.right;
    // Un arc implique un graphe orienté
    if(isOrient()===undefined) _predefEnv["Oriente"]=TRUE;
    if(!isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
-   var l=evalSommet(left, true);
-   var r=evalSommet(right, true);
+   // Graphe concerné
+   let g=_grapheEnv;
+   let arcs=_arcs;
+   if(ins.g){
+      let graf=_graphes[ins.g];
+      if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
+      g=graf.sommets;
+      arcs=graf.arcs;
+   }
+
+   var l=evalSommet(left, true, g);
+   var r=evalSommet(right, true, g);
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
-   _arcs.push({t:"Arc", i:l, a:r, marques:{}});
-   _grapheChange=true;
+   arcs.push({t:"Arc", i:l, a:r, marques:{}});
+   if(g===_grapheEnv) _grapheChange=true;
 }
 
 function interpDef(def){
@@ -1042,11 +1074,12 @@ function regularCheck(ultimate){
    _instrCnt=0;
    if(_grapheChange){
       _grapheChange=false;
-      if(_grapheMode=="dot") updateGraphe();
+      if(_grapheMode=="dot") updateGraphe("G", _grapheEnv, _arcs);
       else if(_grapheMode=="map" && ultimate) updateMap();
    }
    if(ultimate){
-      for(let i=0; i<_graphes.length; i++){
+      for(let i in _graphes){
+         if(i=="G") continue; // Déjà fait
          if(_grapheMode=="dot") updateGraphe(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
          else if(_grapheMode=="map") updateMap(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
       }
@@ -1076,15 +1109,15 @@ function interpretWithEnv(tree, isloop){
    for(let ti of tree){
       if(_instrCnt++>100000) regularCheck();
       if(ti.t=="SOMMET"){
-	 creerSommets(ti.args);
+	 interpCreerSommets(ti);
 	 continue;
       }
       if(ti.t=="ARETE"){
-	 creerArete(ti.left, ti.right);
+	 creerArete(ti);
 	 continue;
       }
       if(ti.t=="Arc"){
-	 creerArc(ti.left, ti.right);
+	 creerArc(ti);
 	 continue;
       }
       if(ti.t=="="){
@@ -1156,7 +1189,10 @@ function interpretWithEnv(tree, isloop){
          if(_predefEnv[ti.name] || _globalEnv[ti.name] || _grapheEnv[ti.name])
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
          _globalEnv[ti.name] = ti;
-         _graphes.push(ti);
+         ti.sommets={};
+         ti.arcs=[];
+         _graphes[ti.name]=ti;
+         continue;
       }
       if(ti.t=="$"){
 	 prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
@@ -1468,6 +1504,7 @@ function prePop(args, ln){
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
+   _graphes.G = {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
    _predefEnv={};
    _predefEnv["Adj"]={t: "predvar", f:preM};
    _predefEnv["Id"]={t: "predvar", f:preId};
@@ -1503,6 +1540,7 @@ function interpret(tree){
    _predefEnv["pop"]={t:"predfn", f:prePop};
    _predefEnv["Infinity"]={t:"number", val:Infinity};
    _globalEnv={};
+   _globalEnv.G = _graphes.G;
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
    interpretWithEnv(tree, false, false);

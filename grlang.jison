@@ -123,14 +123,14 @@ id
       ;
 
 instructionNoColon
-      : Sommet listeExpr {
-	 $$ = { t:"SOMMET", args:$2, ln:@1.first_line} ;
+      : Sommet grapheSpec listeExpr {
+	 $$ = { t:"SOMMET", g:$2, args:$3, ln:@1.first_line} ;
       }
-      | Arete "[" expr "," expr "]" {
-	 $$ = { t:"ARETE", left: $3, right: $5, ln:@1.first_line};
+      | Arete grapheSpec "[" expr "," expr "]" {
+	 $$ = { t:"ARETE", g:$2, left: $4, right: $6, ln:@1.first_line};
       }
-      | Arc "(" expr "," expr ")" {
-	 $$ = { t:"Arc", left:$3, right:$5, ln:@1.first_line};
+      | Arc grapheSpec "(" expr "," expr ")" {
+	 $$ = { t:"Arc", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
       | Graphe ID {
          $$ = { t:"Graphe", name:$2, ln:@1.first_line};
@@ -196,6 +196,15 @@ manySemis
       }
       | ";" manySemis {
          $$=false;
+      }
+      ;
+
+grapheSpec
+      : {
+         $$=false;
+      }
+      | "<" ID ">" {
+         $$=$2;
       }
       ;
 

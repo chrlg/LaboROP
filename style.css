@@ -152,6 +152,9 @@ div#tabs {
 #tabs button.selected:hover {
    background-color: #880;
 }
+#extragraph {
+   display:inline-block;
+}
 
 div#misc{
    top: calc(50vh + 4px);
