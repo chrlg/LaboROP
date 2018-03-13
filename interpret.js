@@ -207,7 +207,7 @@ function getEnv(sym){
 // champs de l'arc lui-même)
 // Pour cette raison la référence vers un arc n'est pas de longueur 2 mais 6
 // Avec o[0][o[1]] étant la référence vers le 1er sommet, o[2][o[3]] vers le 2e sommet
-// et o[4][o[5]] vers le 5e
+// et o[4][o[5]] vers l'arc
 function evaluateArc(o, ln){
    if(o.length!=6) throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:ln};
    var w=o[4][o[5]]; // L'arc lui-même
@@ -500,31 +500,30 @@ function evaluate(expr){
    // Comparaison (inégalité)
    // Uniquement pour des valeurs scalaires
    if(expr.t=="<" || expr.t==">" || expr.t=="<=" || expr.t==">="){
-      var a=evaluate(expr.left);
-      var b=evaluate(expr.right);
-      if(a.t=="global" || a.t=="predvar" || a.t=="predfn" || a.t=="DEF")
-	    throw {error:"exec", name:"Erreur interne", msg:""+a.t+" dans ==", ln:expr.ln};
-      if(a.t=="tuple")
-	    throw {error:"type", name:"Valeurs multiples", 
-		  msg:"Tentative d'utiliser l'opérateur de comparaison avec une valeur multiple",
-		  ln:expr.ln};
-      if(a.t != b.t) throw {error:"type", name:"Comparaison de valeur de types différents",
-	    msg:"", ln:expr.ln};
-      var vala=false, valb=false;
-      if(a.t=="number" || a.t=="string"){
-	 vala=a.val;
-	 valb=b.val;
-      }else if(a.t=="Sommet"){
-	 vala=a.name;
-	 valb=b.name;
-      }else throw {error:"type", name:"Type invalide pour une comparaison",
-	 msg:"Tentative de comparer deux valeurs de type "+a.t, ln:expr.ln};
-      _opCnt++;
-      if(expr.t=="<") return (vala<valb)?TRUE:FALSE;
-      else if(expr.t==">") return (vala>valb)?TRUE:FALSE;
-      else if(expr.t==">=") return (vala>=valb)?TRUE:FALSE;
-      else if(expr.t=="<=") return (vala<=valb)?TRUE:FALSE;
-      else throw {error:"interne", name:"Hein?", msg:"", ln:expr.ln};
+      let comp=false;
+      if(expr.t=="<") comp=function(a,b){ return (a<b)?TRUE:FALSE;}
+      else if(expr.t==">") comp=function(a,b){ return (a>b)?TRUE:FALSE;}
+      else if(expr.t=="<=") comp=function(a,b){ return (a<=b)?TRUE:FALSE;}
+      else if(expr.t==">=") comp=function(a,b){ return (a>=b)?TRUE:FALSE;}
+
+      expr.l=function(){
+         var a=evaluate(expr.left);
+         var b=evaluate(expr.right);
+         if(a.t != b.t) throw {error:"type", name:"Comparaison de valeur de types différents",
+            msg:`tentative de comparer un ${a.t} et un ${b.t}`, ln:expr.ln};
+         var vala=false, valb=false;
+         if(a.t=="number" || a.t=="string"){
+            vala=a.val;
+            valb=b.val;
+         }else if(a.t=="Sommet"){
+            vala=a.name;
+            valb=b.name;
+         }else throw {error:"type", name:"Type invalide pour une comparaison",
+            msg:"Tentative de comparer deux valeurs de type "+a.t, ln:expr.ln};
+         _opCnt++;
+         return comp(vala,valb);
+      }
+      return expr.l();
    }
 
    // Arete ou arc
@@ -1085,7 +1084,7 @@ function interpPlusEgal(tree){
 // LISTE D'INSTRUCTIONS
 function interpretWithEnv(tree, isloop){
    for(let ti of tree){
-      if(_instrCnt++>1000000) regularCheck();
+      if(_instrCnt++>100000) regularCheck();
       if(ti.t=="SOMMET"){
 	 creerSommets(ti.args);
 	 continue;
@@ -1518,6 +1517,7 @@ function interpret(tree){
    _predefEnv["abs"]={t:"predfn", f:preMaths1};
    _predefEnv["import"]={t:"predfn", f:preImport};
    _predefEnv["pop"]={t:"predfn", f:prePop};
+   _predefEnv["Infinity"]={t:"number", val:Infinity};
    _globalEnv={};
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
