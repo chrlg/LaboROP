@@ -708,9 +708,12 @@ function evaluate(expr){
 
    if(expr.t=="field"){
       var o=evaluate(expr.o);
-      if(o.t=="struct") return o.f[expr.f];
-      else if(o.t=="Sommet" || o.t=="Arc" || o.t=="Arete") return o.marques[expr.f];
+      let res=NULL;
+      if(o.t=="struct") res=o.f[expr.f];
+      else if(o.t=="Sommet" || o.t=="Arc" || o.t=="Arete") res=o.marques[expr.f];
       else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
+      if(res===undefined) return NULL;
+      else return res;
    }
 
    if(expr.t=="index"){
@@ -1366,36 +1369,57 @@ function preZero(){
 }
 
 function preArcs(args, ln){
-   if(args.length==0) return {t:"array", val:_arcs};
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction arcs/aretes attend un et un seul argument", ln:ln};
-   var a=evaluate(args[0]);
-   if(a.t!="Sommet") throw {error:"type", name:"Erreur de type", 
-      msg:"La fonction arcs/aretes attend un argument de type Sommet", ln:args[0].ln};
+   if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction arcs s'utilise avec au plus 2 arguments (graphe et/ou sommet)", ln:ln};
+   let arcs=_arcs;
+   let s=false;
+   for(let a of args){
+      let ev=evaluate(a);
+      if(ev.t=="Graphe") arcs=ev.arcs;
+      else if(ev.t=="Sommet") s=ev;
+      else throw {error:"args", name:"Mauvais argument", 
+         msg:"Argument de type "+ev.t+" invalide pour arcs", ln:ln};
+   }
+   if(s===false) return {t:"array", val:arcs};
+
    var rep=[];
-   for(var i=0; i<_arcs.length; i++){
-      if(_arcs[i].i==a) rep.push(_arcs[i]);
-      else if(_arcs[i].a==a && _arcs[i].t=="Arete") {
+   for(var i=0; i<arcs.length; i++){
+      if(arcs[i].i==s) rep.push(arcs[i]);
+      else if(arcs[i].a==s && arcs[i].t=="Arete") {
 	 // Dans le cas précis de arete, on inverse les sommets
 	 // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
 	 // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
-	 var pivot=_arcs[i].i;
-	 _arcs[i].i=_arcs[i].a;
-	 _arcs[i].a=pivot;
-	 rep.push(_arcs[i]);
+	 var pivot=arcs[i].i;
+	 arcs[i].i=arcs[i].a;
+	 arcs[i].a=pivot;
+	 rep.push(arcs[i]);
       }
    }
    return {t:"array", val:rep};
 }
 
 function preSommets(args, ln){
-   if(args.length==0) return {t:"array", val:Object.values(_grapheEnv)};
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction sommets s'utilise avec 0 ou 1 argument", ln:ln};
-   let num=evaluate(args[0]);
-   if(num.t!="number") throw {error:"args", name:"Mauvais type d'argument",
-      msg:"L'argument de la fonction sommets, s'il y en a, doit être entier", ln:ln};
-   return Object.values(_grapheEnv)[num.val];
+   let g=_grapheEnv;
+   let idx=false;
+   if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
+      msg:"La fonction sommets s'utilise avec au plus 2 arguments (graphe et/ou index)", ln:ln};
+   for(let a of args){
+      let ev=evaluate(a);
+      if(ev.t=="Graphe") g=ev.sommets;
+      else if(ev.t=="number"){
+         if(idx!==false) throw {error:"args", name:"Mauvais arguments", 
+            msg:"La fonction sommets s'utilise avec au plus un argument index", ln:ln};
+         idx=ev.val;
+      }
+      else throw {error:"args", name:"Mauvais arguments",
+            msg:"La fonction sommets s'utilise sans argument, ou des arguements de type entier et graphe", ln:ln};
+   }
+   let t=Object.values(g);
+
+   if(idx===false) return {t:"array", val:t};
+   if(idx<0 || idx>=t.length) throw {error:"exec", name:"Indice invalide",
+         msg:"Le sommet #"+idx+" n'existe pas", ln:ln};
+   return t[idx];
 }
 
 function preLen(args, ln){
