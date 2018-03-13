@@ -100,3 +100,82 @@ if C==F:
 else:
    println("Il y a manifestement une erreur dans mon code")
 `;
+
+sol4version=1;
+sol4code=`#france : 21->0
+#29Ns : 4180->10428
+#nord29 : Pas la peine c'est trop gros de toutes façons
+
+import("29Ns")
+depart=S4180
+arrivee=S10428
+
+# Algorithme de Ford
+def ford(depart):
+   # Tous les sommets sont marqués d(s)=∞ initialement
+   for s in sommets(): s.d=Infinity # Oui, Infinity existe maintenant. Je triche, puisqu'il n'existait pas lors de votre labo
+   depart.d=0 # Sauf le sommet de départ
+   n=len(sommets()) # Nombre de sommets
+   for i in range(n-1): # Comme dans le cours : on fait n-1 passages
+      nch=0 # Optimisation: nombre de modifications faites (voir plus loin)
+      for [u,v] in aretes(): # Pour toutes les arêtes
+         if v.d>u.d+[u,v].val: # Si l'arête permet d'améliorer une marque d
+            v.d=u.d+[u,v].val # alors on améliore la marque d
+            v.pred=u # Et, histoire de pouvoir retrouver le chemin optimal (pas seulement sa longueur) on ajoute une marque pred sur le sommet dont on vient d'améliorer le chemin
+            nch++ # On incrémente le compteur de trucs modifiés
+         if u.d>v.d+[u,v].val: # Piège : puisque le graphe est non orienté, chaque arête peut
+            u.d=v.d+[u,v].val # servir dans les deux sens. Il faut donc aussi envisager que
+            u.pred=v # l'arête [u,v] permet d'améliorer la distance de u, en passant par v
+            nch++
+      #print(i, "[",nch,"] ") # Juste pour se rendre compte de l'avancement. Et se rendre compte à quel point on n'a aucune chance de finir vite sur une vraie carte avec Ford
+      if nch==0: break # Optimisation : si on n'a rien fait, alors pas la peine d'attendre 
+         # de faire n-1 passes, de toutes façons, toutes les passes qui suivent ne changeront
+         # plus rien
+
+# Algorithme de Dijkstra
+def dijkstra(depart):
+   for s in sommets(): s.d=Infinity
+   depart.d=0
+   nonMarqueNonInfini=[]+depart # Liste des sommets non marqués (en excluant ceux à distace infinie qui n'ont aucune chance d'être élus "plus proche sommet non marqué")
+   while len(nonMarqueNonInfini)>0:
+      #1. Recherche du plus petit dans cette liste
+      idxMin=0
+      for i in range(1, len(nonMarqueNonInfini)):
+         # si le ième est plus petit que le idxMinième
+         if nonMarqueNonInfini[i].d<nonMarqueNonInfini[idxMin].d:
+            idxMin=i
+      #2, maintenant idxMin est le sommet non marqué de distance la plus petite
+      # Il ne reste plus qu'à regardé tous les successeurs possibles
+      smin=pop(nonMarqueNonInfini, idxMin) # Je l'enlève de la liste (⇔ je le marque)
+      for [x,y] in aretes(smin):
+         if y.d>smin.d+[x,y].val:
+            y.d=smin.d+[x,y].val
+            y.pred=smin # Comme pour ford : ce qu'il faut pour retrouver le chemin quand on aura fini
+            nonMarqueNonInfini += y # y est maintenant à traiter (sa distance n'est pas infinie). Notez que si ça se trouve, c'est pas la première fois : pas grave, au pire la 2e visite ne servira à rien (on pourrait aussi ajouter vraiment une marque aux sommets, en plus de les enlever/ajouter à ce tableau, pour éviter ça)
+         # Note : pas besoin cette fois de traiter l'arête dans les deux sens : de toutes façons, smin, c'est ce qu'a démontré dijkstra, ne peut plus être amélioré. Il n'y a donc aucune chance que x.d>y.d+[x,y].val (rappel x=smin)
+
+# Calcul du chemin à partir des marques "pred"
+def chemin(depart, arrivee):
+   # On part de la fin
+   s=arrivee
+   retour=""
+   while s!=depart: # et tant qu'on n'est pas arrivé au départ
+      retour = ""+s+"-"+retour
+      s=s.pred # on remonte vers le prédécesseur (dans le chemin calculé) 
+   retour = ""+depart+"-"+retour
+   return retour
+
+# Coloration en rouge
+def rouge(depart, arrivee):
+   # Fondamentalement le même algorithme
+   s=arrivee
+   while s!=depart:
+      p=s.pred
+      [p,s].color="red" # on colore l'arête (note : dans ce mode d'affichage, les sommes ne sont pas représentés de toutes façons)
+      s=p
+
+dijkstra(depart)
+println(chemin(depart, arrivee))
+rouge(depart, arrivee)
+
+`;
