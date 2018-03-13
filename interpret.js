@@ -1212,6 +1212,7 @@ function interpretWithEnv(tree, isloop){
       if(ti.t=="Graphe"){
          if(_predefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
+         if(ti.name=="G") throw {error:"env", name:"Surdéfinition", msg:"Le nom G est réservé au graphe par défaut", ln:ti.ln};
          _globalEnv[ti.name] = ti;
          ti.sommets={};
          ti.arcs=[];
