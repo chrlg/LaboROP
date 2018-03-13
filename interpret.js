@@ -1162,9 +1162,13 @@ function interpretWithEnv(tree, isloop){
          interpPlusEgal(ti);
          continue;
       }
-
+      if(ti.t=="Graphe"){
+         if(_predefEnv[ti.name] || _globalEnv[ti.name] || _grapheEnv[ti.name])
+            throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
+         _globalEnv[ti.name] = ti;
+      }
       if(ti.t=="$"){
-	 console.log(eval(ti.i.slice(1)));
+	 prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
 	 continue;
       }
       console.log("Can't do ", ti);
@@ -1451,7 +1455,6 @@ function preImport(args, ln){
    if(e.t!="string") throw {error:"args", name:"Mauvais type d'argument",
       msg:"La fonction import attent une chaîne", ln:ln};
    if(_modules[e.val]) return ; // Déjà importé
-   console.log("importing...");
    importScripts("mod_"+e.val+".js");
    _modules[e.val]=true;
 }

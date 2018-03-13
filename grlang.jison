@@ -74,6 +74,7 @@
 
 "Sommet"		return "Sommet"
 "Arete"			return "Arete"
+"Graphe"                return "Graphe"
 "Arc"			return "Arc"
 "def"			return "def"
 "for"			return "for"
@@ -130,6 +131,9 @@ instructionNoColon
       }
       | Arc "(" expr "," expr ")" {
 	 $$ = { t:"Arc", left:$3, right:$5, ln:@1.first_line};
+      }
+      | Graphe ID {
+         $$ = { t:"Graphe", name:$2, ln:@1.first_line};
       }
       | llvalue "=" expr {
 	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
