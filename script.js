@@ -12,6 +12,7 @@ var _grlg = {
 };
 
 var _graphes={};
+var _grapheMode="dot";
 
 var timeout=false;
 function messageFromWorker(event){
@@ -115,9 +116,11 @@ function zoomGraph(){
    if (targetw<winw) targetw=winw;
    if (targeth<winh) targeth=winh;
    $("#svgcont svg").width(targetw).height(targeth);
+   $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
 }
 
 function updateGraph(gr){
+   _grapheMode="dot";
    let str=gr.graph;
    let name=gr.name;
    _graphes[name]=Viz(str);
@@ -144,11 +147,13 @@ function showGraph(name){
 }
 
 function showMap(lines){
+   let targetscale = 1.1**_grlg.zoomlv;
+   _grapheMode="map";
    let cv=$("#canvascont canvas")[0];
    let ctx=cv.getContext("2d");
    ctx.clearRect(0, 0, 1000, 1000);
    ctx.strokeStyle="#000";
-   ctx.lineWidth=1;
+   ctx.lineWidth=1/targetscale;
    for(let i=0; i<lines.length; i++){
       let L=lines[i];
       if(L.length>4) continue;
@@ -157,7 +162,7 @@ function showMap(lines){
       ctx.lineTo(L[2], L[3]);
       ctx.stroke();
    }
-   ctx.lineWidth=3;
+   ctx.lineWidth=3/targetscale;
    for(let i=0; i<lines.length; i++){
       let L=lines[i];
       if(L.length<5) continue;
@@ -249,7 +254,7 @@ function init(){
    initFiles();
 
    // Zoom dans show
-   $("#svgcont").bind("mousewheel DOMMouseScroll", function(e){
+   $("#show").bind("mousewheel DOMMouseScroll", function(e){
       if(!e.altKey) return;
       let ee=e.originalEvent;
       let delta=ee.detail?ee.detail:ee.deltaY;
