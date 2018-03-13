@@ -423,6 +423,20 @@ function initStorage(){
       sol2.version=sol2version;
       sol2.code = sol2code;
    }
+   // Solution Labo4
+   let sol4=false;
+   for(let i=0; i<listFiles.length; i++){
+      if(listFiles[i].name=="Labo4 - solu prof") sol4=listFiles[i];
+   }
+   if(!sol4) {
+      sol4={name:"Labo4 - solu prof", version:0};
+      listFiles.push(sol4);
+   }
+
+   if(sol4.version < sol4version){
+      sol4.version=sol4version;
+      sol4.code = sol4code;
+   }
    saveFiles();
 }
 
