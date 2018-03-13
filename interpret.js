@@ -126,6 +126,12 @@ function updateGraphe(name=false, sommets=_grapheEnv, arcs=_arcs){
       let col=arcs[i].marques.color;
       let val=arcs[i].marques.val;
       let label=arcs[i].marques.label;
+      let tooltip="("+arcs[i].i.name+","+arcs[i].a.name+")\n";
+      for(let m in arcs[i].marques){
+         let v=arcs[i].marques[m].val;
+         tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
+      }
+      attr=attr+`[tooltip="${tooltip}"]`;
       if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
       if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
       else if(val && val.t=="number") attr=attr+`[label="${""+val.val}"]`;
@@ -225,9 +231,14 @@ function evaluateArc(o, ln){
       throw {error:"type", name:"Pas un arc ou une arête", 
 	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
    }
-   for(let i=0; i<_arcs.length; i++){
-      if(_arcs[i].i==s1 && _arcs[i].a==s2) return _arcs[i];
-      if(o[5][0]=="-" && _arcs[i].a==s1 && _arcs[i].i==s2) return _arcs[i];
+   let arcs=_arcs;
+   for(let gn in _graphes){
+      let g=_graphes[gn];
+      if (g.sommets[s1.name]===s1) arcs=g.arcs;
+   }
+   for(let i=0; i<arcs.length; i++){
+      if(arcs[i].i==s1 && arcs[i].a==s2) return arcs[i];
+      if(o[5][0]=="-" && arcs[i].a==s1 && arcs[i].i==s2) return arcs[i];
    }
    return NULL;
    //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
@@ -242,6 +253,7 @@ function evaluateLVal(lv, direct){
    function getIdlv(name){
       if(_predefEnv[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
       if(_grapheEnv[name]) return _grapheEnv;
+      if(_graphes[name]) return _globalEnv;
       if(_localEnv[name] && _localEnv[name].t=="global") return _globalEnv;
       return _localEnv;
    }
@@ -1198,7 +1210,7 @@ function interpretWithEnv(tree, isloop){
          continue;
       }
       if(ti.t=="Graphe"){
-         if(_predefEnv[ti.name] || _globalEnv[ti.name] || _grapheEnv[ti.name])
+         if(_predefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
          _globalEnv[ti.name] = ti;
          ti.sommets={};
