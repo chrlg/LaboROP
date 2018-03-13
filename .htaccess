@@ -1,6 +1,6 @@
 # BEGIN Cache-Control Headers
 <IfModule mod_headers.c>
-	<FilesMatch "(interpret|grlang|script|codepredef)\.js$">
+	<FilesMatch "(interpret|grlang|script|codepredef|mod_simple)\.js$">
 		Header set Cache-Control "max-age=20, private"
 	</FilesMatch>
 	<FilesMatch "(index\.html|style\.css)$">

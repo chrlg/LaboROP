@@ -9,17 +9,17 @@ do
       echo jison done
    fi
    mark=0
-   for i in *.html *.js *.css
+   for i in *.html *.jison *.js *.css
    do
       if [[ $i -nt .installSentinelle ]]
       then
+         scp "$i" maths:W3/LaboROP/
 	 mark=1
       fi
    done
 
    if [[ $mark = 1 ]]
    then
-      cp *.html *.js *.css /net/www/vrac/ROP/
       touch .installSentinelle
       echo "reinstall"
    else
