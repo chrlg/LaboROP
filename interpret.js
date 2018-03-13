@@ -812,23 +812,6 @@ function creerSommets(liste){
    _grapheChange=true;
 }
 
-function interpIncrement(ins){
-   if(ins.left.t=="id" && ins.left.name=="GX") return creerSommets([ins.right]);
-   if(ins.left.t=="id" && ins.left.name=="GU"){
-      if(ins.right.t=="arete") return creerArete(ins.right.left, ins.right.right);
-      if(ins.right.t=="arc") return creerArc(ins.right.left, ins.right.right);
-      throw {error:"type", name:"Erreur de type", msg: "Argument invalide pour U+=", ln:ins.ln};
-   }
-   if(ins.left.t=="id"){
-      
-      if(_localEnv[ins.left.name]===undefined) throw {error:"variable", name:"Variable non définie", 
-	    msg:""+inst.left.name+" n'est pas définie", ln:ins.left.ln};
-      _localEnv[ins.left.name] += evaluate(ins.right);
-   }
-   console.log("Cannot do +=", ins);
-}
-
-
 function getRef(ref){
    // Cas matriciel
    if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
@@ -1346,14 +1329,6 @@ function preZero(){
    return M;
 }
 
-function preX(){
-   return {t:"array", val:Object.values(_grapheEnv)};
-}
-
-function preU(){
-   return {t:"array", val:_arcs};
-}
-
 function preArcs(args, ln){
    if(args.length==0) return {t:"array", val:_arcs};
    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
@@ -1497,9 +1472,7 @@ function interpret(tree){
    _predefEnv["Adj"]={t: "predvar", f:preM};
    _predefEnv["Id"]={t: "predvar", f:preId};
    _predefEnv["Zero"]={t: "predvar", f:preZero};
-   _predefEnv["GX"]={t: "predvar", f:preX};
    _predefEnv["Oriente"]=UNDEFINED;
-   _predefEnv["GU"]={t: "predvar", f:preU};
    _predefEnv["OpCount"]={t:"predvar", f:preOpCnt};
    _predefEnv["sommets"]={t:"predfn", f:preSommets};
    _predefEnv["len"]={t:"predfn", f:preLen};
