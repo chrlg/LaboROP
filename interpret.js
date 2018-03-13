@@ -16,6 +16,7 @@ var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
 var _numSommet=0, _numArc=0; // Compteur sommets et arcs
 var _modules = {}; // Modules importés
+var _graphes = [];
 
 var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
               // mais on a aussi besoin, globalement, d'une liste d'arcs
@@ -105,7 +106,7 @@ function parseTabulation(str){
 }
 
 // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
-function updateGraphe(){
+function updateGraphe(name=false, sommets=_grapheEnv, arcs=_arcs){
    let gr="";
    let orient = isOrient();
    if(orient) gr+="digraph{";
@@ -113,36 +114,36 @@ function updateGraphe(){
    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
    // été générés de toutes façons avec leurs arcs)
    // (Note: servira plus tard pour les attributs)
-   for(let e in _grapheEnv){
+   for(let e in sommets){
       let attr="";
-      let col=_grapheEnv[e].marques.color;
+      let col=sommets[e].marques.color;
       if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
       gr+=(""+e+attr+";");
    }
    // Arcs ou aretes
-   for(let i=0; i<_arcs.length; i++){
+   for(let i=0; i<arcs.length; i++){
       let attr="";
-      let col=_arcs[i].marques.color;
-      let val=_arcs[i].marques.val;
-      let label=_arcs[i].marques.label;
+      let col=arcs[i].marques.color;
+      let val=arcs[i].marques.val;
+      let label=arcs[i].marques.label;
       if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
       if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
       else if(val && val.t=="number") attr=attr+`[label="${""+val.val}"]`;
-      if(orient) gr+=""+_arcs[i].i.name +"->"+_arcs[i].a.name+attr+";";
-      else gr+=""+_arcs[i].i.name+"--"+_arcs[i].a.name+attr+";";
+      if(orient) gr+=""+arcs[i].i.name +"->"+arcs[i].a.name+attr+";";
+      else gr+=""+arcs[i].i.name+"--"+arcs[i].a.name+attr+";";
    }
    gr+="}\n";
    // Envoie le graphe au thread principal, qui appelera dot avec
-   postMessage({graph:gr});
+   postMessage({graph:gr, name:name});
 }
 
 // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
 // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
-function updateMap(){
+function updateMap(name=false, sommets=_grapheEnv, arcs=_arcs){
    let gr=[];
    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-   for(let n in _grapheEnv){
-      let s=_grapheEnv[n];
+   for(let n in sommets){
+      let s=sommets[n];
       let x=s.marques.x.val;
       let y=s.marques.y.val;
       if(x<xmin) xmin=x;
@@ -150,9 +151,9 @@ function updateMap(){
       if(y<ymin) ymin=y;
       if(y>ymax) ymax=y;
    }
-   for(let i=0; i<_arcs.length; i++){
-      let s1=_arcs[i].i;
-      let s2=_arcs[i].a;
+   for(let i=0; i<arcs.length; i++){
+      let s1=arcs[i].i;
+      let s2=arcs[i].a;
       let x1=s1.marques.x.val;
       let x2=s2.marques.x.val;
       let y1=s1.marques.y.val;
@@ -161,10 +162,10 @@ function updateMap(){
       x2=(x2-xmin)*1000.0/(xmax-xmin);
       y1=(y1-ymin)*1000.0/(ymax-ymin);
       y2=(y2-ymin)*1000.0/(ymax-ymin);
-      if(_arcs[i].marques.color) gr.push([x1,y1,x2,y2,_arcs[i].marques.color.val]);
+      if(arcs[i].marques.color) gr.push([x1,y1,x2,y2,arcs[i].marques.color.val]);
       else gr.push([x1,y1,x2,y2]);
    }
-   postMessage({mapgr:gr});
+   postMessage({mapgr:gr, name:name});
 }
 
 
@@ -1061,6 +1062,12 @@ function regularCheck(ultimate){
       if(_grapheMode=="dot") updateGraphe();
       else if(_grapheMode=="map" && ultimate) updateMap();
    }
+   if(ultimate){
+      for(let i=0; i<_graphes.length; i++){
+         if(_grapheMode=="dot") updateGraphe(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
+         else if(_grapheMode=="map") updateMap(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
+      }
+   }
    if(_strChange){
       _strChange=false;
       _str=_str.slice(-10000);
@@ -1166,6 +1173,7 @@ function interpretWithEnv(tree, isloop){
          if(_predefEnv[ti.name] || _globalEnv[ti.name] || _grapheEnv[ti.name])
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
          _globalEnv[ti.name] = ti;
+         _graphes.push(ti);
       }
       if(ti.t=="$"){
 	 prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
