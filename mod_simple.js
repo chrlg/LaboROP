@@ -5,7 +5,7 @@ _grapheEnv.A={t:"Sommet", name:"A", marques:{}};
 _grapheEnv.B={t:"Sommet", name:"B", marques:{}};
 _grapheEnv.P={t:"Sommet", name:"P", marques:{}};
 function ajoutArc(init, term, cap, f){
-   _arcs.push({t:"Arc", i:_grapheEnv[init], a:_grapheEnv[term], marques:{capacite:{t:"number", val:cap}, label:{t:"string", val:""+cap}, flot:{t:"number", val:f}}});
+   _arcs.push({t:"Arc", i:_grapheEnv[init], a:_grapheEnv[term], marques:{capacite:{t:"number", val:cap}, flot:{t:"number", val:f}}});
 }
 ajoutArc("S", "A", 20, 0);
 ajoutArc("S", "B", 20, 20);

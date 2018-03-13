@@ -361,8 +361,11 @@ expr
       | "{}" {
          $$={t:"struct", f:[], ln:@1.first_line};
       }
-      | "Sommet" expr {
-	 $$={t:"SOMMET", arg:$2, ln:@1.first_line};
+      | "Sommet" grapheSpec expr {
+	 $$={t:"SOMMET", g:$2, arg:$3, ln:@1.first_line};
+      }
+      | "Arc" grapheSpec "(" expr "," expr ")" {
+	 $$ = { t:"Arc", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
       | lvalue "[" borne ":" borne "]" {
          $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};

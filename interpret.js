@@ -282,6 +282,9 @@ function evaluateLVal(lv, direct){
       else if(v.t=="Arc"){
          return [v.marques, lv.f];
       }
+      else if(v.t=="Graphe"){
+         return [v.sommets, lv.f];
+      }
       else if(v.t!="struct"){ // Autre chose sans champ
          throw {error:"type", name:"Pas une structure", 
             msg:"tentative d'accéder à un champ d'un objet de type "+v.t, ln:lv.ln};
@@ -711,6 +714,7 @@ function evaluate(expr){
       let res=NULL;
       if(o.t=="struct") res=o.f[expr.f];
       else if(o.t=="Sommet" || o.t=="Arc" || o.t=="Arete") res=o.marques[expr.f];
+      else if(o.t=="Graphe") res=o.sommets[expr.f];
       else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
       if(res===undefined) return NULL;
       else return res;
@@ -761,6 +765,9 @@ function evaluate(expr){
       }
       if(b1===false) return {t:"array", val:tab.val.slice(b0)};
       else return {t:"array", val:tab.val.slice(b0, b1)};
+   }
+   if(expr.t=="Arc"){
+      return creerArc(expr);
    }
    console.trace("Cannot evaluate", expr);
 }
@@ -953,8 +960,10 @@ function creerArc(ins){
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
-   arcs.push({t:"Arc", i:l, a:r, marques:{}});
+   let na={t:"Arc", i:l, a:r, marques:{}};
+   arcs.push(na);
    if(g===_grapheEnv) _grapheChange=true;
+   return na;
 }
 
 function interpDef(def){
