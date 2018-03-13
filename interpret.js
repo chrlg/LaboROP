@@ -1371,7 +1371,7 @@ function preZero(){
 function preArcs(args, ln){
    if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction arcs s'utilise avec au plus 2 arguments (graphe et/ou sommet)", ln:ln};
-   let arcs=_arcs;
+   let arcs=false;
    let s=false;
    for(let a of args){
       let ev=evaluate(a);
@@ -1380,7 +1380,16 @@ function preArcs(args, ln){
       else throw {error:"args", name:"Mauvais argument", 
          msg:"Argument de type "+ev.t+" invalide pour arcs", ln:ln};
    }
+   if(arcs===false){
+      if(s){ // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
+         for(let gn in _graphes){
+            if(_graphes[gn].sommets[s.name]===s) arcs=_graphes[gn].arcs;
+         }
+      }
+      else arcs=_arcs;
+   }
    if(s===false) return {t:"array", val:arcs};
+   if(arcs===false) return NULL;
 
    var rep=[];
    for(var i=0; i<arcs.length; i++){

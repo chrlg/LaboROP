@@ -7,9 +7,9 @@ _grapheEnv.P={t:"Sommet", name:"P", marques:{}};
 function ajoutArc(init, term, cap, f){
    _arcs.push({t:"Arc", i:_grapheEnv[init], a:_grapheEnv[term], marques:{capacite:{t:"number", val:cap}, label:{t:"string", val:""+cap}, flot:{t:"number", val:f}}});
 }
-ajoutArc("S", "A", 20, 0);
-ajoutArc("S", "B", 20, 20);
-ajoutArc("A", "B", 20, 0);
+ajoutArc("S", "A", 20, 20);
+ajoutArc("S", "B", 20, 0);
+ajoutArc("A", "B", 20, 20);
 ajoutArc("A", "P", 10, 0);
 ajoutArc("B", "P", 20, 20);
 _predefEnv.Oriente=TRUE;
