@@ -150,6 +150,9 @@ function updateMap(name=false, sommets=_grapheEnv, arcs=_arcs){
    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
    for(let n in sommets){
       let s=sommets[n];
+      console.log(sommets===_grapheEnv, n, s);
+      if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
+      if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
       let x=s.marques.x.val;
       let y=s.marques.y.val;
       if(x<xmin) xmin=x;
@@ -715,7 +718,13 @@ function evaluate(expr){
    }
 
    if(expr.t=="SOMMET"){
-      var v=evalSommet(expr.arg, true);
+      let g=_grapheEnv;
+      if(expr.g) {
+         g=_graphes[expr.g];
+         if(g===undefined) throw {error:"env", name:"Graphe inexistant", 
+            msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
+      }
+      var v=evalSommet(expr.arg, true, g);
       if(!v || v.t!="Sommet") throw {error:"type", name:"Pas un sommet", 
 	 msg:"Un "+v.t+" n'est pas un sommet valide", ln:expr.arg.ln};
       return v;
@@ -1105,7 +1114,6 @@ function regularCheck(ultimate){
       for(let i in _graphes){
          if(i=="G") continue; // Déjà fait
          if(_grapheMode=="dot") updateGraphe(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
-         else if(_grapheMode=="map") updateMap(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
       }
    }
    if(_strChange){

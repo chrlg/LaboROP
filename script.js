@@ -56,6 +56,9 @@ function messageFromWorker(event){
       let $m=$("#misc")[0];
       $m.scrollTop=$m.scrollHeight;
    }
+   if(event.data.store){
+      window[event.data.name]=event.data.store;
+   }
 }
 
 function oneditorChange(e){
