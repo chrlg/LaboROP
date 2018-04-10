@@ -298,6 +298,9 @@ expr
       | expr "-" expr {
 	 $$ = {t:"-", left:$1, right:$3, ln:@2.first_line};
       }
+      | "-" expr {
+         $$ = {t:"-", left:{t:"number", val:0}, right:$2, ln:@1.first_line};
+      }
       | expr "*" expr {
 	 $$ = {t:"*", left:$1, right:$3, ln:@2.first_line};
       }

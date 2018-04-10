@@ -150,7 +150,6 @@ function updateMap(name=false, sommets=_grapheEnv, arcs=_arcs){
    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
    for(let n in sommets){
       let s=sommets[n];
-      console.log(sommets===_grapheEnv, n, s);
       if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
       if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
       let x=s.marques.x.val;
@@ -221,15 +220,20 @@ function getEnv(sym){
 function evaluateArc(o, ln){
    if(o.length!=6) throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:ln};
    var w=o[4][o[5]]; // L'arc lui-même
+   var s1=o[0][o[1]]; // Ses 2 sommets
+   var s2=o[2][o[3]];
 
-   // Arc qui a déjà été défini directement dans l'environnement
+   // Arc qui a déjà été défini directement dans l'environnement. cad (a,b)=... a déjà été fait
    // Cad que 
-   if(w!==undefined && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) return w; // Arc défini
+   if(w!==undefined && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) {
+      // Il faut toutefois vérifier que les sommets n'ont pas changé depuis la définition
+      // de l'arc (eg, (x,y)=(A,B) puis x=C
+      if(s1==w.i && s2==w.a) return w;
+   }
 
    // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
+   // ou alors ses sommets ont été changés indépendemment depuis qu'on en a parlé. 
    // mais peut-être que les sommets qui le constituent correspondent bien à un arc
-   var s1=o[0][o[1]];
-   var s2=o[2][o[3]];
    if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
       throw {error:"type", name:"Pas un arc ou une arête", 
 	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
@@ -292,9 +296,13 @@ function evaluateLVal(lv, direct){
 	 }
       }
       else if(v.t=="Arete"){
+         if(lv.f=="initial") return [v, "i"];
+         else if(lv.f=="terminal") return [v, "a"];
          return [v.marques, lv.f]; // Arete, dans une variable (et non en tant que paire)
       }
       else if(v.t=="Arc"){
+         if(lv.f=="initial") return [v, "i"];
+         else if(lv.f=="terminal") return [v, "a"];
          return [v.marques, lv.f];
       }
       else if(v.t=="Graphe"){
@@ -720,7 +728,7 @@ function evaluate(expr){
    if(expr.t=="SOMMET"){
       let g=_grapheEnv;
       if(expr.g) {
-         g=_graphes[expr.g];
+         g=_graphes[expr.g].sommets;
          if(g===undefined) throw {error:"env", name:"Graphe inexistant", 
             msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
       }
@@ -734,7 +742,12 @@ function evaluate(expr){
       var o=evaluate(expr.o);
       let res=NULL;
       if(o.t=="struct") res=o.f[expr.f];
-      else if(o.t=="Sommet" || o.t=="Arc" || o.t=="Arete") res=o.marques[expr.f];
+      else if(o.t=="Arc" || o.t=="Arete"){
+         if(expr.f=="initial") res=o.i;
+         else if(expr.f=="terminal") res=o.a;
+         else res=o.marques[expr.f];
+      }
+      else if(o.t=="Sommet") res=o.marques[expr.f];
       else if(o.t=="Graphe") res=o.sommets[expr.f];
       else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
       if(res===undefined) return NULL;

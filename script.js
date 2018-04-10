@@ -435,32 +435,20 @@ function initStorage(){
    }
 
    // Solution Labo2
-   let sol2=false;
-   for(let i=0; i<listFiles.length; i++){
-      if(listFiles[i].name=="Labo2 - solu prof") sol2=listFiles[i];
-   }
-   if(!sol2) {
-      sol2={name:"Labo2 - solu prof", version:0};
-      listFiles.push(sol2);
-   }
+   for(let sol of _sols){
+      let thissol=false;
+      for(let i=0; i<listFiles.length; i++){
+         if(listFiles[i].name==sol.name) thissol=listFiles[i];
+      }
+      if(!thissol) {
+         thissol={name:sol.name, version:0};
+         listFiles.push(thissol);
+      }
 
-   if(sol2.version < sol2version){
-      sol2.version=sol2version;
-      sol2.code = sol2code;
-   }
-   // Solution Labo4
-   let sol4=false;
-   for(let i=0; i<listFiles.length; i++){
-      if(listFiles[i].name=="Labo4 - solu prof") sol4=listFiles[i];
-   }
-   if(!sol4) {
-      sol4={name:"Labo4 - solu prof", version:0};
-      listFiles.push(sol4);
-   }
-
-   if(sol4.version < sol4version){
-      sol4.version=sol4version;
-      sol4.code = sol4code;
+      if(thissol.version < sol.version){
+         thissol.version=sol.version;
+         thissol.code = sol.code;
+      }
    }
    saveFiles();
 }

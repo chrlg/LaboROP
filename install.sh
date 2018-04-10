@@ -9,7 +9,7 @@ do
       echo jison done
    fi
    mark=0
-   for i in *.html *.jison *.js *.css
+   for i in *.html *.jison *.js *.css .htaccess
    do
       if [[ $i -nt .installSentinelle ]]
       then
