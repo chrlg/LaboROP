@@ -1013,6 +1013,7 @@ function interpCall(call){
    if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
    if(fn.t=="predfn") return fn.f(call.args, call.ln, call.f);
+   if(fn.t=="predvar" && fn.optarg) return fn.f(call.args, call.ln, call.f);
    if(fn.t!="DEF") throw {error:"type", name:"Pas une fonction",
 	    msg:"Tentative d'appeler "+call.f+", qui n'est pas une fonction", ln:call.ln};
    if(fn.args.length != call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
@@ -1373,17 +1374,29 @@ function prePrintln(a){
    _str+="\n";
 }
 
-function preM(){
+function preM(args, ln, fname){
    var M={t:"matrix", val:[]};
-   var k=Object.keys(_grapheEnv);
+   var k;
+   var arcs;
+   if(args){
+      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Adj ne peut prendre qu'un argument optionnel, le graphe"};
+      let g=evaluate(args[0]);
+      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Adj est utilisée avec un argument optionnel, cet argument doit être un graphe"};
+      k=Object.keys(g.sommets);
+      arcs=g.arcs;
+   }
+   else {
+      k=Object.keys(_grapheEnv);
+      arcs=_arcs;
+   }
    for(let i=0; i<k.length; i++){
       M.val[i]=new Array(k.length).fill(0);
       for(let j=0; j<k.length; j++){
 	 M.val[i][j]=0;
-         for(let ai=0; ai<_arcs.length; ai++){
-            if(_arcs[ai].i.name == k[i] && _arcs[ai].a.name==k[j]) {;}
+         for(let ai=0; ai<arcs.length; ai++){
+            if(arcs[ai].i.name == k[i] && arcs[ai].a.name==k[j]) {;}
             else if(isOrient()) continue;
-            else if(_arcs[ai].a.name==k[i] && _arcs[ai].i.name==k[j]) {;}
+            else if(arcs[ai].a.name==k[i] && arcs[ai].i.name==k[j]) {;}
             else continue;
             M.val[i][j]++;
          }
@@ -1582,9 +1595,9 @@ function interpret(tree){
    _arcs=[];
    _graphes.G = {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
    _predefEnv={};
-   _predefEnv["Adj"]={t: "predvar", f:preM};
-   _predefEnv["Id"]={t: "predvar", f:preId};
-   _predefEnv["Zero"]={t: "predvar", f:preZero};
+   _predefEnv["Adj"]={t: "predvar", f:preM, optarg:true};
+   _predefEnv["Id"]={t: "predvar", f:preId, optarg:true};
+   _predefEnv["Zero"]={t: "predvar", f:preZero, optarg:true};
    _predefEnv["Oriente"]=UNDEFINED;
    _predefEnv["OpCount"]={t:"predvar", f:preOpCnt};
    _predefEnv["sommets"]={t:"predfn", f:preSommets};
