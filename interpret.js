@@ -1422,11 +1422,18 @@ function preId(args, ln, fname){
    return M;
 }
 
-function preZero(){
+function preZero(args, ln, fname){
    var M={t:"matrix", val:[]};
-   var k=Object.keys(_grapheEnv);
-   for(let i=0; i<k.length; i++){
-      M.val[i]=new Array(k.length).fill(0);
+   var n=0;
+   if(args){
+      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Zero ne peut prendre qu'un argument optionnel, le graphe"};
+      let g=evaluate(args[0]);
+      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Zero est utilisée avec un argument optionnel, cet argument doit être un graphe"};
+      n=Object.keys(g.sommets).length;
+   }
+   else n=Object.keys(_grapheEnv).length;
+   for(let i=0; i<n; i++){
+      M.val[i]=new Array(n).fill(0);
    }
    return M;
 }
