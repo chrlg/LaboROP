@@ -367,8 +367,8 @@ function multMat(a, b){
 }
 
 function boolMultMat(a,b){
-   let R=preZero();
    let n=a.val.length;
+   let R=zeroDim(n);
    for(let i=0; i<n; i++){
       for(let j=0; j<n; j++){
          for(let k=0; k<n; k++){
@@ -673,9 +673,10 @@ function evaluate(expr){
          if(a.t!="matrix" || b.t!="matrix")
             throw {error:"type", name:"Erreur de type", 
                    msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
-         let R=preZero();
-         for(let i=0; i<a.val.length; i++){
-            for(let j=0; j<a.val.length; j++){
+         let n=a.val.length;
+         let R=zeroDim(n);
+         for(let i=0; i<n; i++){
+            for(let j=0; j<n; j++){
                R.val[i][j] = (a.val[i][j]!=0 || b.val[i][j]!=0)?1:0;
             }
          }
@@ -1422,8 +1423,15 @@ function preId(args, ln, fname){
    return M;
 }
 
-function preZero(args, ln, fname){
+function zeroDim(n){
    var M={t:"matrix", val:[]};
+   for(let i=0; i<n; i++){
+      M.val[i]=new Array(n).fill(0);
+   }
+   return M;
+}
+
+function preZero(args, ln, fname){
    var n=0;
    if(args){
       if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Zero ne peut prendre qu'un argument optionnel, le graphe"};
@@ -1432,10 +1440,7 @@ function preZero(args, ln, fname){
       n=Object.keys(g.sommets).length;
    }
    else n=Object.keys(_grapheEnv).length;
-   for(let i=0; i<n; i++){
-      M.val[i]=new Array(n).fill(0);
-   }
-   return M;
+   return zeroDim(n);
 }
 
 function preArcs(args, ln){
