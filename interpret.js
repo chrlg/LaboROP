@@ -1316,7 +1316,6 @@ function preDernier(args, ln){
 
 
 function prePrint(args){
-   _strChange=true;
    function printRec(o){
       if(typeof o=="object"){
 	 if(o.t=="Sommet") _str+=o.name;
@@ -1365,6 +1364,7 @@ function prePrint(args){
    for(var i=0; i<args.length; i++){
       var a=evaluate(args[i]);
       printRec(a);
+      _strChange=true;
    }
 }
 
