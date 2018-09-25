@@ -434,3 +434,71 @@ def chaineChemin():
 #println("Le chemin est : ", chaineChemin())
 #cheminRouge()
 `});
+
+function addSkel(skel, name){
+   let str=skel.prologue;
+   let names=[];
+   for(let i=1; i<51; i++) names[i]="function"+i;
+   let rnfn=function(){
+      return Math.random()-0.5;
+   }
+   names.sort(rnfn);
+   skel.rnd.sort(rnfn);
+   for(let s of skel.rnd) str += s;
+   str += skel.postface;
+   for(let i=0; i<50; i++){
+      let org=new RegExp("_NAME"+i+"_", "g");
+      str=str.replace(org, names[i]);
+   }
+   _sols.push({version:skel.version, name:name, code:str});
+}
+
+let skel={};
+skel.version=1;
+skel.prologue=`
+#blabla
+#si si
+`;
+
+
+skel.rnd=[];
+skel.rnd.push(`
+def _NAME1_():
+   return 12
+`);
+skel.rnd.push(`
+def _NAME2_():
+   return "toto" 
+`);
+skel.rnd.push(`
+def _NAME3_():
+   return 2+2 
+`);
+skel.postface=`
+# cqfd
+`;
+
+addSkel(skel, "TExercice 1");
+
+skel.prologue=`
+#Un autre prologue
+`;
+
+skel.rnd=[];
+skel.rnd.push(`
+def _NAME1_():
+   return "exo2 fn1"
+`);
+
+skel.rnd.push(`
+def _NAME2_():
+   return "exo2 fn2"
+`);
+skel.rnd.push(`
+def _NAME3_():
+   return "exo2 fn3"
+`);
+skel.postface=`
+#Une autre postface
+`;
+addSkel(skel, "T Exo 2");
