@@ -804,6 +804,9 @@ function evaluate(expr){
    if(expr.t=="Arc"){
       return creerArc(expr);
    }
+   if(expr.t=="Arete"){
+      return creerArete(expr);
+   }
    console.trace("Cannot evaluate", expr);
 }
 
@@ -969,8 +972,10 @@ function creerArete(ins){
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
-   arcs.push({t:"Arete", i:l, a:r, marques:{}});
+   let na={t:"Arete", i:l, a:r, marques:{}};
+   arcs.push(na);
    if(g===_grapheEnv) _grapheChange=true;
+   return na;
 }
 
 function creerArc(ins){
@@ -1257,7 +1262,14 @@ function preRandom(args){
    }
    var a=evaluate(args[0]);
    if(a.t=="number"){
-      return Math.floor(Math.random()*a);
+      if(args.length==2){
+         let b=evaluate(args[1]);
+         if(b.t!="number") throw {error:"type", name:"Mauvais argument pour random",
+            msg:"Un entier et un "+a.t+" ne sont pas des arguments valides", 
+            ln:args[1].ln};
+         return a.val+Math.floor(Math.random()*(b.val-a.val));
+      }
+      return Math.floor(Math.random()*a.val);
    }
    if(a.t!="array"){
       throw {error:"type", name:"Mauvais argument pour random", 
@@ -1276,18 +1288,27 @@ function preRandom(args){
       for(var ii=0; ii<a.val.length; ii++){
 	 var i=(r+ii)%a.val.length;
 	 var cur=a.val[i];
+         // Environnement pour self
+         let envSelf={self:cur};
+         _localEnv=envSelf;
+         _stackEnv.push(envSelf);
 	 var env=false; // Environnement d'évaluation de la condition (champs des éléments)
 	 if(cur && cur.t=="struct") env=cur.f;
 	 if(cur && (cur.t=="Arc" || cur.t=="Arete" || cur.t=="Sommet")) env=cur.marques;
 	 if(env){ // S'il y a un environnement, on le push avant d'évaluer la condition
 	    _localEnv=env;
 	    _stackEnv.push(env);
+            console.log(JSON.stringify(_stackEnv));
 	 }
 	 var v=evaluate(args[1]);
 	 if(env){
 	    _stackEnv.pop();
 	    _localEnv = _stackEnv[_stackEnv.length-1];
 	 }
+         // Retrait de envSelf
+         _stackEnv.pop();
+         _localEnv = _stackEnv[_stackEnv.length-1];
+
 	 if(!v || v.t!="boolean") throw {error:"type", name:"Condition non booléenne",
 	    msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
 	 if(v.val) return cur;

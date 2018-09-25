@@ -370,6 +370,9 @@ expr
       | "Arc" grapheSpec "(" expr "," expr ")" {
 	 $$ = { t:"Arc", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
+      | "Arete" grapheSpec "[" expr "," expr "]" {
+	 $$ = { t:"Arete", g:$2, left:$4, right:$6, ln:@1.first_line};
+      }
       | lvalue "[" borne ":" borne "]" {
          $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
       }
