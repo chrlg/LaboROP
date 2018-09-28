@@ -1,18 +1,40 @@
 // © C. Le Gal, 2017-2018
 importScripts("grlang.js");
 
+class Environnement {
+   constructor(){
+      // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
+      // Il est interdit de les écraser
+      this.PredefEnv = {}; 
+      this.GrapheEnv = {};
+      this.GlobalEnv = {};
+      this.Graphes = {};
+      this.LocalEnvStack = [];
+   }
+
+   // Méthode utilitaire : accèse à la variable "Oriente" de l'environnement
+   // prédéfini, disant si un grave est orienté ou non
+   isOrient(){
+      if(this.PredefEnv.Oriente===undefined) return undefined;
+      else return this.PredefEnv.Oriente.val;
+   }
+   setOrient(v){
+      this.PredefEnv["Oriente"]=v;
+   }
+}
+
+var _env = new Environnement();
+
 // Les environnements
 // Il y a 3 environnements globaux: _predef qui contient les constantes et fonctions fournies
 // _grapheEnv, qui contient les sommets désignés par leurs noms
 // _globalEnv, qui contient les variables globales et fonctions définies par l'utilisateur
 // Et 1 environnement local, qui est créé à chaque appel de fonction
 // Par défaut, l'envionnement local est l'environnement global. 
-// _envStack est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
-var _predefEnv = {};
+// _stackEnv est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
 var _grapheEnv = {};
 var _grapheMode = "dot"; // Défaut : rendu avec graphviz
 var _globalEnv = {};
-var _envStack = [_globalEnv] ;
 var _localEnv = _globalEnv;
 var _numSommet=0, _numArc=0; // Compteur sommets et arcs
 var _modules = {}; // Modules importés
@@ -27,7 +49,7 @@ var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'ell
 var _grapheChange=false; // true ssi le graphe a changé depuis la dernière fois qu'il a été affiché
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
-// définies dans _predefEnv. FALSE correspond à False, etc.)
+// définies dans PredefEnv. FALSE correspond à False, etc.)
 const FALSE={t:"boolean", val:false};
 const TRUE={t:"boolean", val:true};
 const UNDEFINED={t:"boolean", val:undefined};
@@ -108,7 +130,7 @@ function parseTabulation(str){
 // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
 function updateGraphe(name=false, sommets=_grapheEnv, arcs=_arcs){
    let gr="";
-   let orient = isOrient();
+   let orient = _env.isOrient();
    if(orient) gr+="digraph{";
    else gr+="graph{";
    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
@@ -177,15 +199,9 @@ function updateMap(name=false, sommets=_grapheEnv, arcs=_arcs){
 }
 
 
-// Fonction utilitaire : donne la valeur de la variable (du langage cible) "Oriente"
-function isOrient(){
-   if(_predefEnv.Oriente===undefined) return undefined;
-   else return _predefEnv.Oriente.val;
-}
-
 // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
 function getEnv(sym){
-   var envs=[_localEnv, _globalEnv, _grapheEnv, _predefEnv];
+   var envs=[_localEnv, _globalEnv, _grapheEnv, _env.PredefEnv];
    for(let i=0; i<envs.length; i++){
       if(envs[i][sym]!==undefined){
 	 if(envs[i][sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
@@ -258,7 +274,7 @@ function evaluateLVal(lv, direct){
 
    // Fonction utilitaire : récupère l'environnement concerné
    function getIdlv(name){
-      if(_predefEnv[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
+      if(_env.PredefEnv[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
       if(_grapheEnv[name]) return _grapheEnv;
       if(_graphes[name]) return _globalEnv;
       if(_localEnv[name] && _localEnv[name].t=="global") return _globalEnv;
@@ -270,8 +286,8 @@ function evaluateLVal(lv, direct){
    }
 
    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
-      if(lv.t=="arete" && isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
-      if(lv.t=="arc" && !isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
+      if(lv.t=="arete" && _env.isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
+      if(lv.t=="arc" && !_env.isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
       let a=getIdlv(lv.initial);
       let b=getIdlv(lv.terminal);
       let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
@@ -415,12 +431,12 @@ function evaluate(expr){
    // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
    // (le langage interdit donc les pointeurs de fonctions)
    if(expr.t=="id"){
-      if(_predefEnv[expr.name]){
-         if(_predefEnv[expr.name].t == "predvar") expr.l = _predefEnv[expr.name].f;
-         else if(_predefEnv[expr.name].t == "predfn") throw {error:"type", name:"Variable incorrecte", 
+      if(_env.PredefEnv[expr.name]){
+         if(_env.PredefEnv[expr.name].t == "predvar") expr.l = _env.PredefEnv[expr.name].f;
+         else if(_env.PredefEnv[expr.name].t == "predfn") throw {error:"type", name:"Variable incorrecte", 
 	    msg: "Tentative d'utiliser la fonction prédéfinie "+expr.name+ " comme une variable",
 	    ln:expr.ln};
-         else expr.l=function(){return _predefEnv[expr.name];};
+         else expr.l=function(){return _env.PredefEnv[expr.name];};
       }
       else if(_grapheEnv[expr.name]) expr.l=function(){return _grapheEnv[expr.name];}
       else if(_localEnv[expr.name]!==undefined && _localEnv[expr.name].t!="global") expr.l=function(){return _localEnv[expr.name]};
@@ -954,8 +970,8 @@ function creerArete(ins){
    let left=ins.left;
    let right=ins.right;
    // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
-   if(isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
-   if(isOrient()===undefined) _predefEnv["Oriente"]=FALSE;
+   if(_env.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
+   if(_env.isOrient()===undefined) _env.setOrient(FALSE);
 
    // Graphe concerné
    let g=_grapheEnv;
@@ -982,8 +998,8 @@ function creerArc(ins){
    let left=ins.left;
    let right=ins.right;
    // Un arc implique un graphe orienté
-   if(isOrient()===undefined) _predefEnv["Oriente"]=TRUE;
-   if(!isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
+   if(_env.isOrient()===undefined) _env.setOrient(TRUE);
+   if(!_env.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
    // Graphe concerné
    let g=_grapheEnv;
@@ -1007,7 +1023,7 @@ function creerArc(ins){
 }
 
 function interpDef(def){
-   if(_predefEnv[def.nom]!==undefined) throw {error:"type", 
+   if(_env.PredefEnv[def.nom]!==undefined) throw {error:"type", 
       name: "Surdéfinition", msg: "Impossible de redéfinir le symbole prédéfini "+def.nom,
       ln:def.ln};
    if(_globalEnv[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
@@ -1238,7 +1254,7 @@ function interpretWithEnv(tree, isloop){
          continue;
       }
       if(ti.t=="Graphe"){
-         if(_predefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
+         if(_env.PredefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
          if(ti.name=="G") throw {error:"env", name:"Surdéfinition", msg:"Le nom G est réservé au graphe par défaut", ln:ti.ln};
          _globalEnv[ti.name] = ti;
@@ -1417,7 +1433,7 @@ function preM(args, ln, fname){
 	 M.val[i][j]=0;
          for(let ai=0; ai<arcs.length; ai++){
             if(arcs[ai].i.name == k[i] && arcs[ai].a.name==k[j]) {;}
-            else if(isOrient()) continue;
+            else if(_env.isOrient()) continue;
             else if(arcs[ai].a.name==k[i] && arcs[ai].i.name==k[j]) {;}
             else continue;
             M.val[i][j]++;
@@ -1634,40 +1650,39 @@ function interpret(tree){
    _grapheEnv={};
    _arcs=[];
    _graphes.G = {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
-   _predefEnv={};
-   _predefEnv["Adj"]={t: "predvar", f:preM, optarg:true};
-   _predefEnv["Id"]={t: "predvar", f:preId, optarg:true};
-   _predefEnv["Zero"]={t: "predvar", f:preZero, optarg:true};
-   _predefEnv["Oriente"]=UNDEFINED;
-   _predefEnv["OpCount"]={t:"predvar", f:preOpCnt};
-   _predefEnv["sommets"]={t:"predfn", f:preSommets};
-   _predefEnv["len"]={t:"predfn", f:preLen};
-   _predefEnv["True"]=TRUE;
-   _predefEnv["False"]=FALSE;
-   _predefEnv["pi"]={t:"number", val:Math.PI};
-   _predefEnv["random"]={t:"predfn", f:preRandom};
-   _predefEnv["print"]={t:"predfn", f:prePrint};
-   _predefEnv["refresh"]={t:"predfn", f:preRefresh};
-   _predefEnv["println"]={t:"predfn", f:prePrintln};
-   _predefEnv["arcs"]={t:"predfn", f:preArcs};
-   _predefEnv["aretes"]={t:"predfn", f:preArcs};
-   _predefEnv["null"]={t:"predvar", f:function(){return NULL;}};
-   _predefEnv["sqrt"]={t:"predfn", f:preMaths1};
-   _predefEnv["sqr"]={t:"predfn", f:preMaths1};
-   _predefEnv["exp"]={t:"predfn", f:preMaths1};
-   _predefEnv["log"]={t:"predfn", f:preMaths1};
-   _predefEnv["log10"]={t:"predfn", f:preMaths1};
-   _predefEnv["log2"]={t:"predfn", f:preMaths1};
-   _predefEnv["sin"]={t:"predfn", f:preMaths1};
-   _predefEnv["cos"]={t:"predfn", f:preMaths1};
-   _predefEnv["tan"]={t:"predfn", f:preMaths1};
-   _predefEnv["asin"]={t:"predfn", f:preMaths1};
-   _predefEnv["acos"]={t:"predfn", f:preMaths1};
-   _predefEnv["atan"]={t:"predfn", f:preMaths1};
-   _predefEnv["abs"]={t:"predfn", f:preMaths1};
-   _predefEnv["import"]={t:"predfn", f:preImport};
-   _predefEnv["pop"]={t:"predfn", f:prePop};
-   _predefEnv["Infinity"]={t:"number", val:Infinity};
+   _env.setOrient(UNDEFINED);
+   _env.PredefEnv["Adj"]={t: "predvar", f:preM, optarg:true};
+   _env.PredefEnv["Id"]={t: "predvar", f:preId, optarg:true};
+   _env.PredefEnv["Zero"]={t: "predvar", f:preZero, optarg:true};
+   _env.PredefEnv["OpCount"]={t:"predvar", f:preOpCnt};
+   _env.PredefEnv["sommets"]={t:"predfn", f:preSommets};
+   _env.PredefEnv["len"]={t:"predfn", f:preLen};
+   _env.PredefEnv["True"]=TRUE;
+   _env.PredefEnv["False"]=FALSE;
+   _env.PredefEnv["pi"]={t:"number", val:Math.PI};
+   _env.PredefEnv["random"]={t:"predfn", f:preRandom};
+   _env.PredefEnv["print"]={t:"predfn", f:prePrint};
+   _env.PredefEnv["refresh"]={t:"predfn", f:preRefresh};
+   _env.PredefEnv["println"]={t:"predfn", f:prePrintln};
+   _env.PredefEnv["arcs"]={t:"predfn", f:preArcs};
+   _env.PredefEnv["aretes"]={t:"predfn", f:preArcs};
+   _env.PredefEnv["null"]={t:"predvar", f:function(){return NULL;}};
+   _env.PredefEnv["sqrt"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["sqr"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["exp"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["log"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["log10"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["log2"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["sin"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["cos"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["tan"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["asin"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["acos"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["atan"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["abs"]={t:"predfn", f:preMaths1};
+   _env.PredefEnv["import"]={t:"predfn", f:preImport};
+   _env.PredefEnv["pop"]={t:"predfn", f:prePop};
+   _env.PredefEnv["Infinity"]={t:"number", val:Infinity};
    _globalEnv={};
    _globalEnv.G = _graphes.G;
    _localEnv=_globalEnv;
