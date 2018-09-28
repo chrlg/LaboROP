@@ -204,3 +204,31 @@ de toutes façons définir une variable de même nom qu'un sommet)
    * Ajouts ou modifications
       - Vous pouvez maintenant ajouter un attribut "color" à un sommet, arc ou arête
         Dans ce cas, il sera représenté avec cette couleur, et en gras, dans le graphe
+      - Extraction de sous-tableaux T[a:b]
+   * Correction de bugs
+      - Comparaison de matrices
+      - Lignes vides commentées
+      - Arrêt boucle infinie
+
+27/2/2018:
+   * Ajouts ou modifications
+      - "import" pour charger des modules fournis par le prof
+      - deux modes d'affichage des graphes : "canvas" pour les gros graphes
+      - concaténation de tableaux
+      - début d'un "JIT" pour l'accélération
+
+13/3/2018
+   * Ajouts à la demande d'étudiants
+      - Infinity
+   * Ajouts ou modificatin
+      - Multi-graphe (on peut créer plusieurs graphes, visualisés dans autant d'onglets)
+      - Tooltip sur l'affichage des graphes 
+      - Zoom sur l'affichage des graphes
+
+10/4/2018
+   * Ajouts à la demande d'étudiants
+      - refresh pour permettre une sorte d'animation
+
+25/9/2018
+   * Correction de bugs
+      - x=Arete [A,B] ne fonctionnait pas
