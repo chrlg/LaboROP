@@ -21,6 +21,9 @@ class Environnement {
    setOrient(v){
       this.PredefEnv["Oriente"]=v;
    }
+   getPredef(name){
+      return this.PredefEnv[name];
+   }
 }
 
 var _env = new Environnement();
@@ -1023,7 +1026,7 @@ function creerArc(ins){
 }
 
 function interpDef(def){
-   if(_env.PredefEnv[def.nom]!==undefined) throw {error:"type", 
+   if(_env.getPredef(def.nom)) throw {error:"type",
       name: "Surdéfinition", msg: "Impossible de redéfinir le symbole prédéfini "+def.nom,
       ln:def.ln};
    if(_globalEnv[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
