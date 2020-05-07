@@ -1,55 +1,37 @@
 // © C. Le Gal, 2017-2018
 importScripts("grlang.js");
 
+// Les environnements
+// Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
+// Graphes, qui contient les graphes, désignés par leurs noms
+// Graphes.G.sommets qui contient les sommets du graph principal désignés par leurs noms
+// global, qui contient les variables globales et fonctions définies par l'utilisateur
+// Et 1 environnement local, qui est créé à chaque appel de fonction
+// Par défaut, l'envionnement local est l'environnement global. 
 class Environnement {
    constructor(){
       // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
       // Il est interdit de les écraser
-      this.PredefEnv = {}; 
-      this.GrapheEnv = {};
-      this.GlobalEnv = {};
+      this.Predef = {}; 
+      // Les Graphes. Dont le graphe par défaut, G
       this.Graphes = {};
-      this.LocalEnvStack = [];
+      // Les variables globales
+      this.Global = {};
+      // Les variables locales (qui sont une pile d'environnements
+      this.LocalEnvStack = [this.Global];
+      // L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
+      this.Local = this.Global;
+
+      // Il y a par défaut un graphe G
+      this.addGraphe("G", 0);
    }
 
-   // Méthode utilitaire : accèse à la variable "Oriente" de l'environnement
-   // prédéfini, disant si un grave est orienté ou non
-   isOrient(){
-      if(this.PredefEnv.Oriente===undefined) return undefined;
-      else return this.PredefEnv.Oriente.val;
-   }
-   setOrient(v){
-      this.PredefEnv["Oriente"]=v;
-   }
-   getPredef(name){
-      return this.PredefEnv[name];
+   function addGraphe(name, ln){
+      if(this.Graphes[name]){
+	 throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
+      }
    }
 }
-
-var _env = new Environnement();
-
-// Les environnements
-// Il y a 3 environnements globaux: _predef qui contient les constantes et fonctions fournies
-// _grapheEnv, qui contient les sommets désignés par leurs noms
-// _globalEnv, qui contient les variables globales et fonctions définies par l'utilisateur
-// Et 1 environnement local, qui est créé à chaque appel de fonction
-// Par défaut, l'envionnement local est l'environnement global. 
-// _stackEnv est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
-var _grapheEnv = {};
-var _grapheMode = "dot"; // Défaut : rendu avec graphviz
-var _globalEnv = {};
-var _localEnv = _globalEnv;
-var _numSommet=0, _numArc=0; // Compteur sommets et arcs
-var _modules = {}; // Modules importés
-var _graphes = {};
-
-var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
-              // mais on a aussi besoin, globalement, d'une liste d'arcs
-var _str=""; // Chaine "stdout" à envoyer à la console
-var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
-var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
-var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
-var _grapheChange=false; // true ssi le graphe a changé depuis la dernière fois qu'il a été affiché
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
 // définies dans PredefEnv. FALSE correspond à False, etc.)
@@ -57,6 +39,40 @@ const FALSE={t:"boolean", val:false};
 const TRUE={t:"boolean", val:true};
 const UNDEFINED={t:"boolean", val:undefined};
 const NULL={t:"null"};
+
+// Chaque graphe de Graphes a la structure suivante :
+// * name : le nom du graphe. Le graphe par défaut s'appelle G
+// * sommets : la liste des sommets. Celle de G constitue par ailleurs un environnement en soi
+// * arcs : la liste des arcs
+// * mode : le mode d'affichage. "dot" par défaut, pour G. "dot"=rendu avec GraphViz. "map"=rendu des arcs seulement
+// * change : true si le graphe a changé depuis la dernière fois qu'il a été affiché
+// * oriente : true si le graphe est orienté, false s'il ne l'est pas, undefined si on n'a pas encore décidé
+class Graphe {
+   constructor(name){
+      this.name = name;
+      this.sommets = {};
+      this.arcs = [];
+      this.mode = "dot";
+      this.change = false;
+      this.oriente = UNDEFINED;
+   }
+
+   function isOrient(){
+      return this.oriente.val;
+   }
+   function setOrient(o){
+      this.oriente.val = o;
+   }
+}
+
+var _env = new Environnement();
+var _G = _env.Graphes.G; // alias utilitaire 
+
+var _modules = {}; // Modules importés
+var _str=""; // Chaine "stdout" à envoyer à la console
+var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
+var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
+var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
@@ -131,46 +147,46 @@ function parseTabulation(str){
 }
 
 // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
-function updateGraphe(name=false, sommets=_grapheEnv, arcs=_arcs){
+function updateGraphe(g){
    let gr="";
-   let orient = _env.isOrient();
+   let orient = g.isOrient();
    if(orient) gr+="digraph{";
    else gr+="graph{";
    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
    // été générés de toutes façons avec leurs arcs)
    // (Note: servira plus tard pour les attributs)
-   for(let e in sommets){
+   for(let e in g.sommets){
       let attr="";
-      let col=sommets[e].marques.color;
+      let col=g.sommets[e].marques.color;
       if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
       gr+=(""+e+attr+";");
    }
    // Arcs ou aretes
-   for(let i=0; i<arcs.length; i++){
+   for(let a of g.arcs){
       let attr="";
-      let col=arcs[i].marques.color;
-      let val=arcs[i].marques.val;
-      let label=arcs[i].marques.label;
-      let tooltip="("+arcs[i].i.name+","+arcs[i].a.name+")\n";
-      for(let m in arcs[i].marques){
-         let v=arcs[i].marques[m].val;
+      let col=a.marques.color;
+      let val=a.marques.val;
+      let label=a.marques.label;
+      let tooltip="("+a.i.name+","+a.a.name+")\n";
+      for(let m in a.marques){
+         let v=a.marques[m].val;
          tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
       }
       attr=attr+`[tooltip="${tooltip}"]`;
       if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
       if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
       else if(val && val.t=="number") attr=attr+`[label="${""+val.val}"]`;
-      if(orient) gr+=""+arcs[i].i.name +"->"+arcs[i].a.name+attr+";";
-      else gr+=""+arcs[i].i.name+"--"+arcs[i].a.name+attr+";";
+      if(orient) gr+=""+a.i.name +"->"+a.a.name+attr+";";
+      else gr+=""+a.i.name+"--"+a.a.name+attr+";";
    }
    gr+="}\n";
    // Envoie le graphe au thread principal, qui appelera dot avec
-   postMessage({graph:gr, name:name});
+   postMessage({graph:gr, name:g.name});
 }
 
 // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
 // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
-function updateMap(name=false, sommets=_grapheEnv, arcs=_arcs){
+function updateMap(name=false, sommets, arcs){
    let gr=[];
    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
    for(let n in sommets){
@@ -257,10 +273,10 @@ function evaluateArc(o, ln){
       throw {error:"type", name:"Pas un arc ou une arête", 
 	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
    }
-   let arcs=_arcs;
-   for(let gn in _graphes){
-      let g=_graphes[gn];
-      if (g.sommets[s1.name]===s1) arcs=g.arcs;
+   let arcs=_arcs; // Par défaut, on cherche dans le graphe G
+   for(let gn in _env.Graphes){
+      let g=_env.Graphes[gn];
+      if (g.sommets[s1.name]===s1) arcs=g.arcs; // Sauf si s1 est un sommet existant d'un autre graphe
    }
    for(let i=0; i<arcs.length; i++){
       if(arcs[i].i==s1 && arcs[i].a==s2) return arcs[i];
@@ -279,7 +295,7 @@ function evaluateLVal(lv, direct){
    function getIdlv(name){
       if(_env.PredefEnv[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
       if(_grapheEnv[name]) return _grapheEnv;
-      if(_graphes[name]) return _globalEnv;
+      if(_env.Graphes[name]) return _globalEnv;
       if(_localEnv[name] && _localEnv[name].t=="global") return _globalEnv;
       return _localEnv;
    }
@@ -748,7 +764,7 @@ function evaluate(expr){
    if(expr.t=="SOMMET"){
       let g=_grapheEnv;
       if(expr.g) {
-         g=_graphes[expr.g].sommets;
+         g=_env.Graphes[expr.g].sommets;
          if(g===undefined) throw {error:"env", name:"Graphe inexistant", 
             msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
       }
@@ -871,8 +887,8 @@ function interpCreerSommets(ins){
    let liste=ins.args;
    let g=_grapheEnv;
    if(ins.g){
-      if(!_graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-      g=_graphes[ins.g].sommets;
+      if(!_env.Graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
+      g=_env.Graphes[ins.g].sommets;
    }
    for(let i=0; i<liste.length; i++){
       let ev=evalSommet(liste[i], false, g);
@@ -972,19 +988,21 @@ function interpAffect(ins){
 function creerArete(ins){
    let left=ins.left;
    let right=ins.right;
-   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
-   if(_env.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
-   if(_env.isOrient()===undefined) _env.setOrient(FALSE);
 
    // Graphe concerné
    let g=_grapheEnv;
    let arcs=_arcs;
    if(ins.g){
-      let graf=_graphes[ins.g];
+      let graf=_env.Graphes[ins.g];
       if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
       g=graf.sommets;
       arcs=graf.arcs;
    }
+
+   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
+   if(_env.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
+   if(_env.isOrient()===undefined) _env.setOrient(FALSE);
+
 
    var l=evalSommet(left, true, g);
    var r=evalSommet(right, true, g);
@@ -992,6 +1010,7 @@ function creerArete(ins){
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
    let na={t:"Arete", i:l, a:r, marques:{}};
+   if(arcs.length>1000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
    arcs.push(na);
    if(g===_grapheEnv) _grapheChange=true;
    return na;
@@ -1008,7 +1027,7 @@ function creerArc(ins){
    let g=_grapheEnv;
    let arcs=_arcs;
    if(ins.g){
-      let graf=_graphes[ins.g];
+      let graf=_env.Graphes[ins.g];
       if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
       g=graf.sommets;
       arcs=graf.arcs;
@@ -1020,6 +1039,7 @@ function creerArc(ins){
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
    let na={t:"Arc", i:l, a:r, marques:{}};
+   if(arcs.length>1000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
    arcs.push(na);
    if(g===_grapheEnv) _grapheChange=true;
    return na;
@@ -1147,12 +1167,12 @@ function regularCheck(ultimate){
    if(_grapheChange){
       _grapheChange=false;
       if(_grapheMode=="dot") updateGraphe("G", _grapheEnv, _arcs);
-      else if(_grapheMode=="map" && ultimate) updateMap();
+      else if(_grapheMode=="map" && ultimate) updateMap(false, _grapheEnv, _arcs);
    }
    if(ultimate){
-      for(let i in _graphes){
+      for(let i in _env.Graphes){
          if(i=="G") continue; // Déjà fait
-         if(_grapheMode=="dot") updateGraphe(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
+         if(_grapheMode=="dot") updateGraphe(_env.Graphes[i].name, _env.Graphes[i].sommets, _env.Graphes[i].arcs);
       }
    }
    if(_strChange){
@@ -1257,13 +1277,17 @@ function interpretWithEnv(tree, isloop){
          continue;
       }
       if(ti.t=="Graphe"){
-         if(_env.PredefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
+         if(_env.PredefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_env.Graphes[ti.name]))
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
-         if(ti.name=="G") throw {error:"env", name:"Surdéfinition", msg:"Le nom G est réservé au graphe par défaut", ln:ti.ln};
+         if(ti.name=="G") {
+            _grapheEnv={};
+            _arcs=[];
+         }
          _globalEnv[ti.name] = ti;
          ti.sommets={};
          ti.arcs=[];
-         _graphes[ti.name]=ti;
+         ti.oriente=undefined;
+         _env.Graphes[ti.name]=ti;
          continue;
       }
       if(ti.t=="$"){
@@ -1497,8 +1521,8 @@ function preArcs(args, ln){
    }
    if(arcs===false){
       if(s){ // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
-         for(let gn in _graphes){
-            if(_graphes[gn].sommets[s.name]===s) arcs=_graphes[gn].arcs;
+         for(let gn in _env.Graphes){
+            if(_env.Graphes[gn].sommets[s.name]===s) arcs=_env.Graphes[gn].arcs;
          }
       }
       else arcs=_arcs;
@@ -1649,11 +1673,19 @@ function prePop(args, ln){
    return r[0];
 }
 
+function preClear(args, ln){
+   _grapheEnv={};
+   _arcs.length=0;
+   _env.Graphes.G.sommets=_grapheEnv;
+   _env.Graphes.G.arcs=_arcs;
+}
+
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
-   _graphes.G = {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
+   _env.Graphes['G']= {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
    _env.setOrient(UNDEFINED);
+   _env.PredefEnv["clear"]={t:"predfn", f:preClear};
    _env.PredefEnv["Adj"]={t: "predvar", f:preM, optarg:true};
    _env.PredefEnv["Id"]={t: "predvar", f:preId, optarg:true};
    _env.PredefEnv["Zero"]={t: "predvar", f:preZero, optarg:true};
@@ -1687,7 +1719,7 @@ function interpret(tree){
    _env.PredefEnv["pop"]={t:"predfn", f:prePop};
    _env.PredefEnv["Infinity"]={t:"number", val:Infinity};
    _globalEnv={};
-   _globalEnv.G = _graphes.G;
+   _globalEnv.G = _env.Graphes.G;
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
    interpretWithEnv(tree, false, false);

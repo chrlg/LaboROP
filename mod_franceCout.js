@@ -72,6 +72,6 @@ ajarc('V18','V19',107,1);
 ajarc('V20','V19',231,2);
 ajarc('S','V18',243,4);
 ajarc('S','V20',71,2);
-_predefEnv.Oriente=TRUE;
+_env.setOrient(TRUE);
 _grapheChange=true;
 _grapheMode="map";

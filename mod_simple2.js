@@ -12,5 +12,5 @@ ajoutArc("S", "B", 20, 0);
 ajoutArc("A", "B", 20, 20);
 ajoutArc("A", "P", 10, 0);
 ajoutArc("B", "P", 20, 20);
-_predefEnv.Oriente=TRUE;
+_env.setOrient(TRUE);
 _grapheChange=true;

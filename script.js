@@ -3,7 +3,7 @@ var worker;
 var Range;
 var errorMarker=false;
 var lastError;
-var timeoutLen=60000;
+var timeoutLen=120000;
 
 var _grlg = {
    svgw:false,
@@ -221,6 +221,8 @@ function init(){
          exec:()=>{showTab("matrix");}});
    editor.commands.addCommand({name:"ShowFiles", bindKey:{win:"alt-f",mac:"Alt-f"},
          exec:()=>{showTab("files");}});
+   editor.commands.addCommand({name:"Stop", bindKey:{win:"alt-c",mac:"Alt-c"},
+         exec:()=>{Terminate();}});
    editor.commands.addCommand({name:"Save&Run", 
          bindKey:{win:"Ctrl-s", mac:"Command-s"}, exec:saveCode});
    editor.commands.addCommand({name:"Run", 
