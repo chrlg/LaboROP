@@ -31,7 +31,23 @@ class Environnement {
 	 throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
       }
    }
+
+   // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
+   function get(sym){
+      let envs=[];
+      if(this.Local===this.Global) envs=[this.Global, this.Graphes.G.sommets, this.Predef];
+      else envs=[this.Local, this.Global, this.Graphes.G.sommets, this.Predef];
+
+      for(let e of envs){
+         if(e[sym]!==undefined){
+	    if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
+	    return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
+         }
+      }
+      return undefined;
+   }
 }
+
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
 // définies dans PredefEnv. FALSE correspond à False, etc.)
@@ -216,18 +232,6 @@ function updateMap(g){
    postMessage({mapgr:gr, name:g.name});
 }
 
-
-// Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
-function getEnv(sym){
-   var envs=[_localEnv, _globalEnv, _grapheEnv, _env.PredefEnv];
-   for(let i=0; i<envs.length; i++){
-      if(envs[i][sym]!==undefined){
-	 if(envs[i][sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
-	 return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
-      }
-   }
-   return undefined;
-}
 
 
 // Etant donnée une référence o (un "pointeur" en quelques sortes) vers un arc
