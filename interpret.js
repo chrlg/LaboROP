@@ -186,11 +186,10 @@ function updateGraphe(g){
 
 // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
 // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
-function updateMap(name=false, sommets, arcs){
+function updateMap(g){
    let gr=[];
    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-   for(let n in sommets){
-      let s=sommets[n];
+   for(let s of g.sommets){
       if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
       if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
       let x=s.marques.x.val;
@@ -200,9 +199,9 @@ function updateMap(name=false, sommets, arcs){
       if(y<ymin) ymin=y;
       if(y>ymax) ymax=y;
    }
-   for(let i=0; i<arcs.length; i++){
-      let s1=arcs[i].i;
-      let s2=arcs[i].a;
+   for(let a of g.arcs){
+      let s1=a.i;
+      let s2=a.a;
       let x1=s1.marques.x.val;
       let x2=s2.marques.x.val;
       let y1=s1.marques.y.val;
@@ -211,10 +210,10 @@ function updateMap(name=false, sommets, arcs){
       x2=(x2-xmin)*1000.0/(xmax-xmin);
       y1=(y1-ymin)*1000.0/(ymax-ymin);
       y2=(y2-ymin)*1000.0/(ymax-ymin);
-      if(arcs[i].marques.color) gr.push([x1,y1,x2,y2,arcs[i].marques.color.val]);
+      if(a.marques.color) gr.push([x1,y1,x2,y2,a.marques.color.val]);
       else gr.push([x1,y1,x2,y2]);
    }
-   postMessage({mapgr:gr, name:name});
+   postMessage({mapgr:gr, name:g.name});
 }
 
 
