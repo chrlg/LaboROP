@@ -4,7 +4,6 @@
       global $me;
       $dir = "./DB/" . $me . "/";
       if(!is_dir($dir)) mkdir($dir);
-      echo json_encode(scandir($dir));
       print_r(scandir($dir));
       exit(0);
    }
