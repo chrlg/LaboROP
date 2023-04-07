@@ -232,3 +232,6 @@ de toutes façons définir une variable de même nom qu'un sommet)
 25/9/2018
    * Correction de bugs
       - x=Arete [A,B] ne fonctionnait pas
+
+01/2/2023
+    * Ajout nombre décimaux
