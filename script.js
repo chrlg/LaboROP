@@ -43,12 +43,18 @@ function messageFromWorker(event){
       updateGraph(event.data);
       return;
    }
-   if(event.data.mapgr){
-      $("#svgcont").hide();
-      $("#canvascont").show();
-      showMap(event.data.mapgr);
-      return;
-   }
+    if(event.data.mapgr){
+        $("#svgcont").hide();
+        $("#canvascont").show();
+        showMap(event.data.mapgr);
+        return;
+    }
+    if(event.data.mapres){
+        $("#svgcont").hide();
+        $("#canvascont").show();
+        showReseau(event.data.mapres, event.data.arcs, event.data.name, event.data.bound, event.data.arrow);
+        return;
+    }
    if(event.data.termine!==undefined){
       $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
       worker=false;
@@ -120,6 +126,8 @@ function zoomGraph(){
    if (targeth<winh) targeth=winh;
    $("#svgcont svg").width(targetw).height(targeth);
    $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
+   if(_lastMapLines) showMap(_lastMapLines);
+   else if(_lastResData) showReseau(_lastResData[0], _lastResData[1], _lastResData[2], _lastResData[3], _lastResData[4]);
 }
 
 function updateGraph(gr){
@@ -140,42 +148,123 @@ function createExtraGraph(name){
    });
 }
 
+let _lastMapLines=false;
+let _lastResData=false;
 function showGraph(name){
-   $("#svgcont").html(_graphes[name]);
-   _grlg.svgw = $("#svgcont svg").width();
-   _grlg.svgh = $("#svgcont svg").height();
-   zoomGraph();
-   // Pour permettre aisément la sauvegarde (via bouton dans le coin)
-   //$("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
+    _lastMapLines=false;
+    _lastResData=false;
+    $("#svgcont").html(_graphes[name]);
+    _grlg.svgw = $("#svgcont svg").width();
+    _grlg.svgh = $("#svgcont svg").height();
+    zoomGraph();
+    // Pour permettre aisément la sauvegarde (via bouton dans le coin)
+    //$("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
 }
 
 function showMap(lines){
-   let targetscale = 1.1**_grlg.zoomlv;
-   _grapheMode="map";
-   let cv=$("#canvascont canvas")[0];
-   let ctx=cv.getContext("2d");
-   ctx.clearRect(0, 0, 1000, 1000);
-   ctx.strokeStyle="#000";
-   ctx.lineWidth=1/targetscale;
-   for(let i=0; i<lines.length; i++){
-      let L=lines[i];
-      if(L.length>4) continue;
-      ctx.beginPath();
-      ctx.moveTo(L[0], L[1]);
-      ctx.lineTo(L[2], L[3]);
-      ctx.stroke();
-   }
-   ctx.lineWidth=3/targetscale;
-   for(let i=0; i<lines.length; i++){
-      let L=lines[i];
-      if(L.length<5) continue;
-      ctx.beginPath();
-      ctx.strokeStyle=L[4];
-      ctx.moveTo(L[0], L[1]);
-      ctx.lineTo(L[2], L[3]);
-      ctx.stroke();
-   }
+    _lastMapLines=lines;
+    _lastResData=false;
+    let targetscale = 1.1**_grlg.zoomlv;
+    _grapheMode="map";
+    let cv=$("#canvascont canvas")[0];
+    let ctx=cv.getContext("2d");
+    ctx.clearRect(0, 0, 4000, 4000);
+    ctx.strokeStyle="#000";
+    ctx.lineWidth=4.0/targetscale;
+    for(let i=0; i<lines.length; i++){
+        let L=lines[i];
+        if(L.length>4) continue;
+        ctx.beginPath();
+        ctx.strokeStyle="#000";
+        ctx.moveTo(L[0], L[1]);
+        ctx.lineTo(L[2], L[3]);
+        ctx.stroke();
+    }
+    ctx.lineWidth=12.0;//targetscale;
+    for(let i=0; i<lines.length; i++){
+        let L=lines[i];
+        if(L.length<5) continue;
+        ctx.beginPath();
+        ctx.strokeStyle=L[4];
+        ctx.moveTo(L[0], L[1]);
+        ctx.lineTo(L[2], L[3]);
+        ctx.stroke();
+    }
 }
+
+function showReseau(sommets, arcs, name, bound, arrow){
+    _lastMapLines=false;
+    _lastResData=[sommets, arcs, name, bound, arrow];
+    let targetscale = 1.1**_grlg.zoomlv;
+    let cv=$("#canvascont canvas")[0];
+    let ctx=cv.getContext("2d");
+    ctx.clearRect(0, 0, 4000, 4000);
+    ctx.strokeStyle="#000";
+    let lw1=4.0/targetscale;
+    let lw2=12.0/targetscale;
+    let xmin=bound[0]-1;
+    let xmax=bound[1]+1;
+    let ymin=bound[2]-1;
+    let ymax=bound[3]+1;
+    let cx=4000.0/(xmax-xmin);
+    let cy=4000.0/(ymax-ymin);
+    let r=80/targetscale;
+    let font1=''+(r*1.1)+'px sans';
+    let font2=''+(r*0.7)+'px sans';
+    let arcLblSize=r*0.25;
+    let nodeSize=arrow?(r/10):r;
+    for(let i=0; i<arcs.length; i++){
+        let a=arcs[i];
+        let s1=sommets[a[0]];
+        let s2=sommets[a[1]];
+        ctx.beginPath();
+        ctx.strokeStyle=a[3];
+        if(a[3]=='#000000') ctx.lineWidth=lw1;
+        else ctx.lineWidth=lw2;
+        let x1=cx*(s1[0]-xmin);
+        let x2=cx*(s2[0]-xmin);
+        let y1=cy*(s1[1]-ymin);
+        let y2=cy*(s2[1]-ymin);
+        let xm=(x1+x2)/2;
+        let ym=(y1+y2)/2;
+        ctx.moveTo(x1,y1);
+        ctx.lineTo(x2,y2);
+        ctx.stroke();
+        ctx.fillStyle=a[3];
+        if(arrow){
+            // cos(30) -sin(30)  |  x1-x2
+            // sin(30) cos(30)   |  y1-y2
+            let fc=0.7*r/Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+            ctx.moveTo(x2,y2);
+            ctx.lineTo(fc*(0.94*(x1-x2)-0.342*(y1-y2))+x2, fc*(0.94*(y1-y2)+0.342*(x1-x2))+y2);
+            ctx.lineTo(fc*(0.94*(x1-x2)+0.342*(y1-y2))+x2, fc*(0.94*(y1-y2)-0.342*(x1-x2))+y2);
+            ctx.fill();
+        }
+        ctx.font=font2;
+        ctx.fillText(a[2], xm-a[2].length*arcLblSize, ym);
+    }
+    for(let i=0; i<sommets.length; i++){
+        let s=sommets[i];
+        let x=cx*(s[0]-xmin);
+        let y=cy*(s[1]-ymin);
+        ctx.beginPath();
+        ctx.strokeStyle=s[4];
+        if(s[4]=='#000000') ctx.lineWidth=lw1;
+        else ctx.lineWidth=lw2;
+        ctx.fillStyle=arrow?s[4]:'#fff';
+        ctx.moveTo(x+2*nodeSize,y);
+        ctx.ellipse(x, y, 2*nodeSize, nodeSize, 0, 0, 6.29);
+        ctx.fill();
+        ctx.stroke();
+        if(!arrow){
+            ctx.fillStyle=s[4];
+            ctx.font=font1;
+            ctx.fillText(s[2], x-1.45*r,y,2.9*r);
+            ctx.font=font2;
+            ctx.fillText(s[3], x-1.5*r,y+r*0.6,3*r);
+        }
+    }
+};
 
 function showTab(t, button=false){
    $(".show").removeClass("selected");
@@ -183,6 +272,16 @@ function showTab(t, button=false){
    $("#tabs button").removeClass("selected");
    if(button) button.addClass("selected");
    else $("#tabs button[data-target='"+t+"']").addClass("selected");
+}
+
+function doZoom(delta){
+  if(delta<0){
+     _grlg.zoomlv++;
+     zoomGraph();
+  }else if(delta>0){
+     _grlg.zoomlv--;
+     zoomGraph();
+  }
 }
 
 function init(){
@@ -247,7 +346,7 @@ function init(){
    }, 1000);
 
    // Tabs
-   $("#tabs button").click(function(e){
+   $("#tabs button[data-target]").click(function(e){
       let t=$(this).attr("data-target");
       showTab(t, $(this));
    });
@@ -263,13 +362,7 @@ function init(){
       if(!e.altKey) return;
       let ee=e.originalEvent;
       let delta=ee.detail?ee.detail:ee.deltaY;
-      if(delta<0){
-         _grlg.zoomlv++;
-         zoomGraph();
-      }else if(delta>0){
-         _grlg.zoomlv--;
-         zoomGraph();
-      }
+      doZoom(delta);
       e.preventDefault();
       return false;
    });
