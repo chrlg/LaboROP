@@ -18,9 +18,9 @@ class Environnement {
       // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
       // Il est interdit de les écraser
       this.Predef = {}; 
-      this.GrapheEnv = {};
-      this.GlobalEnv = {};
+      // Les Graphes. Dont le graphe par défaut, G
       this.Graphes = {};
+      this.GlobalEnv = {};
       this.LocalEnvStack = [];
    }
 
