@@ -79,7 +79,6 @@ function oneditorChange(e){
 function realEditorChange(){
    if(worker) worker.terminate();
    if(timeout) clearTimeout(timeout);
-   _grapheNames=[];
    worker=false;
    worker = new Worker("interpret.js", {type:"module"});
    worker.onmessage = messageFromWorker;

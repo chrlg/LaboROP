@@ -1,10 +1,7 @@
 // © C. Le Gal, 2017-2018
 importScripts("decimal.js");
 importScripts("grlang.js");
-
-function myLog(msg){
-    postMessage({"console":JSON.stringify(msg)});
-}
+importScripts("domcom.js");
 
 // Les environnements
 // Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
