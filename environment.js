@@ -1,4 +1,5 @@
- 
+importScripts("graphe.js");
+
 // Les environnements
 // Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
 // Graphes, qui contient les graphes, désignés par leurs noms
@@ -15,7 +16,13 @@ class Environnement {
       this.Graphes = {};
       // Les variables globales
       this.Global = {};
-      this.LocalEnvStack = [];
+      // Les variables locales (qui sont une pile d'environnements
+      this.LocalEnvStack = [this.Global];
+      // L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
+      this.Local = this.Global;
+
+      // Il y a par défaut un graphe G
+      this.addGraphe("G", 0);
    }
 
    // Méthode utilitaire : accèse à la variable "Oriente" de l'environnement
@@ -29,6 +36,12 @@ class Environnement {
    }
    getPredef(name){
       return this.Predef[name];
+   }
+
+   addGraphe(name, ln){
+      if(this.Graphes[name]){
+	 throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
+      }
    }
 }
 
