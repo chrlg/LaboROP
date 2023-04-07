@@ -1,5 +1,10 @@
 // © C. Le Gal, 2017-2018
+importScripts("decimal.js");
 importScripts("grlang.js");
+
+function myLog(msg){
+    postMessage({"console":JSON.stringify(msg)});
+}
 
 // Les environnements
 // Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
@@ -12,42 +17,52 @@ class Environnement {
    constructor(){
       // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
       // Il est interdit de les écraser
-      this.Predef = {}; 
-      // Les Graphes. Dont le graphe par défaut, G
+      this.PredefEnv = {}; 
+      this.GrapheEnv = {};
+      this.GlobalEnv = {};
       this.Graphes = {};
-      // Les variables globales
-      this.Global = {};
-      // Les variables locales (qui sont une pile d'environnements
-      this.LocalEnvStack = [this.Global];
-      // L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
-      this.Local = this.Global;
-
-      // Il y a par défaut un graphe G
-      this.addGraphe("G", 0);
+      this.LocalEnvStack = [];
    }
 
-   function addGraphe(name, ln){
-      if(this.Graphes[name]){
-	 throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
-      }
+   // Méthode utilitaire : accèse à la variable "Oriente" de l'environnement
+   // prédéfini, disant si un grave est orienté ou non
+   isOrient(){
+      if(this.PredefEnv.Oriente===undefined) return undefined;
+      else return this.PredefEnv.Oriente.val;
    }
-
-   // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
-   function get(sym){
-      let envs=[];
-      if(this.Local===this.Global) envs=[this.Global, this.Graphes.G.sommets, this.Predef];
-      else envs=[this.Local, this.Global, this.Graphes.G.sommets, this.Predef];
-
-      for(let e of envs){
-         if(e[sym]!==undefined){
-	    if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
-	    return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
-         }
-      }
-      return undefined;
+   setOrient(v){
+      this.PredefEnv["Oriente"]=v;
+   }
+   getPredef(name){
+      return this.PredefEnv[name];
    }
 }
 
+var _env = new Environnement();
+
+// Les environnements
+// Il y a 3 environnements globaux: _predef qui contient les constantes et fonctions fournies
+// _grapheEnv, qui contient les sommets désignés par leurs noms
+// _globalEnv, qui contient les variables globales et fonctions définies par l'utilisateur
+// Et 1 environnement local, qui est créé à chaque appel de fonction
+// Par défaut, l'envionnement local est l'environnement global. 
+// _stackEnv est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
+var _grapheEnv = {};
+var _grapheMode = "dot"; // Défaut : rendu avec graphviz
+var _grapheDisc = false; // Si true, n'affiche que ce qui a été découvert (attribut 'visible' true)
+var _globalEnv = {};
+var _localEnv = _globalEnv;
+var _numSommet=0, _numArc=0; // Compteur sommets et arcs
+var _modules = {}; // Modules importés
+var _graphes = {};
+
+var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
+              // mais on a aussi besoin, globalement, d'une liste d'arcs
+var _str=""; // Chaine "stdout" à envoyer à la console
+var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
+var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
+var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
+var _grapheChange=false; // true ssi le graphe a changé depuis la dernière fois qu'il a été affiché
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
 // définies dans PredefEnv. FALSE correspond à False, etc.)
@@ -55,40 +70,6 @@ const FALSE={t:"boolean", val:false};
 const TRUE={t:"boolean", val:true};
 const UNDEFINED={t:"boolean", val:undefined};
 const NULL={t:"null"};
-
-// Chaque graphe de Graphes a la structure suivante :
-// * name : le nom du graphe. Le graphe par défaut s'appelle G
-// * sommets : la liste des sommets. Celle de G constitue par ailleurs un environnement en soi
-// * arcs : la liste des arcs
-// * mode : le mode d'affichage. "dot" par défaut, pour G. "dot"=rendu avec GraphViz. "map"=rendu des arcs seulement
-// * change : true si le graphe a changé depuis la dernière fois qu'il a été affiché
-// * oriente : true si le graphe est orienté, false s'il ne l'est pas, undefined si on n'a pas encore décidé
-class Graphe {
-   constructor(name){
-      this.name = name;
-      this.sommets = {};
-      this.arcs = [];
-      this.mode = "dot";
-      this.change = false;
-      this.oriente = UNDEFINED;
-   }
-
-   function isOrient(){
-      return this.oriente.val;
-   }
-   function setOrient(o){
-      this.oriente.val = o;
-   }
-}
-
-var _env = new Environnement();
-var _G = _env.Graphes.G; // alias utilitaire 
-
-var _modules = {}; // Modules importés
-var _str=""; // Chaine "stdout" à envoyer à la console
-var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
-var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
-var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
@@ -163,49 +144,56 @@ function parseTabulation(str){
 }
 
 // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
-function updateGraphe(g){
+function updateGraphe(name=false, sommets=_grapheEnv, arcs=_arcs){
    let gr="";
-   let orient = g.isOrient();
+   let orient = _env.isOrient();
    if(orient) gr+="digraph{";
    else gr+="graph{";
    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
    // été générés de toutes façons avec leurs arcs)
    // (Note: servira plus tard pour les attributs)
-   for(let e in g.sommets){
+   for(let e in sommets){
+      if(_grapheDisc && !sommets[e].marques.visible) continue;
       let attr="";
-      let col=g.sommets[e].marques.color;
+      let col=sommets[e].marques.color;
       if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
       gr+=(""+e+attr+";");
    }
    // Arcs ou aretes
-   for(let a of g.arcs){
+   for(let i=0; i<arcs.length; i++){
+      if(_grapheDisc){
+          if(orient && !arcs[i].i.marques.visible) continue;
+          else if(!orient && !arcs[i].i.marques.visible && !arcs[i].a.marques.visible) continue;
+      }
       let attr="";
-      let col=a.marques.color;
-      let val=a.marques.val;
-      let label=a.marques.label;
-      let tooltip="("+a.i.name+","+a.a.name+")\n";
-      for(let m in a.marques){
-         let v=a.marques[m].val;
+      let col=arcs[i].marques.color;
+      let val=arcs[i].marques.val;
+      let label=arcs[i].marques.label;
+      let tooltip="("+arcs[i].i.name+","+arcs[i].a.name+")\n";
+      for(let m in arcs[i].marques){
+         let v=arcs[i].marques[m].val;
          tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
       }
       attr=attr+`[tooltip="${tooltip}"]`;
       if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
       if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
-      else if(val && val.t=="number") attr=attr+`[label="${""+val.val}"]`;
-      if(orient) gr+=""+a.i.name +"->"+a.a.name+attr+";";
-      else gr+=""+a.i.name+"--"+a.a.name+attr+";";
+      else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
+      if(orient) gr+=""+arcs[i].i.name +"->"+arcs[i].a.name+attr+";";
+      else gr+=""+arcs[i].i.name+"--"+arcs[i].a.name+attr+";";
    }
    gr+="}\n";
    // Envoie le graphe au thread principal, qui appelera dot avec
-   postMessage({graph:gr, name:g.name});
+   postMessage({graph:gr, name:name});
+   _grapheChange=false;
 }
 
 // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
 // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
-function updateMap(g){
+function updateMap(name=false, sommets=_grapheEnv, arcs=_arcs){
    let gr=[];
    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-   for(let s of g.sommets){
+   for(let n in sommets){
+      let s=sommets[n];
       if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
       if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
       let x=s.marques.x.val;
@@ -215,24 +203,111 @@ function updateMap(g){
       if(y<ymin) ymin=y;
       if(y>ymax) ymax=y;
    }
-   for(let a of g.arcs){
-      let s1=a.i;
-      let s2=a.a;
+   let dx=(xmax-xmin);
+   xmin-=0.005*dx;
+   xmax+=0.005*dx;
+   let dy=(ymax-ymin);
+   ymin-=0.005*dy;
+   ymax+=0.005*dy;
+
+   for(let i=0; i<arcs.length; i++){
+      let s1=arcs[i].i;
+      let s2=arcs[i].a;
+      if(_grapheDisc){
+          let orient=_env.isOrient();
+          if(orient && !s1.marques.visible) continue;
+          else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
+      }
       let x1=s1.marques.x.val;
       let x2=s2.marques.x.val;
       let y1=s1.marques.y.val;
       let y2=s2.marques.y.val;
-      x1=(x1-xmin)*1000.0/(xmax-xmin);
-      x2=(x2-xmin)*1000.0/(xmax-xmin);
-      y1=(y1-ymin)*1000.0/(ymax-ymin);
-      y2=(y2-ymin)*1000.0/(ymax-ymin);
-      if(a.marques.color) gr.push([x1,y1,x2,y2,a.marques.color.val]);
+      x1=(x1-xmin)*4000.0/(xmax-xmin);
+      x2=(x2-xmin)*4000.0/(xmax-xmin);
+      y1=(y1-ymin)*4000.0/(ymax-ymin);
+      y2=(y2-ymin)*4000.0/(ymax-ymin);
+      if(arcs[i].marques.color) gr.push([x1,y1,x2,y2,arcs[i].marques.color.val]);
       else gr.push([x1,y1,x2,y2]);
    }
-   postMessage({mapgr:gr, name:g.name});
+   postMessage({mapgr:gr, name:name});
+   _grapheChange=false;
+}
+
+function updateReseau(name=false, sommets=_grapheEnv, arcs=_arcs, arrow=false){
+    let grs=[], gra=[];
+    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
+    let assoc={};
+    for(let n in sommets){
+        let s=sommets[n];
+        let x=s.marques.x.val;
+        let y=s.marques.y.val;
+        if(x<xmin) xmin=x;
+        if(x>xmax) xmax=x;
+        if(y<ymin) ymin=y;
+        if(y>ymax) ymax=y;
+        if(_grapheDisc && !s.marques.visible) continue;
+        assoc[s.name]=grs.length;
+        let col='#000000';
+        if(s.marques.color) col=s.marques.color.val;
+        let lbl='';
+        if(s.marques.label) lbl=s.marques.label.val;
+        grs.push([x,y,s.name, lbl, col]);
+    }
+    let dx=(xmax-xmin);
+    xmin-=0.005*dx;
+    xmax+=0.005*dx;
+    let dy=(ymax-ymin);
+    ymin-=0.005*dy;
+    ymax+=0.005*dy;
+
+    for(let i=0; i<arcs.length; i++){
+        let a=arcs[i];
+        let s1=a.i;
+        let s2=a.a;
+        if(_grapheDisc){
+            let orient=_env.isOrient();
+            if(orient && !s1.marques.visible) continue;
+            else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
+        }
+
+        let col='#000000';
+        if(a.marques.color) col=a.marques.color.val;
+        let lbl='';
+        if(a.marques.label) lbl=a.marques.label.val;
+        gra.push([assoc[s1.name], assoc[s2.name], lbl, col]);
+    }
+    postMessage({mapres:grs, arcs:gra, name:name, bound:[xmin,xmax,ymin,ymax], arrow:arrow});
+    _grapheChange=false;
+}
+
+function updateArrows(name=false, sommets=_grapheEnv, arcs=_arcs){
+    updateReseau(name, sommets, arcs, true);
 }
 
 
+// Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
+function getEnv(sym){
+   var envs=[_localEnv, _globalEnv, _grapheEnv, _env.PredefEnv];
+   for(let i=0; i<envs.length; i++){
+      if(envs[i][sym]!==undefined){
+	 if(envs[i][sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
+	 return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
+      }
+   }
+   return undefined;
+}
+
+function isNumeric(v){
+   if(v.t=='number') return true;
+   if(v.t=='decimal') return true;
+   return false;
+}
+
+function numericValue(v){
+    if(v.t=='number') return v.val;
+    if(v.t=='decimal') return v.val.toNumber();
+    return undefined;
+}
 
 // Etant donnée une référence o (un "pointeur" en quelques sortes) vers un arc
 // donne la valeur de l'arc (l'objet de _arcs)
@@ -272,28 +347,21 @@ function evaluateArc(o, ln){
    // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
    // ou alors ses sommets ont été changés indépendemment depuis qu'on en a parlé. 
    // mais peut-être que les sommets qui le constituent correspondent bien à un arc
-   
-   // Non, les constituants ne sont pas des sommets : (a,b) ou [a,b], mais a ou b ne sont pas des sommets
    if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
       throw {error:"type", name:"Pas un arc ou une arête", 
 	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
    }
-
-   // Donc on parle d'un [?,?] avec les 2 ? qui sont des sommets
-   // Quel graphe est lié à ces sommets ?
-   let gra=null;
-   for(let g of _env.Graphes){
-      if (g.sommets[s1.name]===s1 && g.sommets[s2.name]===s2.name){
-         gra=g;
-         break;
-      }
+   let arcs=_arcs;
+   for(let gn in _graphes){
+      let g=_graphes[gn];
+      if (g.sommets[s1.name]===s1) arcs=g.arcs;
    }
-   if(gra===null) return NULL;
-   for(let a of gra.arcs){
-      if(a.i===s1 && a.a===s2) return a;
-      if(o[5][0]=="-" && a.a===s1 && a.i===s2) return arcs[i];
+   for(let i=0; i<arcs.length; i++){
+      if(arcs[i].i==s1 && arcs[i].a==s2) return arcs[i];
+      if(o[5][0]=="-" && arcs[i].a==s1 && arcs[i].i==s2) return arcs[i];
    }
    return NULL;
+   //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
 }
 
 const _binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
@@ -305,7 +373,7 @@ function evaluateLVal(lv, direct){
    function getIdlv(name){
       if(_env.PredefEnv[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
       if(_grapheEnv[name]) return _grapheEnv;
-      if(_env.Graphes[name]) return _globalEnv;
+      if(_graphes[name]) return _globalEnv;
       if(_localEnv[name] && _localEnv[name].t=="global") return _globalEnv;
       return _localEnv;
    }
@@ -369,10 +437,10 @@ function evaluateLVal(lv, direct){
       else if(v.t!="array") // Une variable qui était autre chose qu'un tableau, et devient un tableau
          throw{error:"type", name:"Pas un tableau", msg:"Un "+v.t+" n'est pas un tableau",ln:lv.ln};
       var i=evaluate(lv.index);
-      if(i===undefined || i.t!="number"){
+      if(i===undefined || !isNumeric(i)){
 	 throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
       }
-      return [ o[0][o[1]].val, i.val ];
+      return [ o[0][o[1]].val, numericValue(i) ];
    }
    else if(lv.t=="mindex"){ // M[1,2]=...
       let o=evaluateLVal(lv.mat); 
@@ -382,15 +450,15 @@ function evaluateLVal(lv, direct){
                                  msg:"Pas une matrice", ln:lv.ln};
       let i=evaluate(lv.i);
       let j=evaluate(lv.j);
-      if(i===undefined || i.t!="number"){ 
+      if(i===undefined || !isNumeric(i)){ 
          throw {error:"type", name:"Index de ligne invalide",
                 msg:"Un élément de type "+i.t+" n'est pas un index de ligne valide", ln:lv.i.ln};
       }
-      if(j===undefined || j.t!="number"){ 
+      if(j===undefined || !isNumeric(j)){
          throw {error:"type", name:"Index de colonne invalide",
                 msg:"Un élément de type "+j.t+" n'est pas un index de colonne valide", ln:lv.j.ln};
       }
-      return [ o[0][o[1]].val[i.val], j.val ];
+      return [ o[0][o[1]].val[numericValue(i)], numericValue(j) ];
    }
    else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
 }
@@ -452,7 +520,7 @@ function evaluate(expr){
    if(expr.l!==undefined) return expr.l();
 
    // Les valeurs natives. 
-   if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
+   if(expr.t=="string" || expr.t=="number" || expr.t=="boolean" || expr.t=="decimal"){
       expr.l=function(){return expr;};
       return expr;
    }
@@ -485,6 +553,8 @@ function evaluate(expr){
          _opCnt++;
 	 if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
 	 if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
+         if(a.t=="decimal" && isNumeric(b)) return a.val.equals(b.val);
+         if(b.t=="decimal" && isNumeric(a)) return b.val.equals(a.val);
 	 if(a.t!=b.t) return false;
 	 if(a.t=="null") return true;
 	 if(a.t=="Sommet" || a.t=="Arete" || a.t=="Arc") return a==b;
@@ -528,10 +598,12 @@ function evaluate(expr){
    if(expr.t=="&&"){
       expr.l=function(){
          let a=evaluate(expr.left);
+         if(a.t=='null') a=FALSE;
          if(a.t!="boolean")
             throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
          if(!a.val) return FALSE;
          let b=evaluate(expr.right);
+         if(b.t=='null') b=FALSE;
          if(b.t!="boolean")
             throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
          if(b.val) return TRUE;
@@ -542,10 +614,12 @@ function evaluate(expr){
    if(expr.t=="||"){
       expr.l=function(){
          let a=evaluate(expr.left);
+         if(a.t=='null') a=FALSE;
          if(a.t!="boolean")
             throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
          if(a.val) return TRUE;
          let b=evaluate(expr.right);
+         if(b.t=='null') b=FALSE;
          if(b.t!="boolean")
             throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
          if(b.val) return TRUE;
@@ -559,6 +633,8 @@ function evaluate(expr){
       expr.l=function(){
          let a=evaluate(expr.left);
          let b=evaluate(expr.right);
+         if(a.t=='null') a=FALSE;
+         if(b.t=='null') b=FALSE;
          if(a.t!="boolean" || b.t!="boolean")
             throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
          if(a.val && !b.val) return TRUE;
@@ -573,17 +649,36 @@ function evaluate(expr){
    // Uniquement pour des valeurs scalaires
    if(expr.t=="<" || expr.t==">" || expr.t=="<=" || expr.t==">="){
       let comp=false;
-      if(expr.t=="<") comp=function(a,b){ return (a<b)?TRUE:FALSE;}
-      else if(expr.t==">") comp=function(a,b){ return (a>b)?TRUE:FALSE;}
-      else if(expr.t=="<=") comp=function(a,b){ return (a<=b)?TRUE:FALSE;}
-      else if(expr.t==">=") comp=function(a,b){ return (a>=b)?TRUE:FALSE;}
+      let compd=false;
+      if(expr.t=="<") {
+          comp=function(a,b){ return (a<b)?TRUE:FALSE;};
+          compd=function(a,b){ return a.lt(b)?TRUE:FALSE;};
+      }
+      else if(expr.t==">") {
+          comp=function(a,b){ return (a>b)?TRUE:FALSE;};
+          compd=function(a,b){ return a.gt(b)?TRUE:FALSE;};
+      }
+      else if(expr.t=="<=") {
+          comp=function(a,b){ return (a<=b)?TRUE:FALSE;};
+          compd=function(a,b){ return a.lte(b)?TRUE:FALSE;};
+      }
+      else if(expr.t==">=") {
+          comp=function(a,b){ return (a>=b)?TRUE:FALSE;};
+          compd=function(a,b){ return a.gte(b)?TRUE:FALSE;};
+      }
 
       expr.l=function(){
-         var a=evaluate(expr.left);
-         var b=evaluate(expr.right);
+         let a=evaluate(expr.left);
+         let b=evaluate(expr.right);
+         _opCnt++;
+         if(isNumeric(a) && isNumeric(b)){
+            if(a.t=="number" && b.t=="number") return comp(a.val, b.val);
+            if(a.t=="decimal") return compd(a.val, b.val);
+            return compd(Decimal(a.val), b);
+         }
          if(a.t != b.t) throw {error:"type", name:"Comparaison de valeur de types différents",
             msg:`tentative de comparer un ${a.t} et un ${b.t}`, ln:expr.ln};
-         var vala=false, valb=false;
+         let vala=false, valb=false;
          if(a.t=="number" || a.t=="string"){
             vala=a.val;
             valb=b.val;
@@ -592,7 +687,6 @@ function evaluate(expr){
             valb=b.name;
          }else throw {error:"type", name:"Type invalide pour une comparaison",
             msg:"Tentative de comparer deux valeurs de type "+a.t, ln:expr.ln};
-         _opCnt++;
          return comp(vala,valb);
       }
       return expr.l();
@@ -673,7 +767,7 @@ function evaluate(expr){
          }
 	 if(a.t=="string"){
 	    if(b.t=="string") return {t:"string", val:a.val+b.val};
-	    if(b.t=="number") return {t:"string", val:a.val+b.val};
+	    if(isNumeric(b)) return {t:"string", val:a.val+b.val};
 	    if(b.t=="boolean") return {t:"string", val:a.val+(b.val?"True":"False")};
 	    if(b.t=="Sommet") return {t:"string", val:a.val+b.name};
 	    if(b.t=="Arc") return {t:"string", val:a.val+"("+b.i.name+","+b.a.name+")"};
@@ -741,21 +835,41 @@ function evaluate(expr){
          return boolMultMat(a,b);
       }
 
-      if(a.t!="number" || b.t!="number")
-	 throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
+      if(!isNumeric(a) || !isNumeric(b)) throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
       _opCnt++;
-      if(expr.t=="+") return {t:"number", val:a.val+b.val};
-      if(expr.t=="-") return {t:"number", val:a.val-b.val};
-      if(expr.t=="*") return {t:"number", val:a.val*b.val};
-      if(expr.t=="/") return {t:"number", val:a.val/b.val};
-      if(expr.t=="%") return {t:"number", val:a.val%b.val};
-      if(expr.t=="**") return {t:"number", val:a.val**b.val};
+
+      if(a.t=='number' && b.t=="number"){
+          if(expr.t=="+") return {t:"number", val:a.val+b.val};
+          if(expr.t=="-") return {t:"number", val:a.val-b.val};
+          if(expr.t=="*") return {t:"number", val:a.val*b.val};
+          if(expr.t=="/") return {t:"number", val:a.val/b.val};
+          if(expr.t=="%") return {t:"number", val:a.val%b.val};
+          if(expr.t=="**") return {t:"number", val:a.val**b.val};
+      }
+
+      // One of a or b, or both, (not none, else we wouldn't be still there) is decimal
+      if(b.t=="decimal" || a.t=="decimal"){
+          let va;
+          if(a.t=="decimal"){
+              va=a.val;
+          }else{
+              va=Decimal(a.val);
+          }
+          if(expr.t=="+") return {t:"decimal", val:va.plus(b.val)};
+          if(expr.t=="-") return {t:"decimal", val:va.minus(b.val)};
+          if(expr.t=="*") return {t:"decimal", val:va.mul(b.val)};
+          if(expr.t=="/") return {t:"decimal", val:va.div(b.val)};
+          if(expr.t=="%") return {t:"decimal", val:va.mod(b.val)};
+          if(expr.t=="**") return {t:"decimal", val:va.pow(b.val)};
+      }
+
       throw {error:"interne", name:"Erreur interne", msg:"Hein?", ln:expr.ln};
    }
 
    // "!"
    if(expr.t=="!"){
       var a=evaluate(expr.right);
+      if(a.t=='null') a=FALSE;
       if(a.t!="boolean")
          throw {error:"type", name:"Valeur non booléenne",
             msg:"L'opérateur ! s'utilise sur un argument booléen", ln:expr.ln};
@@ -774,7 +888,7 @@ function evaluate(expr){
    if(expr.t=="SOMMET"){
       let g=_grapheEnv;
       if(expr.g) {
-         g=_env.Graphes[expr.g].sommets;
+         g=_graphes[expr.g].sommets;
          if(g===undefined) throw {error:"env", name:"Graphe inexistant", 
             msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
       }
@@ -803,11 +917,12 @@ function evaluate(expr){
    if(expr.t=="index"){
       var tab=evaluate(expr.tab);
       var idx=evaluate(expr.index);
-      if(idx.t!="number") throw {error:"type", name:"Erreur de type", msg:"Index non entier",
+      if(!isNumeric(idx)) throw {error:"type", name:"Erreur de type", msg:"Index non entier",
             ln:expr.index.ln};
-      if(tab.t=="array") return tab.val[idx.val];
-      if(tab.t=="string") return {t:"string", val:tab.val[idx.val]};
-      if(tab.t=="Sommet") return {t:"string", val:tab.name[idx.val]};
+      let i=numericValue(idx);
+      if(tab.t=="array") return tab.val[i];
+      if(tab.t=="string") return {t:"string", val:tab.val[i]};
+      if(tab.t=="Sommet") return {t:"string", val:tab.name[i]};
    }
    if(expr.t=="mindex"){
       let i=evaluate(expr.i);
@@ -897,8 +1012,8 @@ function interpCreerSommets(ins){
    let liste=ins.args;
    let g=_grapheEnv;
    if(ins.g){
-      if(!_env.Graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-      g=_env.Graphes[ins.g].sommets;
+      if(!_graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
+      g=_graphes[ins.g].sommets;
    }
    for(let i=0; i<liste.length; i++){
       let ev=evalSommet(liste[i], false, g);
@@ -998,21 +1113,19 @@ function interpAffect(ins){
 function creerArete(ins){
    let left=ins.left;
    let right=ins.right;
+   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
+   if(_env.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
+   if(_env.isOrient()===undefined) _env.setOrient(FALSE);
 
    // Graphe concerné
    let g=_grapheEnv;
    let arcs=_arcs;
    if(ins.g){
-      let graf=_env.Graphes[ins.g];
+      let graf=_graphes[ins.g];
       if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
       g=graf.sommets;
       arcs=graf.arcs;
    }
-
-   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
-   if(_env.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
-   if(_env.isOrient()===undefined) _env.setOrient(FALSE);
-
 
    var l=evalSommet(left, true, g);
    var r=evalSommet(right, true, g);
@@ -1020,7 +1133,7 @@ function creerArete(ins){
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
    let na={t:"Arete", i:l, a:r, marques:{}};
-   if(arcs.length>1000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
+   if(arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
    arcs.push(na);
    if(g===_grapheEnv) _grapheChange=true;
    return na;
@@ -1037,7 +1150,7 @@ function creerArc(ins){
    let g=_grapheEnv;
    let arcs=_arcs;
    if(ins.g){
-      let graf=_env.Graphes[ins.g];
+      let graf=_graphes[ins.g];
       if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
       g=graf.sommets;
       arcs=graf.arcs;
@@ -1049,7 +1162,7 @@ function creerArc(ins){
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
    let na={t:"Arc", i:l, a:r, marques:{}};
-   if(arcs.length>1000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
+   if(arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
    arcs.push(na);
    if(g===_grapheEnv) _grapheChange=true;
    return na;
@@ -1091,6 +1204,7 @@ function interpCall(call){
 
 function interpIf(si, isloop){
    var c=evaluate(si.cond);
+   if(c.t=='null') c=FALSE;
    if(c.t != "boolean") throw {error:"type", name: "Condition non booléenne",
            msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
    if(c.val) return interpretWithEnv(si["do"], isloop);
@@ -1100,6 +1214,7 @@ function interpIf(si, isloop){
 function interpWhile(tant){
    for(;;){
       var c=evaluate(tant.cond);
+      if(c.t=='null') c=FALSE;
       if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
 	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
       if(!c.val) break;
@@ -1175,19 +1290,21 @@ function interpExit(arg){
 function regularCheck(ultimate){
    _instrCnt=0;
    if(_grapheChange){
-      _grapheChange=false;
       if(_grapheMode=="dot") updateGraphe("G", _grapheEnv, _arcs);
-      else if(_grapheMode=="map" && ultimate) updateMap(false, _grapheEnv, _arcs);
+      else if(_grapheMode=="reseau" && ultimate) updateReseau("G");
+      else if(_grapheMode=="map" && ultimate) updateMap("G");
+      else if(_grapheMode=="arrows" && ultimate) updateArrows("G");
    }
    if(ultimate){
-      for(let i in _env.Graphes){
+      for(let i in _graphes){
          if(i=="G") continue; // Déjà fait
-         if(_grapheMode=="dot") updateGraphe(_env.Graphes[i].name, _env.Graphes[i].sommets, _env.Graphes[i].arcs);
+         if(_grapheMode=="dot") updateGraphe(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
+         //else if(_grapheMode=="reseau") updateReseau(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
       }
    }
    if(_strChange){
       _strChange=false;
-      _str=_str.slice(-10000);
+//      _str=_str.slice(-10000);
       postMessage({print: _str});
    }
 }
@@ -1287,24 +1404,23 @@ function interpretWithEnv(tree, isloop){
          continue;
       }
       if(ti.t=="Graphe"){
-         if(_env.PredefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_env.Graphes[ti.name]))
+         if(_env.PredefEnv[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
          if(ti.name=="G") {
             _grapheEnv={};
             _arcs=[];
+            //throw {error:"env", name:"Surdéfinition", msg:"Le nom G est réservé au graphe par défaut", ln:ti.ln};
          }
          _globalEnv[ti.name] = ti;
          ti.sommets={};
          ti.arcs=[];
-         ti.oriente=undefined;
-         _env.Graphes[ti.name]=ti;
+         _graphes[ti.name]=ti;
          continue;
       }
       if(ti.t=="$"){
 	 prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
 	 continue;
       }
-      console.log("Can't do ", ti);
    }
    return false;
 }
@@ -1351,7 +1467,6 @@ function preRandom(args){
 	 if(env){ // S'il y a un environnement, on le push avant d'évaluer la condition
 	    _localEnv=env;
 	    _stackEnv.push(env);
-            console.log(JSON.stringify(_stackEnv));
 	 }
 	 var v=evaluate(args[1]);
 	 if(env){
@@ -1397,7 +1512,7 @@ function prePrint(args){
 	 if(o.t=="Sommet") _str+=o.name;
 	 else if(o.t=="Arete") _str+="["+o.i.name+","+o.a.name+"]";
 	 else if(o.t=="Arc") _str+="("+o.i.name+","+o.a.name+")";
-	 else if(o.t=="number") _str+=(""+o.val);
+	 else if(isNumeric(o)) _str+=(""+o.val);
 	 else if(o.t=="string") _str+=o.val;
 	 else if(o.t=="boolean") _str+= (o.val?"True":"False");
 	 else if(o.t=="array"){
@@ -1531,15 +1646,29 @@ function preArcs(args, ln){
    }
    if(arcs===false){
       if(s){ // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
-         for(let gn in _env.Graphes){
-            if(_env.Graphes[gn].sommets[s.name]===s) arcs=_env.Graphes[gn].arcs;
+         for(let gn in _graphes){
+            if(_graphes[gn].sommets[s.name]===s) arcs=_graphes[gn].arcs;
          }
       }
       else arcs=_arcs;
    }
-   if(s===false) return {t:"array", val:arcs};
+   if(s===false) {
+       if(_grapheDisc){
+           let orient=_env.isOrient();
+           if(orient){
+               return {t:"array", val: arcs.filter(a=>a.i.marques.visible)};
+           }
+           else{
+               return {t:"array", val: arcs.filter(a=>a.i.marques.visible || a.a.marques.visible)};
+           }
+       }
+       else{
+           return {t:"array", val:arcs};
+       }
+   }
    if(arcs===false) return NULL;
 
+   if(_grapheDisc && !s.marques.visible) return NULL;
    var rep=[];
    for(var i=0; i<arcs.length; i++){
       if(arcs[i].i==s) rep.push(arcs[i]);
@@ -1574,9 +1703,11 @@ function preSommets(args, ln){
    }
    let t=Object.values(g);
 
+   if(_grapheDisc && !idx) return {t:"array", val:t.filter(s=>s.marques.visible)};
    if(idx===false) return {t:"array", val:t};
    if(idx<0 || idx>=t.length) throw {error:"exec", name:"Indice invalide",
          msg:"Le sommet #"+idx+" n'existe pas", ln:ln};
+   if(_grapheDisc && !t[idx].marques.visible) throw {error:"exec", name: "Sommet inaccessible", msg:"Le sommet #"+idx+" n'est pas encore visible", ln:ln};
    return t[idx];
 }
 
@@ -1625,7 +1756,7 @@ function preOpCnt(){
    return {t:"number", val:_opCnt};
 }
 
-function importGraphe(g){
+function importGraphe(g,v){
    for(let i=0; i<g[0].length; i++){
       let x={t:"number", val:g[0][i][0]};
       let y={t:"number", val:g[0][i][1]};
@@ -1643,10 +1774,57 @@ function importGraphe(g){
          let y2=s2.marques.x;
          d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
       }
-      _arcs.push({t:"Arete", i:s1, a:s2, marques:{val:d}});
+      if (v=="noValues") _arcs.push({t:"Arete", i:s1, a:s2, marques:{}});
+      else _arcs.push({t:"Arete", i:s1, a:s2, marques:{val:d}});
    }
    _grapheChange=true;
    _grapheMode="map";
+}
+
+function importReseau(g,v){
+   for(let i=0; i<g[0].length; i++){
+      let x={t:"number", val:g[0][i][0]};
+      let y={t:"number", val:g[0][i][1]};
+      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
+   }
+   for(let p of g[1]){
+      let s1=_grapheEnv["S"+p[0]];
+      let s2=_grapheEnv["S"+p[1]];
+      let d={t:"number", val:0};
+      if(p.length==3) d.val=p[2];
+      else{
+         let x1=s1.marques.x;
+         let x2=s2.marques.x;
+         let y1=s1.marques.x;
+         let y2=s2.marques.x;
+         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+      }
+      if (v=="noValues") _arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
+      else _arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
+   }
+   _env.setOrient(TRUE);
+   _grapheMode="dot";   
+   _grapheChange=true;
+}
+
+function importReseauValue(g,v){
+   for(let i=0; i<g[0].length; i++){
+      let x={t:"number", val:g[0][i][0]};
+      let y={t:"number", val:g[0][i][1]};
+      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
+   }
+   for(let p of g[1]){
+      let s1=_grapheEnv["S"+p[0]];
+      let s2=_grapheEnv["S"+p[1]];
+      let d={t:"number", val:0};
+      d.val=p[2];
+      let c={t:"number", val:0};
+      c.val=p[3];
+      _arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d,t:"number",cout:c}});
+   }
+   _env.setOrient(TRUE);
+   _grapheMode="arrows";   
+   _grapheChange=true;
 }
 
 function preImport(args, ln){
@@ -1656,7 +1834,7 @@ function preImport(args, ln){
    if(e.t!="string") throw {error:"args", name:"Mauvais type d'argument",
       msg:"La fonction import attent une chaîne", ln:ln};
    if(_modules[e.val]) return ; // Déjà importé
-   importScripts("mod_"+e.val+".js");
+   importScripts("Modules/mod_"+e.val+".js");
    _modules[e.val]=true;
 }
 
@@ -1685,15 +1863,25 @@ function prePop(args, ln){
 
 function preClear(args, ln){
    _grapheEnv={};
+//   _arcs=[];
    _arcs.length=0;
-   _env.Graphes.G.sommets=_grapheEnv;
-   _env.Graphes.G.arcs=_arcs;
+   _graphes.G.sommets=_grapheEnv;
+   _graphes.G.arcs=_arcs;
+}
+
+function preGraphMode(args, ln){
+    if(args.length==0){
+        return {t:"string", val:_grapheMode};
+    }
+    _grapheMode = ''+args[0].val;
+    _grapheChange=true;
+    regularCheck();
 }
 
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
-   _env.Graphes['G']= {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
+   _graphes.G = {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
    _env.setOrient(UNDEFINED);
    _env.PredefEnv["clear"]={t:"predfn", f:preClear};
    _env.PredefEnv["Adj"]={t: "predvar", f:preM, optarg:true};
@@ -1728,8 +1916,9 @@ function interpret(tree){
    _env.PredefEnv["import"]={t:"predfn", f:preImport};
    _env.PredefEnv["pop"]={t:"predfn", f:prePop};
    _env.PredefEnv["Infinity"]={t:"number", val:Infinity};
+   _env.PredefEnv["_grapheMode"]={t:"predfn", f:preGraphMode};
    _globalEnv={};
-   _globalEnv.G = _env.Graphes.G;
+   _globalEnv.G = _graphes.G;
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
    interpretWithEnv(tree, false, false);
