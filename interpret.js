@@ -1,6 +1,5 @@
 // © C. Le Gal, 2017-2018
-import {Decimal} from "./decimal.mjs";
-//importScripts("decimal.js");
+importScripts("decimal.js");
 importScripts("grlang.js");
 
 function myLog(msg){
