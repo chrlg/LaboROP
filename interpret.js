@@ -1,5 +1,6 @@
 // © C. Le Gal, 2017-2018
-importScripts("decimal.js");
+import {Decimal} from "decimal.mjs";
+//importScripts("decimal.js");
 importScripts("grlang.js");
 
 function myLog(msg){
@@ -20,7 +21,8 @@ class Environnement {
       this.Predef = {}; 
       // Les Graphes. Dont le graphe par défaut, G
       this.Graphes = {};
-      this.GlobalEnv = {};
+      // Les variables globales
+      this.Global = {};
       this.LocalEnvStack = [];
    }
 

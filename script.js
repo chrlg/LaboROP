@@ -81,7 +81,7 @@ function realEditorChange(){
    if(timeout) clearTimeout(timeout);
    _grapheNames=[];
    worker=false;
-   worker = new Worker("interpret.js");
+   worker = new Worker("interpret.js", {type:"module"});
    worker.onmessage = messageFromWorker;
    worker.postMessage(editor.getValue());
    timeout=setTimeout(Terminate, timeoutLen);
