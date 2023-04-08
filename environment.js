@@ -73,7 +73,7 @@ class Environnement {
     // Sinon, c'est par défaut l'environnement "Current" dans lequel on crée des valeurs (local ou global)
     // Sauf si c'est explicitement précisé qu'on parle de l'environnement global
     // Ou s'il s'agit d'un graphe ou d'un sommet existant
-    function getIdlv(name){
+    getIdlv(name){
         if(this.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
         if(this.Current[name]){
             if(this.Current[name].t=='global') return this.Global;

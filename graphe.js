@@ -17,10 +17,10 @@ class Graphe {
                                   // de parcours tant qu'ils n'ont pas été marqués découverts
    }
 
-   function isOrient(){
+   isOrient(){
       return this.oriente.val;
    }
-   function setOrient(o){
+   setOrient(o){
       this.oriente.val = o;
    }
 }

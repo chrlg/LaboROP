@@ -1,6 +1,7 @@
 // © C. Le Gal, 2017-2018
 importScripts("decimal.js");
 importScripts("grlang.js");
+importScripts("constats.js");
 importScripts("domcom.js");
 importScripts("environment.js");
 
@@ -12,14 +13,6 @@ var _str=""; // Chaine "stdout" à envoyer à la console
 var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
 var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
 var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
-
-// Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
-// définies dans Predef. FALSE correspond à False, etc.)
-const FALSE={t:"boolean", val:false};
-const TRUE={t:"boolean", val:true};
-const UNDEFINED={t:"boolean", val:undefined};
-const NULL={t:"null"};
-
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
