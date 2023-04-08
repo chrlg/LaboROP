@@ -1,7 +1,7 @@
 // © C. Le Gal, 2017-2018
 importScripts("decimal.js");
 importScripts("grlang.js");
-importScripts("constats.js");
+importScripts("constants.js");
 importScripts("domcom.js");
 importScripts("environment.js");
 
@@ -929,13 +929,13 @@ function evalSommet(som, creer, graphe){
 }
 
 
-// Ajoute des sommets dans l'environnement _grapheEnv
+// Ajoute des sommets
 function interpCreerSommets(ins){
    let liste=ins.args;
-   let g=_grapheEnv;
+   let g=_env.Graphes.G;
    if(ins.g){
-      if(!_graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-      g=_graphes[ins.g].sommets;
+      if(!_env.Graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
+      g=_env.Graphes[ins.g];
    }
    for(let i=0; i<liste.length; i++){
       let ev=evalSommet(liste[i], false, g);
@@ -948,7 +948,7 @@ function interpCreerSommets(ins){
       // Autre chose ?
       else throw {error:"interne", name:"Erreur interne", msg:"Ni string, ni sommet dans creerSommet\nev:"+ev+"\nev.t="+ev.t, ln:liste[i].ln};
    }
-   if(g===_grapheEnv) _grapheChange=true;
+   g.change=true;
 }
 
 function getRef(ref){
