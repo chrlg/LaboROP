@@ -1061,29 +1061,26 @@ function creerArete(ins){
 function creerArc(ins){
    let left=ins.left;
    let right=ins.right;
-   // Un arc implique un graphe orienté
-   if(_env.isOrient()===undefined) _env.setOrient(TRUE);
-   if(!_env.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
    // Graphe concerné
-   let g=_grapheEnv;
-   let arcs=_arcs;
+   let g=_env.G;
    if(ins.g){
-      let graf=_env.Graphes[ins.g];
-      if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-      g=graf.sommets;
-      arcs=graf.arcs;
+      g=_env.Graphes[ins.g];
+      if(!g) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
    }
+   // Un arc implique un graphe orienté
+   if(g.isOrient()===undefined) _env.setOrient(TRUE);
+   if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
-   var l=evalSommet(left, true, g);
-   var r=evalSommet(right, true, g);
+   let l=evalSommet(left, true, g);
+   let r=evalSommet(right, true, g);
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
    let na={t:"Arc", i:l, a:r, marques:{}};
-   if(arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
-   arcs.push(na);
-   if(g===_grapheEnv) _grapheChange=true;
+   if(g.arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
+   g.arcs.push(na);
+   g.change=true;
    return na;
 }
 
