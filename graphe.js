@@ -7,12 +7,14 @@
 // * oriente : true si le graphe est orienté, false s'il ne l'est pas, undefined si on n'a pas encore décidé
 class Graphe {
    constructor(name){
-      this.name = name;
-      this.sommets = {};
-      this.arcs = [];
-      this.mode = "dot";
-      this.change = false;
-      this.oriente = UNDEFINED;
+      this.name = name;  // nom du graphe
+      this.sommets = {}; // dictionnaire de ses sommets
+      this.arcs = [];    // liste de ses arcs
+      this.mode = "dot"; // mode d'affichage. 'dot' utilise graphviz
+      this.change = false;        // le graphe a-t-il changé depuis son dernier affichage
+      this.oriente = UNDEFINED;   // s'agit-il d'un graphe orienté ou non
+      this.discover = false ;     // mode "découverte" ou non : les sommets et arrêtent n'apparaissent pas dans les fonctions 
+                                  // de parcours tant qu'ils n'ont pas été marqués découverts
    }
 
    function isOrient(){

@@ -42,6 +42,9 @@ class Environnement {
       if(this.Graphes[name]){
 	 throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
       }
+      this.Graphes[name] = new Graphe(name);
+      if(name=='G') this.G = this.Graphes['G']
    }
+
 }
 

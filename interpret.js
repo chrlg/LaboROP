@@ -13,22 +13,14 @@ var _env = new Environnement();
 // Et 1 environnement local, qui est créé à chaque appel de fonction
 // Par défaut, l'envionnement local est l'environnement global. 
 // _stackEnv est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
-var _grapheEnv = {};
-var _grapheMode = "dot"; // Défaut : rendu avec graphviz
-var _grapheDisc = false; // Si true, n'affiche que ce qui a été découvert (attribut 'visible' true)
 var _globalEnv = {};
 var _localEnv = _globalEnv;
-var _numSommet=0, _numArc=0; // Compteur sommets et arcs
 var _modules = {}; // Modules importés
-var _graphes = {};
 
-var _arcs=[]; // Pas un environnement, contrairement à la liste des sommets _grapheEnv, puisqu'ils n'ont pas de noms
-              // mais on a aussi besoin, globalement, d'une liste d'arcs
 var _str=""; // Chaine "stdout" à envoyer à la console
 var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
 var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
 var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
-var _grapheChange=false; // true ssi le graphe a changé depuis la dernière fois qu'il a été affiché
 
 // Des constantes du langage utilisées dans le présent code (voir plus loin les constantes du langage
 // définies dans Predef. FALSE correspond à False, etc.)
@@ -110,47 +102,48 @@ function parseTabulation(str){
 }
 
 // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
-function updateGraphe(name=false, sommets=_grapheEnv, arcs=_arcs){
-   let gr="";
-   let orient = _env.isOrient();
-   if(orient) gr+="digraph{";
-   else gr+="graph{";
-   // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
-   // été générés de toutes façons avec leurs arcs)
-   // (Note: servira plus tard pour les attributs)
-   for(let e in sommets){
-      if(_grapheDisc && !sommets[e].marques.visible) continue;
-      let attr="";
-      let col=sommets[e].marques.color;
-      if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
-      gr+=(""+e+attr+";");
-   }
-   // Arcs ou aretes
-   for(let i=0; i<arcs.length; i++){
-      if(_grapheDisc){
-          if(orient && !arcs[i].i.marques.visible) continue;
-          else if(!orient && !arcs[i].i.marques.visible && !arcs[i].a.marques.visible) continue;
-      }
-      let attr="";
-      let col=arcs[i].marques.color;
-      let val=arcs[i].marques.val;
-      let label=arcs[i].marques.label;
-      let tooltip="("+arcs[i].i.name+","+arcs[i].a.name+")\n";
-      for(let m in arcs[i].marques){
-         let v=arcs[i].marques[m].val;
-         tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
-      }
-      attr=attr+`[tooltip="${tooltip}"]`;
-      if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
-      if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
-      else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
-      if(orient) gr+=""+arcs[i].i.name +"->"+arcs[i].a.name+attr+";";
-      else gr+=""+arcs[i].i.name+"--"+arcs[i].a.name+attr+";";
-   }
-   gr+="}\n";
-   // Envoie le graphe au thread principal, qui appelera dot avec
-   postMessage({graph:gr, name:name});
-   _grapheChange=false;
+function updateGraphe(graphe=false){
+    if(!graphe) graphe=_env.G;
+    let gr="";
+    let orient = graphe.isOrient();
+    if(orient) gr+="digraph{";
+    else gr+="graph{";
+    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
+    // été générés de toutes façons avec leurs arcs)
+    // (Note: servira plus tard pour les attributs)
+    for(let e in graphe.sommets){
+        if(graphe.discover && !graphe.sommets[e].marques.visible) continue;
+        let attr="";
+        let col=graphe.sommets[e].marques.color;
+        if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
+        gr+=(""+e+attr+";");
+    }
+    // Arcs ou aretes
+    for(let i=0; i<graphe.arcs.length; i++){
+        if(graphe.discover){
+            if(orient && !graphe.arcs[i].i.marques.visible) continue;
+            else if(!orient && !graphe.arcs[i].i.marques.visible && !graphe.arcs[i].a.marques.visible) continue;
+        }
+        let attr="";
+        let col=graphe.arcs[i].marques.color;
+        let val=graphe.arcs[i].marques.val;
+        let label=graphe.arcs[i].marques.label;
+        let tooltip="("+graphe.arcs[i].i.name+","+graphe.arcs[i].a.name+")\n";
+        for(let m in graphe.arcs[i].marques){
+            let v=graphe.arcs[i].marques[m].val;
+            tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
+        }
+        attr=attr+`[tooltip="${tooltip}"]`;
+        if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
+        if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
+        else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
+        if(orient) gr+=""+graphe.arcs[i].i.name +"->"+graphe.arcs[i].a.name+attr+";";
+        else gr+=""+graphe.arcs[i].i.name+"--"+graphe.arcs[i].a.name+attr+";";
+    }
+    gr+="}\n";
+    // Envoie le graphe au thread principal, qui appelera dot avec
+    postMessage({graph:gr, name:graphe.name});
+    graphe.change=false;
 }
 
 // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
@@ -1255,16 +1248,16 @@ function interpExit(arg){
 
 function regularCheck(ultimate){
    _instrCnt=0;
-   if(_grapheChange){
-      if(_grapheMode=="dot") updateGraphe("G", _grapheEnv, _arcs);
-      else if(_grapheMode=="reseau" && ultimate) updateReseau("G");
-      else if(_grapheMode=="map" && ultimate) updateMap("G");
-      else if(_grapheMode=="arrows" && ultimate) updateArrows("G");
+   if(_env.G.change){
+      if(_eng.G.mode=="dot") updateGraphe(_env.G);
+      else if(_env.G.mode=="reseau" && ultimate) updateReseau("G");
+      else if(_eng.G.mode=="map" && ultimate) updateMap("G");
+      else if(_env.G.mode=="arrows" && ultimate) updateArrows("G");
    }
    if(ultimate){
-      for(let i in _graphes){
-         if(i=="G") continue; // Déjà fait
-         if(_grapheMode=="dot") updateGraphe(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
+      for(let name in _env.Graphes){
+         if(name=="G") continue; // Déjà fait
+         if(_env.Graphes[name].mode=="dot") updateGraphe(_env.Graphes[name]);
          //else if(_grapheMode=="reseau") updateReseau(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
       }
    }
