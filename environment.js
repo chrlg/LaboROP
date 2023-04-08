@@ -59,5 +59,13 @@ class Environnement {
         }
         return undefined;
     }
+
+    // Retourne le graphe contenant un sommet donné
+    grapheContaining(s){
+        for(let g of this.Graphes){
+            if(g.sommets[s.name]===s) return g;
+        }
+        return null;
+    }
 }
 

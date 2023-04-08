@@ -291,14 +291,11 @@ function evaluateArc(o, ln){
       throw {error:"type", name:"Pas un arc ou une arête", 
 	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
    }
-   let arcs=_arcs;
-   for(let gn in _graphes){
-      let g=_graphes[gn];
-      if (g.sommets[s1.name]===s1) arcs=g.arcs;
-   }
-   for(let i=0; i<arcs.length; i++){
-      if(arcs[i].i==s1 && arcs[i].a==s2) return arcs[i];
-      if(o[5][0]=="-" && arcs[i].a==s1 && arcs[i].i==s2) return arcs[i];
+   let graphe = _env.grapheContaining(s1);
+   if(graphe===null) return NULL;
+   for(let a of graphe.arcs){
+      if(a.i===s1 && a.a===s2) return a;
+      if(o[5][0]=="-" && a.a===s1 && a.i===s2) return a;
    }
    return NULL;
    //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
