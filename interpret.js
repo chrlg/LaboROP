@@ -960,7 +960,7 @@ function getRef(ref){
 function setRef(ref, val, ln){
    // Cas des arcs et arêtes
    if(ref.length==6){
-      if(ref[0]==_grapheEnv || ref[2]==_grapheEnv){ // Arc constitué d'un sommet immutable
+      if(ref[0]==_env.G.sommets || ref[2]==_env.G.sommets){ // Arc constitué d'un sommet immutable
          throw {error:"env", name:"Surdéfinition d'un arc", msg:"Impossible d'écraser l'arc ou l'arête ("+ref[1]+","+ref[3]+")", ln:ln};
       }
       if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
@@ -976,7 +976,7 @@ function setRef(ref, val, ln){
       setRef(ref.slice(4), val, ln);
       return;
    }
-   if(ref[0]==_grapheEnv) throw {error:"env", name:"Surdéfinition d'un sommet", 
+   if(ref[0]==_env.G.sommets) throw {error:"env", name:"Surdéfinition d'un sommet", 
 	    msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
 
    // Copy "profonde" pour les tableaux et structures (mais récursive, car si un item contient un truc qui ne
@@ -1035,29 +1035,26 @@ function interpAffect(ins){
 function creerArete(ins){
    let left=ins.left;
    let right=ins.right;
-   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
-   if(_env.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
-   if(_env.isOrient()===undefined) _env.setOrient(FALSE);
 
    // Graphe concerné
-   let g=_grapheEnv;
-   let arcs=_arcs;
+   let g=_env.G;
    if(ins.g){
-      let graf=_graphes[ins.g];
-      if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-      g=graf.sommets;
-      arcs=graf.arcs;
+      g=_env.Graphes[ins.g];
+      if(!g) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
    }
+   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
+   if(g.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
+   if(g.isOrient()===undefined) g.setOrient(FALSE);
 
-   var l=evalSommet(left, true, g);
-   var r=evalSommet(right, true, g);
+   let l=evalSommet(left, true, g);
+   let r=evalSommet(right, true, g);
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
    let na={t:"Arete", i:l, a:r, marques:{}};
-   if(arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
-   arcs.push(na);
-   if(g===_grapheEnv) _grapheChange=true;
+   if(g.arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
+   g.arcs.push(na);
+   g.change=true;
    return na;
 }
 
@@ -1072,7 +1069,7 @@ function creerArc(ins){
    let g=_grapheEnv;
    let arcs=_arcs;
    if(ins.g){
-      let graf=_graphes[ins.g];
+      let graf=_env.Graphes[ins.g];
       if(!graf) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
       g=graf.sommets;
       arcs=graf.arcs;
@@ -1326,7 +1323,7 @@ function interpretWithEnv(tree, isloop){
          continue;
       }
       if(ti.t=="Graphe"){
-         if(_env.Predef[ti.name] || _grapheEnv[ti.name] || (_globalEnv[ti.name]&&!_graphes[ti.name]))
+         if(_env.Predef[ti.name] || _env.Graphes[ti.name])
             throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
          if(ti.name=="G") {
             _grapheEnv={};
@@ -1336,7 +1333,7 @@ function interpretWithEnv(tree, isloop){
          _globalEnv[ti.name] = ti;
          ti.sommets={};
          ti.arcs=[];
-         _graphes[ti.name]=ti;
+         _env.Graphes[ti.name]=ti;
          continue;
       }
       if(ti.t=="$"){
@@ -1568,8 +1565,8 @@ function preArcs(args, ln){
    }
    if(arcs===false){
       if(s){ // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
-         for(let gn in _graphes){
-            if(_graphes[gn].sommets[s.name]===s) arcs=_graphes[gn].arcs;
+         for(let gn in _env.Graphes){
+            if(_env.Graphes[gn].sommets[s.name]===s) arcs=_env.Graphes[gn].arcs;
          }
       }
       else arcs=_arcs;
@@ -1785,10 +1782,9 @@ function prePop(args, ln){
 
 function preClear(args, ln){
    _grapheEnv={};
-//   _arcs=[];
    _arcs.length=0;
-   _graphes.G.sommets=_grapheEnv;
-   _graphes.G.arcs=_arcs;
+   _env.G.sommets=_grapheEnv;
+   _env.G.arcs=_arcs;
 }
 
 function preGraphMode(args, ln){
@@ -1803,7 +1799,6 @@ function preGraphMode(args, ln){
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
-   _graphes.G = {t:"Graphe", name:"G", sommets:_grapheEnv, arcs:_arcs};
    _env.setOrient(UNDEFINED);
    _env.Predef["clear"]={t:"predfn", f:preClear};
    _env.Predef["Adj"]={t: "predvar", f:preM, optarg:true};
@@ -1840,7 +1835,6 @@ function interpret(tree){
    _env.Predef["Infinity"]={t:"number", val:Infinity};
    _env.Predef["_grapheMode"]={t:"predfn", f:preGraphMode};
    _globalEnv={};
-   _globalEnv.G = _graphes.G;
    _localEnv=_globalEnv;
    _stackEnv=[_localEnv];
    interpretWithEnv(tree, false, false);
@@ -1850,9 +1844,9 @@ function interpret(tree){
 onmessage = function (e){
    if(e.data=="tick"){
       var v=0;
-      if(_globalEnv["tick"]) v=_globalEnv["tick"].val;
+      if(_env.Global["tick"]) v=_env.Global["tick"].val;
       v++;
-      _globalEnv["tick"]={t:"number", val:v};
+      _env.Global["tick"]={t:"number", val:v};
       return;
    }
    try{
