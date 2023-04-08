@@ -193,19 +193,20 @@ function updateMap(graphe=false){
     graphe.change=false;
 }
 
-function updateReseau(name=false, sommets=_grapheEnv, arcs=_arcs, arrow=false){
+function updateReseau(graphe=false, arrow=false){
+    if(!graphe) graphe=_env.G;
     let grs=[], gra=[];
     let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
     let assoc={};
-    for(let n in sommets){
-        let s=sommets[n];
+    for(let n in graphe.sommets){
+        let s=graphe.sommets[n];
         let x=s.marques.x.val;
         let y=s.marques.y.val;
         if(x<xmin) xmin=x;
         if(x>xmax) xmax=x;
         if(y<ymin) ymin=y;
         if(y>ymax) ymax=y;
-        if(_grapheDisc && !s.marques.visible) continue;
+        if(graphe.discover && !s.marques.visible) continue;
         assoc[s.name]=grs.length;
         let col='#000000';
         if(s.marques.color) col=s.marques.color.val;
@@ -220,12 +221,12 @@ function updateReseau(name=false, sommets=_grapheEnv, arcs=_arcs, arrow=false){
     ymin-=0.005*dy;
     ymax+=0.005*dy;
 
-    for(let i=0; i<arcs.length; i++){
-        let a=arcs[i];
+    for(let i=0; i<graphe.arcs.length; i++){
+        let a=graphe.arcs[i];
         let s1=a.i;
         let s2=a.a;
-        if(_grapheDisc){
-            let orient=_env.isOrient();
+        if(graphe.discover){
+            let orient=graphe.isOrient();
             if(orient && !s1.marques.visible) continue;
             else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
         }
@@ -236,12 +237,12 @@ function updateReseau(name=false, sommets=_grapheEnv, arcs=_arcs, arrow=false){
         if(a.marques.label) lbl=a.marques.label.val;
         gra.push([assoc[s1.name], assoc[s2.name], lbl, col]);
     }
-    postMessage({mapres:grs, arcs:gra, name:name, bound:[xmin,xmax,ymin,ymax], arrow:arrow});
-    _grapheChange=false;
+    postMessage({mapres:grs, arcs:gra, name:graphe.name, bound:[xmin,xmax,ymin,ymax], arrow:arrow});
+    graphe.change=false;
 }
 
-function updateArrows(name=false, sommets=_grapheEnv, arcs=_arcs){
-    updateReseau(name, sommets, arcs, true);
+function updateArrows(graphe=false){
+    updateReseau(graphe, true);
 }
 
 
@@ -1250,16 +1251,16 @@ function interpExit(arg){
 function regularCheck(ultimate){
    _instrCnt=0;
    if(_env.G.change){
-      if(_eng.G.mode=="dot") updateGraphe(_env.G);
-      else if(_env.G.mode=="reseau" && ultimate) updateReseau("G");
-      else if(_eng.G.mode=="map" && ultimate) updateMap("G");
-      else if(_env.G.mode=="arrows" && ultimate) updateArrows("G");
+      if(_eng.G.mode=="dot") updateGraphe();
+      else if(_env.G.mode=="reseau" && ultimate) updateReseau();
+      else if(_eng.G.mode=="map" && ultimate) updateMap();
+      else if(_env.G.mode=="arrows" && ultimate) updateArrows();
    }
    if(ultimate){
       for(let name in _env.Graphes){
          if(name=="G") continue; // Déjà fait
          if(_env.Graphes[name].mode=="dot") updateGraphe(_env.Graphes[name]);
-         //else if(_grapheMode=="reseau") updateReseau(_graphes[i].name, _graphes[i].sommets, _graphes[i].arcs);
+         //else if(_grapheMode=="reseau") updateReseau(_env.Graphes[name]);
       }
    }
    if(_strChange){
