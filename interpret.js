@@ -463,11 +463,12 @@ function evaluate(expr){
 	    ln:expr.ln};
          else expr.l=function(){return _env.Predef[expr.name];};
       }
-      else if(_grapheEnv[expr.name]) expr.l=function(){return _grapheEnv[expr.name];}
-      else if(_localEnv[expr.name]!==undefined && _localEnv[expr.name].t!="global") expr.l=function(){return _localEnv[expr.name]};
-      else if(_globalEnv[expr.name]!==undefined){
-         if(_globalEnv[expr.name].t=="DEF") throw {error:"type", name:"Variable incorrecte", msg: ""+expr.name+" est une fonction", ln:expr.ln};
-         expr.l=function(){return _globalEnv[expr.name];};
+      else if(_env.Graphes[expr.name]) expr.l=function(){return _env.Graphes[expr.name];}
+      else if(_env.G.sommets[expr.name]) expr.l=function(){return _env.G.sommets[expr.name];}
+      else if(_env.Local && _env.Local[expr.name]!==undefined && _env.Local[expr.name].t!="global") expr.l=function(){return _env.Local[expr.name]};
+      else if(_env.Global[expr.name]!==undefined){
+         if(_env.Global[expr.name].t=="DEF") throw {error:"type", name:"Variable incorrecte", msg: ""+expr.name+" est une fonction", ln:expr.ln};
+         expr.l=function(){return _env.Global[expr.name];};
       }
       else throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
       return expr.l();
@@ -814,11 +815,11 @@ function evaluate(expr){
    }
 
    if(expr.t=="SOMMET"){
-      let g=_grapheEnv;
+      let g=_env.Graphes.G.sommets;
       if(expr.g) {
-         g=_graphes[expr.g].sommets;
-         if(g===undefined) throw {error:"env", name:"Graphe inexistant", 
-            msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
+         if(_env.Graphes[expr.g]===undefined) throw {error:"env", name:"Graphe inexistant", 
+                                                  msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
+         g=_env.Graphes[expr.g].sommets;
       }
       var v=evalSommet(expr.arg, true, g);
       if(!v || v.t!="Sommet") throw {error:"type", name:"Pas un sommet", 

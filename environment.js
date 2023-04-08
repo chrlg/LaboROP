@@ -69,11 +69,18 @@ class Environnement {
     }
     
     // Environment concerné par un symbole en L-value
+    // Si c'est déjà un symbole prédéfini, alors, c'est une erreur
+    // Sinon, c'est par défaut l'environnement "Current" dans lequel on crée des valeurs (local ou global)
+    // Sauf si c'est explicitement précisé qu'on parle de l'environnement global
+    // Ou s'il s'agit d'un graphe ou d'un sommet existant
     function getIdlv(name){
         if(this.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
-        if(this.G.sommets[name]) return this.G.sommets;
+        if(this.Current[name]){
+            if(this.Current[name].t=='global') return this.Global;
+            return this.Current;
+        }
         if(this.Graphes[name]) return this.Graphes;
-        if(this.Current[name] && this.Current[name].t=='global') return this.Global;
+        if(this.G.sommets[name]) return this.G.sommets;
         return this.Current;
     }
 
