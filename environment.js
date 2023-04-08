@@ -67,5 +67,15 @@ class Environnement {
         }
         return null;
     }
+    
+    // Environment concerné par un symbole en L-value
+    function getIdlv(name){
+        if(this.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
+        if(this.G.sommets[name]) return this.G.sommets;
+        if(this.Graphes[name]) return this.Graphes;
+        if(this.Current[name] && this.Current[name].t=='global') return this.Global;
+        return this.Current;
+    }
+
 }
 

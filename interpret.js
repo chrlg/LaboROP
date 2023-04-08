@@ -306,26 +306,17 @@ const _binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 // Ou un quadruplet pour les arcs et aretes
 function evaluateLVal(lv, direct){
 
-   // Fonction utilitaire : récupère l'environnement concerné
-   function getIdlv(name){
-      if(_env.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
-      if(_grapheEnv[name]) return _grapheEnv;
-      if(_graphes[name]) return _globalEnv;
-      if(_localEnv[name] && _localEnv[name].t=="global") return _globalEnv;
-      return _localEnv;
-   }
-
    if(lv.t=="id") { // une variable (non prédéfinie) : a=
-      return [getIdlv(lv.name), lv.name];
+      return [_env.getIdlv(lv.name), lv.name];
    }
 
    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
-      if(lv.t=="arete" && _env.isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
-      if(lv.t=="arc" && !_env.isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
-      let a=getIdlv(lv.initial);
-      let b=getIdlv(lv.terminal);
+      if(lv.t=="arete" && _env.G.isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
+      if(lv.t=="arc" && !_env.G.isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
+      let a=_env.getIdlv(lv.initial);
+      let b=_env.getIdlv(lv.terminal);
       let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
-      let c=getIdlv(cn);
+      let c=_env.getIdlv(cn);
       return [a, lv.initial, b, lv.terminal, c, cn];
    }
 
@@ -337,10 +328,10 @@ function evaluateLVal(lv, direct){
 
       if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
       else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
-         if(lv.f=="color" || lv.f=="val" || lv.f=="label") _grapheChange=true;
+         if(lv.f=="color" || lv.f=="val" || lv.f=="label") _env.grapheContaining(v).change=true;
 	 if(o.length==2) return [v.marques, lv.f]; // Sommet
 	 if(o.length==6) {
-	    var w=evaluateArc(o, lv.ln);
+	    let w=evaluateArc(o, lv.ln);
 	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
 	    return [w.marques, lv.f];
 	 }
@@ -366,14 +357,14 @@ function evaluateLVal(lv, direct){
    }
 
    else if(lv.t=="index"){ // a[12]=
-      var o=evaluateLVal(lv.tab); // o=référence vers a
+      let o=evaluateLVal(lv.tab); // o=référence vers a
       let v=getRef(o); // valeur (evaluate(lv.tab))
       if(v===undefined) o[0][o[1]] = {t:"array", val:[]}; // Une création de variable
-      else if(o[0]==_grapheEnv) 
+      else if(o[0]==_env.G.sommets)
          throw{error:"env", name:"Les sommets ne sont pas des tableaux", msg:"", ln:lv.ln};
       else if(v.t!="array") // Une variable qui était autre chose qu'un tableau, et devient un tableau
          throw{error:"type", name:"Pas un tableau", msg:"Un "+v.t+" n'est pas un tableau",ln:lv.ln};
-      var i=evaluate(lv.index);
+      let i=evaluate(lv.index);
       if(i===undefined || !isNumeric(i)){
 	 throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
       }
