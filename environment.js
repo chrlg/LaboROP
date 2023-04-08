@@ -8,43 +8,56 @@ importScripts("graphe.js");
 // Et 1 environnement local, qui est créé à chaque appel de fonction
 // Par défaut, l'envionnement local est l'environnement global. 
 class Environnement {
-   constructor(){
-      // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
-      // Il est interdit de les écraser
-      this.Predef = {}; 
-      // Les Graphes. Dont le graphe par défaut, G
-      this.Graphes = {};
-      // Les variables globales
-      this.Global = {};
-      // Les variables locales (qui sont une pile d'environnements
-      this.LocalEnvStack = [this.Global];
-      // L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
-      this.Local = this.Global;
+    constructor(){
+        // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
+        // Il est interdit de les écraser
+        this.Predef = {}; 
+        // Les Graphes. Dont le graphe par défaut, G
+        this.Graphes = {};
+        // Les variables globales
+        this.Global = {};
+        // Les variables locales (qui sont une pile d'environnements, pour les appels imbriqués)
+        this.LocalEnvStack = [];
+        // L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
+        this.Local = null;
+        // L'environnement courant (celui dans lequel on écrit) = env local, sauf s'il n'y en a pas = env global
+        this.Current = this.Global;
 
-      // Il y a par défaut un graphe G
-      this.addGraphe("G", 0);
-   }
+        // Il y a par défaut un graphe G
+        this.addGraphe("G", 0);
+    }
 
-   // Méthode utilitaire : accèse à la variable "Oriente" de l'environnement
-   // prédéfini, disant si un grave est orienté ou non
-   isOrient(){
-      if(this.Predef.Oriente===undefined) return undefined;
-      else return this.Predef.Oriente.val;
-   }
-   setOrient(v){
-      this.Predef["Oriente"]=v;
-   }
-   getPredef(name){
-      return this.Predef[name];
-   }
+    // Méthode utilitaire : accèse à la variable "Oriente" de l'environnement
+    // prédéfini, disant si un grave est orienté ou non
+    isOrient(){
+        if(this.Predef.Oriente===undefined) return undefined;
+        else return this.Predef.Oriente.val;
+    }
+    setOrient(v){
+        this.Predef["Oriente"]=v;
+    }
+    getPredef(name){
+        return this.Predef[name];
+    }
 
-   addGraphe(name, ln){
-      if(this.Graphes[name]){
-	 throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
-      }
-      this.Graphes[name] = new Graphe(name);
-      if(name=='G') this.G = this.Graphes['G']
-   }
+    addGraphe(name, ln){
+        if(this.Graphes[name]){
+            throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
+        }
+        this.Graphes[name] = new Graphe(name);
+        if(name=='G') this.G = this.Graphes['G']
+    }
 
+    // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
+    get(sym){
+        let envs=[this.Local, this.Global, this.Graphes, this.G.sommets, this.Predef];
+        for(let e of envs){
+            if(e && envs[sym]!==undefined){
+                if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
+                return e[sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
+            }
+        }
+        return undefined;
+    }
 }
 

@@ -6,15 +6,6 @@ importScripts("environment.js");
 
 var _env = new Environnement();
 
-// Les environnements
-// Il y a 3 environnements globaux: _predef qui contient les constantes et fonctions fournies
-// _grapheEnv, qui contient les sommets désignés par leurs noms
-// _globalEnv, qui contient les variables globales et fonctions définies par l'utilisateur
-// Et 1 environnement local, qui est créé à chaque appel de fonction
-// Par défaut, l'envionnement local est l'environnement global. 
-// _stackEnv est la pile d'environnement locaux (grandit à chaque appel, diminue à chaque return)
-var _globalEnv = {};
-var _localEnv = _globalEnv;
 var _modules = {}; // Modules importés
 
 var _str=""; // Chaine "stdout" à envoyer à la console
@@ -245,18 +236,6 @@ function updateArrows(graphe=false){
     updateReseau(graphe, true);
 }
 
-
-// Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
-function getEnv(sym){
-   var envs=[_localEnv, _globalEnv, _grapheEnv, _env.Predef];
-   for(let i=0; i<envs.length; i++){
-      if(envs[i][sym]!==undefined){
-	 if(envs[i][sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
-	 return envs[i][sym]; // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
-      }
-   }
-   return undefined;
-}
 
 function isNumeric(v){
    if(v.t=='number') return true;
@@ -944,7 +923,7 @@ function evalSommet(som, creer, sommets=_grapheEnv){
    var S=null;
    if(som.t=="id"){
       if(sommets[som.name]!==undefined) return sommets[som.name]; // Sommet déjà existant (dans ce graphe)
-      if(getEnv(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
+      if(_env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
    }
 
    if(str===null){
@@ -1138,7 +1117,7 @@ function interpDef(def){
 }
 
 function interpCall(call){
-   var fn=getEnv(call.f);
+   var fn=_env.get(call.f);
    if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
    if(fn.t=="predfn") return fn.f(call.args, call.ln, call.f);
