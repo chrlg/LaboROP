@@ -893,18 +893,18 @@ function evaluate(expr){
 }
 
 // Fonction interne d'ajout de sommet
-function addSommet(name, sommets=_grapheEnv){
-   sommets[name] = {t:"Sommet", name:name, marques:{}};
+function addSommet(name, graphe){
+   graphe.sommets[name] = {t:"Sommet", name:name, marques:{}};
 }
 
 // Récupère la valeur d'un sommet à partir d'une chaine ou d'une variable non identifiée
 // Si creer est true, crée le sommet s'il n'existe pas
 // Si le sommet n'existe pas, et n'a pas été créé, retourne le nom à la place
-function evalSommet(som, creer, sommets=_grapheEnv){
+function evalSommet(som, creer, graphe){
    var str=null;
    var S=null;
    if(som.t=="id"){
-      if(sommets[som.name]!==undefined) return sommets[som.name]; // Sommet déjà existant (dans ce graphe)
+      if(graphe.sommets[som.name]!==undefined) return graphe.sommets[som.name]; // Sommet déjà existant (dans ce graphe)
       if(_env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
    }
 
@@ -920,10 +920,10 @@ function evalSommet(som, creer, sommets=_grapheEnv){
       throw{error: "type", name: "Nom de sommet illégal", 
 	    msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+str, ln: som.ln};
    }
-   if(sommets[str]) return sommets[str];
+   if(graphe.sommets[str]) return graphe.sommets[str];
    if(creer) {
-      addSommet(str, sommets);
-      return sommets[str];
+      addSommet(str, graphe);
+      return graphe.sommets[str];
    }
    return str;
 }
