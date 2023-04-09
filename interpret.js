@@ -685,7 +685,7 @@ function evaluate(expr){
             else res=o.marques[expr.f];
         }
         else if(o.t=="Sommet") res=o.marques[expr.f];
-        else if(o.t=="Graphe") res=o.sommets[expr.f];
+        else if(o.t=="graphe") res=o.sommets[expr.f];
         else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
         if(res===undefined) return NULL;
         else return res;
