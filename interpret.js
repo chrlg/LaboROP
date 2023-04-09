@@ -1320,15 +1320,13 @@ function interpretWithEnv(tree, isloop){
             continue;
         }
         if(ti.t=="Graphe"){
-            if(_env.Predef[ti.name] || _env.Graphes[ti.name])
-                throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
-            if(ti.name=="G") {
-                _env.G.sommets={};
-                _env.G.arcs.length=0;
+            if(_env.Predef[ti.name]) 
+                throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est réservé", ln:ti.ln};
+            if(_env.Graphes[ti.name]){
+                _env.Graphes[ti.name].sommets={};
+                _env.Graphes[ti.name].arcs.length=0;
             }else{
-                ti.sommets={};
-                ti.arcs=[];
-                _env.Graphes[ti.name]=ti;
+                _env.addGraphe(ti.name, ti.ln);
             }
             continue;
         }
@@ -1777,10 +1775,11 @@ function prePop(args, ln){
 }
 
 function preClear(args, ln){
-   _grapheEnv={};
-   _arcs.length=0;
-   _env.G.sommets=_grapheEnv;
-   _env.G.arcs=_arcs;
+    if(args.length==1){
+        console.log('clear args', args);
+    }
+    _env.G.sommets={};
+    _env.G.arcs.length=0;
 }
 
 function preGraphMode(args, ln){
