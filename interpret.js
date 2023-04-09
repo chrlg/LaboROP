@@ -85,54 +85,6 @@ function parseTabulation(str){
    return out;
 }
 
-
-// Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
-// ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
-function updateMap(graphe=false){
-    if(!graphe) graphe=_env.G;
-    let gr=[];
-    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-    for(let n in graphe.sommets){
-        let s=graphe.sommets[n];
-        if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
-        if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
-        let x=s.marques.x.val;
-        let y=s.marques.y.val;
-        if(x<xmin) xmin=x;
-        if(x>xmax) xmax=x;
-        if(y<ymin) ymin=y;
-        if(y>ymax) ymax=y;
-    }
-    let dx=(xmax-xmin);
-    xmin-=0.005*dx;
-    xmax+=0.005*dx;
-    let dy=(ymax-ymin);
-    ymin-=0.005*dy;
-    ymax+=0.005*dy;
-
-    for(let i=0; i<graphe.arcs.length; i++){
-        let s1=graphe.arcs[i].i;
-        let s2=graphe.arcs[i].a;
-        if(graphe.discover){
-            let orient=graphe.isOrient();
-            if(orient && !s1.marques.visible) continue;
-            else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
-        }
-        let x1=s1.marques.x.val;
-        let x2=s2.marques.x.val;
-        let y1=s1.marques.y.val;
-        let y2=s2.marques.y.val;
-        x1=(x1-xmin)*4000.0/(xmax-xmin);
-        x2=(x2-xmin)*4000.0/(xmax-xmin);
-        y1=(y1-ymin)*4000.0/(ymax-ymin);
-        y2=(y2-ymin)*4000.0/(ymax-ymin);
-        if(graphe.arcs[i].marques.color) gr.push([x1,y1,x2,y2,graphe.arcs[i].marques.color.val]);
-        else gr.push([x1,y1,x2,y2]);
-    }
-    postMessage({mapgr:gr, name:graphe.name});
-    graphe.change=false;
-}
-
 function updateReseau(graphe=false, arrow=false){
     if(!graphe) graphe=_env.G;
     let grs=[], gra=[];
@@ -1165,7 +1117,6 @@ function regularCheck(force=false){
     
     if(_env.G.change){
         else if(_env.G.mode=="reseau" && ultimate) updateReseau();
-        else if(_env.G.mode=="map" && ultimate) updateMap();
         else if(_env.G.mode=="arrows" && ultimate) updateArrows();
     }
     if(_strChange){

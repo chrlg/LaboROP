@@ -27,6 +27,7 @@ class Graphe {
     redraw(force=false){
         if(force || this.change){
             if(this.mode=='dot') this.generateDot();
+            else if(this.mode=='map') this.generateMap();
         }
         this.change=false;
     }
@@ -72,7 +73,52 @@ class Graphe {
         gr+="}\n";
         // Envoie le graphe au thread principal, qui appelera dot avec
         postMessage({graph:gr, name:this.name});
-        this.change=false;
     }
+
+
+    // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
+    // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
+    generateMap(){
+        let gr=[];
+        let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
+        for(let s of this.sommets){
+            if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
+            if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
+            let x=s.marques.x.val;
+            let y=s.marques.y.val;
+            if(x<xmin) xmin=x;
+            if(x>xmax) xmax=x;
+            if(y<ymin) ymin=y;
+            if(y>ymax) ymax=y;
+        }
+        let dx=(xmax-xmin);
+        xmin-=0.005*dx;
+        xmax+=0.005*dx;
+        let dy=(ymax-ymin);
+        ymin-=0.005*dy;
+        ymax+=0.005*dy;
+
+        for(let a of this.arcs){
+            let s1=a.i;
+            let s2=a.a;
+            if(this.discover){
+                let orient=this.isOrient();
+                if(orient && !s1.marques.visible) continue;
+                else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
+            }
+            let x1=s1.marques.x.val;
+            let x2=s2.marques.x.val;
+            let y1=s1.marques.y.val;
+            let y2=s2.marques.y.val;
+            x1=(x1-xmin)*4000.0/(xmax-xmin);
+            x2=(x2-xmin)*4000.0/(xmax-xmin);
+            y1=(y1-ymin)*4000.0/(ymax-ymin);
+            y2=(y2-ymin)*4000.0/(ymax-ymin);
+            if(a.marques.color) gr.push([x1,y1,x2,y2,a.marques.color.val]);
+            else gr.push([x1,y1,x2,y2]);
+        }
+        postMessage({mapgr:gr, name:this.name});
+    }
+
 }
 
