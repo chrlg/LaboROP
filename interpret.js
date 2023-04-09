@@ -1686,12 +1686,12 @@ onmessage = function (e){
       _env.Global["tick"]={t:"number", val:v};
       return;
    }
-   try{
+   //try{
       let str=parseTabulation(e.data);
       let out = grlang.parse(str);
       interpret(out);
       postMessage({termine: 0, opcnt:_opCnt});
-   }catch(e){
+   /*}catch(e){
       if(e.error) {
 	 if(e.error=="exit") {
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
@@ -1707,6 +1707,6 @@ onmessage = function (e){
          console.trace(e);
          postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e)});
       }
-   }
+   } */
 }
 

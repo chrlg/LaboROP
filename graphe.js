@@ -67,7 +67,7 @@ class Graphe {
             let val=a.marques.val;
             let label=a.marques.label;
             let tooltip="("+a.i.name+","+a.a.name+")\n";
-            for(let m in this.arcs[i].marques){
+            for(let m in a.marques){
                 let v=a.marques[m].val;
                 tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
             }
