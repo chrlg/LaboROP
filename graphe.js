@@ -32,6 +32,8 @@ class Graphe {
         if(force || this.change){
             if(this.mode=='dot') this.generateDot();
             else if(this.mode=='map') this.generateMap();
+            else if(this.mode=='reseau') this.generateReseau(false);
+            else if(this.mode=='arrows' || this.mode=='arrow') this.generateReseau(true);
         }
         this.change=false;
     }
@@ -55,10 +57,11 @@ class Graphe {
         }
         // Arcs ou aretes
         for(let a of this.arcs){
-            if(this.discover){
+            if(this.discover){ // en mode discover, un arc n'est affiché que si son sommet initial est visible (n'importe quel sommet pour arete)
                 if(orient && !a.i.marques.visible) continue;
                 else if(!orient && !a.i.marques.visible && !a.a.marques.visible) continue;
             }
+            // Construction des attributs (couleur, label)
             let attr="";
             let col=a.marques.color;
             let val=a.marques.val;
@@ -69,6 +72,7 @@ class Graphe {
                 tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
             }
             attr=attr+`[tooltip="${tooltip}"]`;
+            // S'il y a une couleur, on dessine aussi en gras
             if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
             if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
             else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
@@ -123,6 +127,59 @@ class Graphe {
             else gr.push([x1,y1,x2,y2]);
         }
         postMessage({mapgr:gr, name:this.name});
+    }
+
+    // Affichage en mode "reseau"
+    // Cad sommets positionnées en x,y, et n'ayant d'arcs qu'avec des voisins
+    // (l'affichage dessine les arcs en ligne droite)
+    // Ne pas appeler si les attributs x,y n'existent pas
+    generateReseau(arrow=false){
+        let grs=[], gra=[]; // grs, tableau de sommets (dans la représentatino réseau), gra, tableau d'arcs
+        let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity; // bornes
+        let assoc={}; // Table associative liant nom du sommet à indice dans grs
+        for(let s of this.sommets){
+            let x=s.marques.x.val;
+            let y=s.marques.y.val;
+            if(x<xmin) xmin=x; // update bornes
+            if(x>xmax) xmax=x;
+            if(y<ymin) ymin=y;
+            if(y>ymax) ymax=y;
+            // Si un sommet n'est pas visible, il n'entre pas dans la liste des sommets, mais est
+            // quand même utilisé pour calculer les bornes
+            if(this.discover && !s.marques.visible) continue;
+            assoc[s.name]=grs.length; // grs.length est l'index dans grs, puisqu'on n'ajoutera qu'après
+            let col='#000000';     // couleur = noir, sauf si une marque "color" existe
+            if(s.marques.color) col=s.marques.color.val;
+            let lbl='';
+            if(s.marques.label) lbl=s.marques.label.val;
+            grs.push([x,y,s.name, lbl, col]);
+        }
+        // Ajustement des bornes pour laisser la place pour dessiner le sommet
+        let dx=(xmax-xmin);
+        xmin-=0.005*dx;
+        xmax+=0.005*dx;
+        let dy=(ymax-ymin);
+        ymin-=0.005*dy;
+        ymax+=0.005*dy;
+
+        for(let a of this.arcs){
+            let s1=a.i;
+            let s2=a.a;
+            // En mode discover on ne dessine que les arcs sont le sommet initial (ou un des sommets pour les aretes)
+            // est visible
+            if(this.discover){
+                let orient=this.isOrient();
+                if(orient && !s1.marques.visible) continue;
+                else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
+            }
+
+            let col='#000000'; // couleur noir, sauf si l'arc a un attribut color
+            if(a.marques.color) col=a.marques.color.val;
+            let lbl='';
+            if(a.marques.label) lbl=a.marques.label.val;
+            gra.push([assoc[s1.name], assoc[s2.name], lbl, col]);
+        }
+        postMessage({mapres:grs, arcs:gra, name:this.name, bound:[xmin,xmax,ymin,ymax], arrow:arrow});
     }
 
 }

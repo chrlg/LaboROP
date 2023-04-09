@@ -85,59 +85,6 @@ function parseTabulation(str){
    return out;
 }
 
-function updateReseau(graphe=false, arrow=false){
-    if(!graphe) graphe=_env.G;
-    let grs=[], gra=[];
-    let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-    let assoc={};
-    for(let n in graphe.sommets){
-        let s=graphe.sommets[n];
-        let x=s.marques.x.val;
-        let y=s.marques.y.val;
-        if(x<xmin) xmin=x;
-        if(x>xmax) xmax=x;
-        if(y<ymin) ymin=y;
-        if(y>ymax) ymax=y;
-        if(graphe.discover && !s.marques.visible) continue;
-        assoc[s.name]=grs.length;
-        let col='#000000';
-        if(s.marques.color) col=s.marques.color.val;
-        let lbl='';
-        if(s.marques.label) lbl=s.marques.label.val;
-        grs.push([x,y,s.name, lbl, col]);
-    }
-    let dx=(xmax-xmin);
-    xmin-=0.005*dx;
-    xmax+=0.005*dx;
-    let dy=(ymax-ymin);
-    ymin-=0.005*dy;
-    ymax+=0.005*dy;
-
-    for(let i=0; i<graphe.arcs.length; i++){
-        let a=graphe.arcs[i];
-        let s1=a.i;
-        let s2=a.a;
-        if(graphe.discover){
-            let orient=graphe.isOrient();
-            if(orient && !s1.marques.visible) continue;
-            else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
-        }
-
-        let col='#000000';
-        if(a.marques.color) col=a.marques.color.val;
-        let lbl='';
-        if(a.marques.label) lbl=a.marques.label.val;
-        gra.push([assoc[s1.name], assoc[s2.name], lbl, col]);
-    }
-    postMessage({mapres:grs, arcs:gra, name:graphe.name, bound:[xmin,xmax,ymin,ymax], arrow:arrow});
-    graphe.change=false;
-}
-
-function updateArrows(graphe=false){
-    updateReseau(graphe, true);
-}
-
-
 function isNumeric(v){
    if(v.t=='number') return true;
    if(v.t=='decimal') return true;
@@ -1115,10 +1062,6 @@ function regularCheck(force=false){
     _instrCnt=0;
     for(let g of _env.Graphes) g.redraw(force);
     
-    if(_env.G.change){
-        else if(_env.G.mode=="reseau" && ultimate) updateReseau();
-        else if(_env.G.mode=="arrows" && ultimate) updateArrows();
-    }
     if(_strChange){
         _strChange=false;
         postMessage({print: _str});
