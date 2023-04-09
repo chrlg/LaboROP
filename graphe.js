@@ -14,6 +14,7 @@ class Graphe {
         this.change = false;        // le graphe a-t-il changé depuis son dernier affichage
         this.oriente = UNDEFINED;   // s'agit-il d'un graphe orienté ou non
         this.discover = false ;     // mode "découverte" ou non : les sommets et arrêtent n'apparaissent pas dans les fonctions 
+        this.t = "graphe" ;  // Pour être utilisé comme objet du langage
         // de parcours tant qu'ils n'ont pas été marqués découverts
     }
 
