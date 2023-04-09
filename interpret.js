@@ -1060,7 +1060,7 @@ function interpExit(arg){
 
 function regularCheck(force=false){
     _instrCnt=0;
-    for(let g of _env.Graphes) g.redraw(force);
+    for(let i in _env.Graphes) _env.Graphes[i].redraw(force);
     
     if(_strChange){
         _strChange=false;
