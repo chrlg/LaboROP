@@ -82,7 +82,7 @@ function realEditorChange(){
    worker=false;
    worker = new Worker("interpret.js", {type:"module"});
    worker.onmessage = messageFromWorker;
-   worker.onerror = (e) => {console.log('error'); console.log(e);};
+   worker.onerror = (e) => {console.log(e);};
    worker.postMessage(editor.getValue());
    timeout=setTimeout(Terminate, timeoutLen);
    $("#console").empty();

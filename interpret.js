@@ -948,7 +948,7 @@ function interpDef(def){
 }
 
 function interpCall(call){
-   var fn=_env.get(call.f);
+   let fn=_env.get(call.f);
    if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
    if(fn.t=="predfn") return fn.f(call.args, call.ln, call.f);
@@ -1686,12 +1686,12 @@ onmessage = function (e){
       _env.Global["tick"]={t:"number", val:v};
       return;
    }
-   //try{
+   try{
       let str=parseTabulation(e.data);
       let out = grlang.parse(str);
       interpret(out);
       postMessage({termine: 0, opcnt:_opCnt});
-   /*}catch(e){
+   }catch(e){
       if(e.error) {
 	 if(e.error=="exit") {
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
@@ -1705,8 +1705,9 @@ onmessage = function (e){
       }
       else {
          console.trace(e);
-         postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e)});
+         //postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e)});
+         throw(e);
       }
-   } */
+   }
 }
 

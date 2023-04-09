@@ -43,7 +43,7 @@ class Environnement {
     get(sym){
         let envs=[this.Local, this.Global, this.Graphes, this.G.sommets, this.Predef];
         for(let e of envs){
-            if(e && envs[sym]!==undefined){
+            if(e && e[sym]!==undefined){
                 if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
                 return e[sym];                   // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
             }
