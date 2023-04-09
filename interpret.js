@@ -85,50 +85,6 @@ function parseTabulation(str){
    return out;
 }
 
-// Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
-function updateGraphe(graphe=false){
-    if(!graphe) graphe=_env.G;
-    let gr="";
-    let orient = graphe.isOrient();
-    if(orient) gr+="digraph{";
-    else gr+="graph{";
-    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
-    // été générés de toutes façons avec leurs arcs)
-    // (Note: servira plus tard pour les attributs)
-    for(let e in graphe.sommets){
-        if(graphe.discover && !graphe.sommets[e].marques.visible) continue;
-        let attr="";
-        let col=graphe.sommets[e].marques.color;
-        if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
-        gr+=(""+e+attr+";");
-    }
-    // Arcs ou aretes
-    for(let i=0; i<graphe.arcs.length; i++){
-        if(graphe.discover){
-            if(orient && !graphe.arcs[i].i.marques.visible) continue;
-            else if(!orient && !graphe.arcs[i].i.marques.visible && !graphe.arcs[i].a.marques.visible) continue;
-        }
-        let attr="";
-        let col=graphe.arcs[i].marques.color;
-        let val=graphe.arcs[i].marques.val;
-        let label=graphe.arcs[i].marques.label;
-        let tooltip="("+graphe.arcs[i].i.name+","+graphe.arcs[i].a.name+")\n";
-        for(let m in graphe.arcs[i].marques){
-            let v=graphe.arcs[i].marques[m].val;
-            tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
-        }
-        attr=attr+`[tooltip="${tooltip}"]`;
-        if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
-        if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
-        else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
-        if(orient) gr+=""+graphe.arcs[i].i.name +"->"+graphe.arcs[i].a.name+attr+";";
-        else gr+=""+graphe.arcs[i].i.name+"--"+graphe.arcs[i].a.name+attr+";";
-    }
-    gr+="}\n";
-    // Envoie le graphe au thread principal, qui appelera dot avec
-    postMessage({graph:gr, name:graphe.name});
-    graphe.change=false;
-}
 
 // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
 // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
@@ -1203,26 +1159,19 @@ function interpExit(arg){
 }
 
 
-function regularCheck(ultimate){
-   _instrCnt=0;
-   if(_env.G.change){
-      if(_env.G.mode=="dot") updateGraphe();
-      else if(_env.G.mode=="reseau" && ultimate) updateReseau();
-      else if(_env.G.mode=="map" && ultimate) updateMap();
-      else if(_env.G.mode=="arrows" && ultimate) updateArrows();
-   }
-   if(ultimate){
-      for(let name in _env.Graphes){
-         if(name=="G") continue; // Déjà fait
-         if(_env.Graphes[name].mode=="dot") updateGraphe(_env.Graphes[name]);
-         //else if(_grapheMode=="reseau") updateReseau(_env.Graphes[name]);
-      }
-   }
-   if(_strChange){
-      _strChange=false;
-//      _str=_str.slice(-10000);
-      postMessage({print: _str});
-   }
+function regularCheck(force=false){
+    _instrCnt=0;
+    for(let g of _env.Graphes) g.redraw(force);
+    
+    if(_env.G.change){
+        else if(_env.G.mode=="reseau" && ultimate) updateReseau();
+        else if(_env.G.mode=="map" && ultimate) updateMap();
+        else if(_env.G.mode=="arrows" && ultimate) updateArrows();
+    }
+    if(_strChange){
+        _strChange=false;
+        postMessage({print: _str});
+    }
 }
 
 function interpPlusEgal(tree){

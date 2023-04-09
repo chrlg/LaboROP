@@ -23,5 +23,56 @@ class Graphe {
     setOrient(o){
         this.oriente.val = o;
     }
+
+    redraw(force=false){
+        if(force || this.change){
+            if(this.mode=='dot') this.generateDot();
+        }
+        this.change=false;
+    }
+
+    // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
+    generateDot(){
+        let gr="";
+        let orient = this.isOrient();
+        if(orient) gr+="digraph{";
+        else gr+="graph{";
+        // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
+        // été générés de toutes façons avec leurs arcs)
+        // (Note: servira plus tard pour les attributs)
+        for(let e in this.sommets){
+            if(this.discover && !this.sommets[e].marques.visible) continue;
+            let attr="";
+            let col=this.sommets[e].marques.color;
+            if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
+            gr+=(""+e+attr+";");
+        }
+        // Arcs ou aretes
+        for(let a of this.arcs){
+            if(this.discover){
+                if(orient && !a.i.marques.visible) continue;
+                else if(!orient && !a.i.marques.visible && !a.a.marques.visible) continue;
+            }
+            let attr="";
+            let col=a.marques.color;
+            let val=a.marques.val;
+            let label=a.marques.label;
+            let tooltip="("+a.i.name+","+a.a.name+")\n";
+            for(let m in this.arcs[i].marques){
+                let v=a.marques[m].val;
+                tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
+            }
+            attr=attr+`[tooltip="${tooltip}"]`;
+            if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
+            if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
+            else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
+            if(orient) gr+=""+a.i.name +"->"+a.a.name+attr+";";
+            else gr+=""+a.i.name+"--"+a.a.name+attr+";";
+        }
+        gr+="}\n";
+        // Envoie le graphe au thread principal, qui appelera dot avec
+        postMessage({graph:gr, name:this.name});
+        this.change=false;
+    }
 }
 
