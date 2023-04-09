@@ -90,7 +90,8 @@ class Graphe {
     generateMap(){
         let gr=[];
         let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-        for(let s of this.sommets){
+        for(let i in this.sommets){
+            let s=this.sommets[i];
             if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
             if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
             let x=s.marques.x.val;
@@ -137,7 +138,8 @@ class Graphe {
         let grs=[], gra=[]; // grs, tableau de sommets (dans la représentatino réseau), gra, tableau d'arcs
         let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity; // bornes
         let assoc={}; // Table associative liant nom du sommet à indice dans grs
-        for(let s of this.sommets){
+        for(let i in this.sommets){
+            let s=this.comments[i];
             let x=s.marques.x.val;
             let y=s.marques.y.val;
             if(x<xmin) xmin=x; // update bornes
