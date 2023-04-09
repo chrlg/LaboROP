@@ -53,7 +53,8 @@ class Environnement {
 
     // Retourne le graphe contenant un sommet donné
     grapheContaining(s){
-        for(let g of this.Graphes){
+        for(let i in this.Graphes){
+            let g=this.Graphes[i];
             if(g.sommets[s.name]===s) return g;
         }
         return null;
