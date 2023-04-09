@@ -17,13 +17,17 @@ class Graphe {
         // de parcours tant qu'ils n'ont pas été marqués découverts
     }
 
+    // Ce graphe est-il orienté ou non?
     isOrient(){
         return this.oriente.val;
     }
+    // setter
     setOrient(o){
         this.oriente.val = o;
     }
 
+    // regénère une description à envoyer au thread d'affichage, si nécessaire (si le graphe a changé,
+    // ou si un argument force est passé)
     redraw(force=false){
         if(force || this.change){
             if(this.mode=='dot') this.generateDot();
@@ -34,7 +38,7 @@ class Graphe {
 
     // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
     generateDot(){
-        let gr="";
+        let gr=""; // Chaine contenant le .dot de graphviz
         let orient = this.isOrient();
         if(orient) gr+="digraph{";
         else gr+="graph{";
@@ -42,6 +46,7 @@ class Graphe {
         // été générés de toutes façons avec leurs arcs)
         // (Note: servira plus tard pour les attributs)
         for(let e in this.sommets){
+            // En mode "discover", le sommet n'est affiché que s'il apparait avec l'attribut "visible"
             if(this.discover && !this.sommets[e].marques.visible) continue;
             let attr="";
             let col=this.sommets[e].marques.color;
