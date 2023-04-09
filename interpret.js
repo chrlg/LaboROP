@@ -808,11 +808,11 @@ function evaluate(expr){
    }
 
    if(expr.t=="SOMMET"){
-      let g=_env.Graphes.G.sommets;
+      let g=_env.G;
       if(expr.g) {
          if(_env.Graphes[expr.g]===undefined) throw {error:"env", name:"Graphe inexistant", 
                                                   msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
-         g=_env.Graphes[expr.g].sommets;
+         g=_env.Graphes[expr.g];
       }
       var v=evalSommet(expr.arg, true, g);
       if(!v || v.t!="Sommet") throw {error:"type", name:"Pas un sommet", 
@@ -932,7 +932,7 @@ function evalSommet(som, creer, graphe){
 // Ajoute des sommets
 function interpCreerSommets(ins){
    let liste=ins.args;
-   let g=_env.Graphes.G;
+   let g=_env.G;
    if(ins.g){
       if(!_env.Graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
       g=_env.Graphes[ins.g];
@@ -1069,7 +1069,7 @@ function creerArc(ins){
       if(!g) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
    }
    // Un arc implique un graphe orienté
-   if(g.isOrient()===undefined) _env.setOrient(TRUE);
+   if(g.isOrient()===undefined) g.setOrient(TRUE);
    if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
    let l=evalSommet(left, true, g);
@@ -1088,8 +1088,8 @@ function interpDef(def){
    if(_env.getPredef(def.nom)) throw {error:"type",
       name: "Surdéfinition", msg: "Impossible de redéfinir le symbole prédéfini "+def.nom,
       ln:def.ln};
-   if(_globalEnv[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
-   _globalEnv[def.nom] = def;
+   if(_env.Global[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
+   _env.Global[def.nom] = def;
 }
 
 function interpCall(call){
@@ -1206,9 +1206,9 @@ function interpExit(arg){
 function regularCheck(ultimate){
    _instrCnt=0;
    if(_env.G.change){
-      if(_eng.G.mode=="dot") updateGraphe();
+      if(_env.G.mode=="dot") updateGraphe();
       else if(_env.G.mode=="reseau" && ultimate) updateReseau();
-      else if(_eng.G.mode=="map" && ultimate) updateMap();
+      else if(_env.G.mode=="map" && ultimate) updateMap();
       else if(_env.G.mode=="arrows" && ultimate) updateArrows();
    }
    if(ultimate){
@@ -1240,105 +1240,104 @@ function interpPlusEgal(tree){
 
 // LISTE D'INSTRUCTIONS
 function interpretWithEnv(tree, isloop){
-   for(let ti of tree){
-      if(_instrCnt++>100000) regularCheck();
-      if(ti.t=="SOMMET"){
-	 interpCreerSommets(ti);
-	 continue;
-      }
-      if(ti.t=="ARETE"){
-	 creerArete(ti);
-	 continue;
-      }
-      if(ti.t=="Arc"){
-	 creerArc(ti);
-	 continue;
-      }
-      if(ti.t=="="){
-	 interpAffect(ti);
-	 continue;
-      }
-      if(ti.t=="++" || ti.t=="--"){
-	 evaluate(ti);
-	 continue;
-      }
-      if(ti.t=="foreach"){
-         let b=interpForeach(ti);
-	 if(b=="return") return "return";
-         continue;
-      }
-      if(ti.t=="for"){
-	 var b=interpFor(ti);
-	 if(b=="return") return "return";
-	 continue;
-      }
-      if(ti.t=="if"){
-	 var b=interpIf(ti, isloop);
-	 if(isloop && b=="break") return "break";
-	 if(isloop && b=="continue") return "continue";
-	 if(b=="return") return "return";
-	 continue;
-      }
-      if(ti.t=="while"){
-	 var b=interpWhile(ti);
-	 if(b=="return") return "return";
-	 continue;
-      }
-      if(ti.t=="call"){
-	 interpCall(ti);
-	 continue;
-      }
-      if(ti.t=="DEF"){
-	 interpDef(ti);
-	 continue;
-      }
-      if(ti.t=="break"){
-	 if(!isloop) throw {error:"exec", name:"Break en dehors d'une boucle",
-	       msg:"'break' ne peut être utilisé que dans une boucle for ou while",
-	       ln:ti.ln};
-	 return "break";
-      }
-      if(ti.t=="continue"){
-	 if(!isloop) throw {error:"exec", name:"continue en dehors d'une boucle",
-	       msg:"'continue' ne peut être utilisé que dans une boucle for ou while",
-	       ln:ti.ln};
-	 return "continue";
-      }
-      if(ti.t=="pass"){
-         continue;
-      }
-      if(ti.t=="return"){
-	 interpReturn(ti);
-	 return "return";
-      }
-      if(ti.t=="exit"){
-	 interpExit(ti.arg);
-	 return "exit";
-      }
-      if(ti.t=="+="){
-         interpPlusEgal(ti);
-         continue;
-      }
-      if(ti.t=="Graphe"){
-         if(_env.Predef[ti.name] || _env.Graphes[ti.name])
-            throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
-         if(ti.name=="G") {
-            _grapheEnv={};
-            _arcs=[];
-            //throw {error:"env", name:"Surdéfinition", msg:"Le nom G est réservé au graphe par défaut", ln:ti.ln};
-         }
-         _globalEnv[ti.name] = ti;
-         ti.sommets={};
-         ti.arcs=[];
-         _env.Graphes[ti.name]=ti;
-         continue;
-      }
-      if(ti.t=="$"){
-	 prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
-	 continue;
-      }
-   }
-   return false;
+    for(let ti of tree){
+        if(_instrCnt++>100000) regularCheck();
+        if(ti.t=="SOMMET"){
+            interpCreerSommets(ti);
+            continue;
+        }
+        if(ti.t=="ARETE"){
+            creerArete(ti);
+            continue;
+        }
+        if(ti.t=="Arc"){
+            creerArc(ti);
+            continue;
+        }
+        if(ti.t=="="){
+            interpAffect(ti);
+            continue;
+        }
+        if(ti.t=="++" || ti.t=="--"){
+            evaluate(ti);
+            continue;
+        }
+        if(ti.t=="foreach"){
+            let b=interpForeach(ti);
+            if(b=="return") return "return";
+            continue;
+        }
+        if(ti.t=="for"){
+            var b=interpFor(ti);
+            if(b=="return") return "return";
+            continue;
+        }
+        if(ti.t=="if"){
+            var b=interpIf(ti, isloop);
+            if(isloop && b=="break") return "break";
+            if(isloop && b=="continue") return "continue";
+            if(b=="return") return "return";
+            continue;
+        }
+        if(ti.t=="while"){
+            var b=interpWhile(ti);
+            if(b=="return") return "return";
+            continue;
+        }
+        if(ti.t=="call"){
+            interpCall(ti);
+            continue;
+        }
+        if(ti.t=="DEF"){
+            interpDef(ti);
+            continue;
+        }
+        if(ti.t=="break"){
+            if(!isloop) throw {error:"exec", name:"Break en dehors d'une boucle",
+                msg:"'break' ne peut être utilisé que dans une boucle for ou while",
+                ln:ti.ln};
+            return "break";
+        }
+        if(ti.t=="continue"){
+            if(!isloop) throw {error:"exec", name:"continue en dehors d'une boucle",
+                msg:"'continue' ne peut être utilisé que dans une boucle for ou while",
+                ln:ti.ln};
+            return "continue";
+        }
+        if(ti.t=="pass"){
+            continue;
+        }
+        if(ti.t=="return"){
+            interpReturn(ti);
+            return "return";
+        }
+        if(ti.t=="exit"){
+            interpExit(ti.arg);
+            return "exit";
+        }
+        if(ti.t=="+="){
+            interpPlusEgal(ti);
+            continue;
+        }
+        if(ti.t=="Graphe"){
+            if(_env.Predef[ti.name] || _env.Graphes[ti.name])
+                throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est déjà utilisé", ln:ti.ln};
+            if(ti.name=="G") {
+                _env.G.sommets={};
+                _env.G.arcs.length=0;
+            }else{
+                ti.sommets={};
+                ti.arcs=[];
+                _env.Graphes[ti.name]=ti;
+            }
+            continue;
+        }
+        if(ti.t=="$"){
+            prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
+            continue;
+        }
+    }
+    return false;
 }
 
 function preRandom(args){
@@ -1701,11 +1700,11 @@ function importReseau(g,v){
    for(let i=0; i<g[0].length; i++){
       let x={t:"number", val:g[0][i][0]};
       let y={t:"number", val:g[0][i][1]};
-      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
+      _env.G.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
    }
    for(let p of g[1]){
-      let s1=_grapheEnv["S"+p[0]];
-      let s2=_grapheEnv["S"+p[1]];
+      let s1=_env.G.sommets["S"+p[0]];
+      let s2=_env.G.sommets["S"+p[1]];
       let d={t:"number", val:0};
       if(p.length==3) d.val=p[2];
       else{
@@ -1715,12 +1714,12 @@ function importReseau(g,v){
          let y2=s2.marques.x;
          d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
       }
-      if (v=="noValues") _arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
-      else _arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
+      if (v=="noValues") _env.G.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
+      else _env.G.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
    }
-   _env.setOrient(TRUE);
-   _grapheMode="dot";   
-   _grapheChange=true;
+   _env.G.setOrient(TRUE);
+   _env.G.mode="dot";   
+   _env.G.change=true;
 }
 
 function importReseauValue(g,v){
@@ -1796,7 +1795,6 @@ function preGraphMode(args, ln){
 function interpret(tree){
    _grapheEnv={};
    _arcs=[];
-   _env.setOrient(UNDEFINED);
    _env.Predef["clear"]={t:"predfn", f:preClear};
    _env.Predef["Adj"]={t: "predvar", f:preM, optarg:true};
    _env.Predef["Id"]={t: "predvar", f:preId, optarg:true};
