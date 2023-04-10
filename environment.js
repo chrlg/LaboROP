@@ -73,5 +73,12 @@ class Environnement {
         return this.Current;
     }
 
+    // Même chose mais sous forme de L-value, c'est à dire de paire "environnement / index"
+    // Et uniquement dans un environnement qu'on peut écrire sous forme d'affectation
+    // (par exemple, pas sommets et graphes, puisqu'il est impossible d'écraser un sommet A en écrivant A=AutreSommet)
+    getLVal(name){
+        return [getIdlv(name), name]
+    }
+
 }
 

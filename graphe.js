@@ -88,11 +88,14 @@ class Graphe {
 
     // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
     // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
+    // Réservé aux graphes dont tous les nœuds ont un x,y (même si par défaut on remplace par 0)
     generateMap(){
         let gr=[];
+        // Calcul des bornes du dessin
         let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
         for(let i in this.sommets){
             let s=this.sommets[i];
+            // Remplacement par 0 s'il n'y a pas de x ou y
             if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
             if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
             let x=s.marques.x.val;
@@ -102,6 +105,7 @@ class Graphe {
             if(y<ymin) ymin=y;
             if(y>ymax) ymax=y;
         }
+        // Une marge autour du dessin
         let dx=(xmax-xmin);
         xmin-=0.005*dx;
         xmax+=0.005*dx;
@@ -109,14 +113,19 @@ class Graphe {
         ymin-=0.005*dy;
         ymax+=0.005*dy;
 
+        // Ce qu'on dessine en réalité ce sont uniquement les arcs
         for(let a of this.arcs){
             let s1=a.i;
             let s2=a.a;
+            // En mode discover, on ne dessine un arc que si son sommet initial (ou un des sommets pour une arête) est visible
+            // Notons que cela n'impacte pas l'échelle du dessin (contrairement au mode dot, dans lequel on "zoome" sur
+            // les seuls sommets connus
             if(this.discover){
                 let orient=this.isOrient();
                 if(orient && !s1.marques.visible) continue;
                 else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
             }
+            // Mapping sur une zone [0,4000]×[0,4000]
             let x1=s1.marques.x.val;
             let x2=s2.marques.x.val;
             let y1=s1.marques.y.val;
