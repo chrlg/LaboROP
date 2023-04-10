@@ -20,6 +20,16 @@ function numericValue(v){
 // Note : les expressions sont potentiellement décorée d'un attribut `.l`, qui est une lambda 
 // retournant leur valeur
 // Cela évite, si l'expression est évaluée plusieurs fois, de redécider à chaque fois le bon mode de calcul
+// Note 2 : il est assumé que les symboles locaux sont affectés avant leur première utilisation
+// Aucune vérification statique de cela n'est effectuée
+// Si ce n'est pas le cas, la conséquence sera soit un retour "undefined"
+// soit le fait que le symbole locale restera désigner (du fait de expr.l) un symbole global en tant que r-value
+// même en la présence future d'un symbole local sensé ensuite le masquer.
+// ex x=15; def f(): print(x); x=12; print(x)
+// affiche 15 les 2 fois, car x, la première fois, désigne le x global, et ensuite, du fait du expr.l, continue à le faire
+// même après la création d'un x local valant 12
+// En python, un tel code déclencherait une erreur "symbol local utilisé avant l'affectation", car une vérification statique
+// aurait identifié que x est une variable locale
 function evaluate(expr){
     // JIT
     if(expr.l!==undefined) return expr.l();
@@ -33,22 +43,10 @@ function evaluate(expr){
     // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
     // (le langage interdit donc les pointeurs de fonctions)
     if(expr.t=="id"){
-        if(_env.Predef[expr.name]){
-            if(_env.Predef[expr.name].t == "predvar") expr.l = _env.Predef[expr.name].f;
-            else if(_env.Predef[expr.name].t == "predfn") throw {error:"type", name:"Variable incorrecte", 
-                msg: "Tentative d'utiliser la fonction prédéfinie "+expr.name+ " comme une variable",
-                    ln:expr.ln};
-            else expr.l=function(){return _env.Predef[expr.name];};
-        }
-        else if(_env.Graphes[expr.name]) expr.l=function(){return _env.Graphes[expr.name];}
-        else if(_env.G.sommets[expr.name]) expr.l=function(){return _env.G.sommets[expr.name];}
-        else if(_env.Local && _env.Local[expr.name]!==undefined && _env.Local[expr.name].t!="global") expr.l=function(){return _env.Local[expr.name]};
-        else if(_env.Global[expr.name]!==undefined){
-            if(_env.Global[expr.name].t=="DEF") throw {error:"type", name:"Variable incorrecte", msg: ""+expr.name+" est une fonction", ln:expr.ln};
-            expr.l=function(){return _env.Global[expr.name];};
-        }
-        else throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
-        return expr.l();
+        let e=_env.getEnv(expr.name);
+        if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
+        expr.l=function(){return e[expr.name];}
+        return e[expr.name];
     }
 
     // Comparaison (égalité)
