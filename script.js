@@ -452,7 +452,9 @@ function initFiles(){
    let inputNew=$("<input />");
    $("<td>").appendTo(tr).append(inputNew);
    let btNew=$("<button>Créer nouveau</button>")
-   $("<td colspan=4>").appendTo(tr).append(btNew);
+   $("<td colspan=2>").appendTo(tr).append(btNew);
+   let btImport=$("<input type='file' onchange='this.files[0].text().then(t => importPyroFile(t))'>");
+   $("<td colspan=2>").appendTo(tr).append(btImport);
    
    btNew.click(function(){
       if(inputNew.val()==""){
@@ -473,6 +475,11 @@ function initFiles(){
       initFiles();
    });
 }
+
+export function importPyroFile(txt){
+    editor.setValue(txt, -1);
+}
+window.importPyroFile=importPyroFile;
 
 
 var listFiles, currentFilename, currentFile;
