@@ -11,9 +11,9 @@ let _env = new Environnement();
 let _modules = {}; // Modules importés
 
 let _str=""; // Chaine "stdout" à envoyer à la console
+let _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 let _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
 let _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
-let _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
