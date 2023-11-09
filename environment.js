@@ -59,7 +59,7 @@ class Environnement {
 
     // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
     get(sym){
-        let e=getEnv(sym);
+        let e=this.getEnv(sym);
         if(e) return e[sym];
         return undefined;
     }
