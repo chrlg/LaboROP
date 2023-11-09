@@ -382,6 +382,7 @@ function evaluate(expr){
         if(tab.t=="array") return tab.val[i];
         if(tab.t=="string") return {t:"string", val:tab.val[i]};
         if(tab.t=="Sommet") return {t:"string", val:tab.name[i]};
+        throw {error:"type", name:"Type non indexable", msg:"Un objet de type "+tab.t+" ne peut être indexé", ln:expr.ln};
     }
     if(expr.t=="mindex"){
         let i=evaluate(expr.i);

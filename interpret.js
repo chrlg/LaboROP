@@ -1,19 +1,19 @@
 // © C. Le Gal, 2017-2018
-importScripts("decimal.js");
+importScripts("lib/decimal.js");
 importScripts("grlang.js");
 importScripts("constants.js");
 importScripts("domcom.js");
 importScripts("environment.js");
 importScripts("expression.js");
 
-var _env = new Environnement();
+let _env = new Environnement();
 
-var _modules = {}; // Modules importés
+let _modules = {}; // Modules importés
 
-var _str=""; // Chaine "stdout" à envoyer à la console
-var _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
-var _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
-var _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
+let _str=""; // Chaine "stdout" à envoyer à la console
+let _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
+let _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
+let _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
