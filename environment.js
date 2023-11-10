@@ -1,4 +1,5 @@
 import {Graphe} from "./graphe.js";
+import populatePredef from "./predef.js";
 
 // Les environnements
 // Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
@@ -28,7 +29,7 @@ export let Local = null;
 // L'environnement courant (celui dans lequel on écrit) = env local, sauf s'il n'y en a pas = env global
 export let Current = Global;
 
-
+// Reset all modifiable env (for new interpret run)
 export function reset(){
     Graphes={};
     Global={};
@@ -57,6 +58,23 @@ export function getPredef(name){
 export function addPredfn(name, fn){
     if(Predef[name]) throw {error:"internal", name:"Erreur interne", msg:`Double définition de symbole prédéfini ${name}`, ln:ln};
     Predef[name] = {t:"predfn", f:fn};
+}
+
+// Add predefined nonstatic variables (variables from the point of view of pyro, but function here in JS)
+export function addPredvar(name, fn, optarg=true){
+    if(Predef[name]) throw {error:"internal", name:"Erreur interne", msg:`Double définition de symbole prédéfini ${name}`, ln:ln};
+    Predef[name] = {t:"predvar", f:fn};
+    if(optarg) Predef[name]['optarg']=true;
+}
+
+// Get a graphe by its name
+// If name is false/undefined, return graph G
+export function getGraph(name, ln){
+   if(name){
+      if(!Graphes[name]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+name+" n'existe pas", ln:ln};
+      return Graphes[name];
+   }
+   return G;
 }
 
 export class Environnement {
@@ -117,3 +135,4 @@ export class Environnement {
 
 }
 
+populatePredef();
