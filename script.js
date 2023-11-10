@@ -341,10 +341,6 @@ function init(){
    editor.setValue(currentFile.code, -1);
    realEditorChange();
 
-   setInterval(function(){
-      if(worker) worker.postMessage("tick");
-   }, 1000);
-
    // Tabs
    $("#tabs button[data-target]").click(function(e){
       let t=$(this).attr("data-target");
