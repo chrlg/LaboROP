@@ -3,6 +3,9 @@
 	<FilesMatch "(interpret|grlang|script|codepredef|mod_.*)\.js$">
 		Header set Cache-Control "max-age=20, private"
 	</FilesMatch>
+	<FilesMatch "(.*)\.js$">
+		Header set Cache-Control "max-age=30, private"
+	</FilesMatch>
 	<FilesMatch "(index\.html|style\.css)$">
 		Header set Cache-Control "max-age=40000, private"
 	</FilesMatch>
