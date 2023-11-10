@@ -291,7 +291,7 @@ function evalSommet(som, creer, graphe){
     let S=null;
     if(som.t=="id"){
         if(graphe.sommets[som.name]!==undefined) return graphe.sommets[som.name]; // Sommet déjà existant (dans ce graphe)
-        if(_env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
+        if(Env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
     }
 
     if(str===null){

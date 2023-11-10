@@ -77,32 +77,34 @@ export function getGraph(name, ln){
    return G;
 }
 
+// Retourne l'environnement concerné par un symbole
+// Usage prévu : il ne s'agit pas d'une L-value (et n'est pas utilisé comme tel dans le code : on ne modifie a priori jamais envinnemnt[index])
+// mais d'un pointeur, qui a l'avantage de connaitre la nouvelle valeur si elle change après l'appel à getRef
+// l'usage est par exemple pour les expr.l de l'évaluation d'expression : la décision de ce à quoi se réfère un symbole
+// est faite une fois pour toute, mais ensuite expr.l peut être appelé de nombreuses fois
+function getEnv(sym){
+    const envs=[Local, Global, Graphes, G.sommets, Predef];
+    for(let e of envs){
+        if(e && e[sym]!==undefined){
+            if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
+                                             // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
+            return e
+        }
+    }
+    return undefined;
+}
+
+// Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
+export function get(sym){
+    let e=getEnv(sym);
+    if(e) return e[sym];
+    return undefined;
+}
+
 export class Environnement {
 
-    // Retourne l'environnement concerné par un symbole
-    // Usage prévu : il ne s'agit pas d'une L-value (et n'est pas utilisé comme tel dans le code : on ne modifie a priori jamais envinnemnt[index])
-    // mais d'un pointeur, qui a l'avantage de connaitre la nouvelle valeur si elle change après l'appel à getRef
-    // l'usage est par exemple pour les expr.l de l'évaluation d'expression : la décision de ce à quoi se réfère un symbole
-    // est faite une fois pour toute, mais ensuite expr.l peut être appelé de nombreuses fois
-    getEnv(sym){
-        const envs=[this.Local, this.Global, this.Graphes, this.G.sommets, this.Predef];
-        for(let e of envs){
-            if(e && e[sym]!==undefined){
-                if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
-                                                 // il faut remonter plus loin (l'env global) pour trouver le vrai sens du symbole
-                return e
-            }
-        }
-        return undefined;
-    }
         
 
-    // Récupère l'objet désigné par "sym", par ordre de priorité "env local > env global > sommet > var prédéfinie"
-    get(sym){
-        let e=this.getEnv(sym);
-        if(e) return e[sym];
-        return undefined;
-    }
 
     // Retourne le graphe contenant un sommet donné
     grapheContaining(s){
