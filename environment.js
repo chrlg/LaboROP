@@ -7,37 +7,59 @@ import {Graphe} from "./graphe.js";
 // Global, qui contient les variables globales et fonctions définies par l'utilisateur
 // Et 1 environnement local, qui est créé à chaque appel de fonction
 // Par défaut, l'envionnement local est l'environnement global. 
+
+// Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
+// Il est interdit de les écraser
+export let Predef = {};
+
+// Les Graphes. Dont le graphe par défaut, G
+export let Graphes = {};
+export let G=null;
+
+// Les variables globales
+export let Global = {};
+
+// Les variables locales (qui sont une pile d'environnements, pour les appels imbriqués)
+export let LocalEnvStack = [];
+
+// L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
+export let Local = null;
+
+// L'environnement courant (celui dans lequel on écrit) = env local, sauf s'il n'y en a pas = env global
+export let Current = Global;
+
+
+export function reset(){
+    Graphes={};
+    Global={};
+    LocalEnvStack=[];
+    Local=null;
+    Current=Global;
+    addGraphe("G", 0);
+}
+
+// Add a new Graph to the environment
+// If that graphe name is G, then, update helper global value G
+export function addGraphe(name, ln){
+    if(Graphes[name]){
+        throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
+    }
+    Graphes[name] = new Graphe(name);
+    if(name=='G') G = Graphes['G']
+}
+
+// Get predefined value name
+export function getPredef(name){
+    return Predef[name];
+}
+
+// Add predefined function name
+export function addPredfn(name, fn){
+    if(Predef[name]) throw {error:"internal", name:"Erreur interne", msg:`Double définition de symbole prédéfini ${name}`, ln:ln};
+    Predef[name] = {t:"predfn", f:fn};
+}
+
 export class Environnement {
-    constructor(){
-        // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
-        // Il est interdit de les écraser
-        this.Predef = {}; 
-        // Les Graphes. Dont le graphe par défaut, G
-        this.Graphes = {};
-        // Les variables globales
-        this.Global = {};
-        // Les variables locales (qui sont une pile d'environnements, pour les appels imbriqués)
-        this.LocalEnvStack = [];
-        // L'environnement local est le dernier de la pile (c'est juste plus pratique de l'avoir directement)
-        this.Local = null;
-        // L'environnement courant (celui dans lequel on écrit) = env local, sauf s'il n'y en a pas = env global
-        this.Current = this.Global;
-
-        // Il y a par défaut un graphe G
-        this.addGraphe("G", 0);
-    }
-
-    getPredef(name){
-        return this.Predef[name];
-    }
-
-    addGraphe(name, ln){
-        if(this.Graphes[name]){
-            throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
-        }
-        this.Graphes[name] = new Graphe(name);
-        if(name=='G') this.G = this.Graphes['G']
-    }
 
     // Retourne l'environnement concerné par un symbole
     // Usage prévu : il ne s'agit pas d'une L-value (et n'est pas utilisé comme tel dans le code : on ne modifie a priori jamais envinnemnt[index])
