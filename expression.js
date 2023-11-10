@@ -2,7 +2,7 @@
 // expression : evaluation des expressions du langage
 
 // Retourne vrai ssi v est numérique, cad un nombre ou un décimal
-function isNumeric(v){
+export function isNumeric(v){
    if(v.t=='number') return true;
    if(v.t=='decimal') return true;
    return false;

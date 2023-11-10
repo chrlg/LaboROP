@@ -1,10 +1,8 @@
 // © C. Le Gal, 2017-2018
-importScripts("lib/decimal.js");
-importScripts("grlang.js");
-importScripts("constants.js");
-importScripts("domcom.js");
-importScripts("environment.js");
-importScripts("expression.js");
+import {TRUE, FALSE, NULL} from "./constants.js";
+import grlang from "./grlang.js";
+import {Environnement} from "./environment.js";
+import {isNumeric} from "./expression.js";
 
 let _env = new Environnement();
 

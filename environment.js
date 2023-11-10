@@ -1,4 +1,4 @@
-importScripts("graphe.js");
+import {Graphe} from "./graphe.js";
 
 // Les environnements
 // Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
@@ -7,7 +7,7 @@ importScripts("graphe.js");
 // Global, qui contient les variables globales et fonctions définies par l'utilisateur
 // Et 1 environnement local, qui est créé à chaque appel de fonction
 // Par défaut, l'envionnement local est l'environnement global. 
-class Environnement {
+export class Environnement {
     constructor(){
         // Environnement prédéfini. Contient les fonctions prédéfinies (random, print, ...)
         // Il est interdit de les écraser
