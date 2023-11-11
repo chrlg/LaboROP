@@ -1,8 +1,10 @@
 // © C. Le Gal 2017-2023. 
 // expression : evaluation des expressions du langage
 
+import * as Env from "./environment.js";
+
 // Retourne vrai ssi v est numérique, cad un nombre ou un décimal
-function isNumeric(v){
+export function isNumeric(v){
    if(v.t=='number') return true;
    if(v.t=='decimal') return true;
    return false;
@@ -30,7 +32,7 @@ function numericValue(v){
 // même après la création d'un x local valant 12
 // En python, un tel code déclencherait une erreur "symbol local utilisé avant l'affectation", car une vérification statique
 // aurait identifié que x est une variable locale
-function evaluate(expr){
+export function evaluate(expr){
     // JIT
     if(expr.l!==undefined) return expr.l();
 
@@ -43,7 +45,7 @@ function evaluate(expr){
     // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
     // (le langage interdit donc les pointeurs de fonctions)
     if(expr.t=="id"){
-        let e=_env.getEnv(expr.name);
+        let e=Env.getEnv(expr.name);
         if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
         expr.l=function(){return e[expr.name];}
         return e[expr.name];
@@ -488,4 +490,89 @@ function evaluateEqual(expr){
         else return TRUE;
     }
     return expr.l();
+}
+
+// Return a pointer to a L-value
+// A L-value is represented by a mutable pair oject/index. That is that object[index] should be modifiable
+// So it could be Local[varname], Global[varname], struct[fieldname], array[index], Graphe[nodeName]...
+// Since nodes and edges behave like a field, it could also be nodeAttributes[fieldName], and the like
+// Because edges can also be l-value (we can write (a,b)=(S1,S2), or `for [a,b] in aretes():`), 
+// and in such case, both the edge (a,b), and the nodes a and b can be affected, 
+// such L-value takes a special form of a 6-uplets, 2 first elements being the l-value of first node, 2 next, second node, and last 2 the edge itself
+export function evaluateLVal(lv, direct){
+
+    if(lv.t=="id") { // Just an identifier: a=  Note that getIdLv(...) would raise an error if that identifier is not mutable (predef)
+        return [Env.getIdlv(lv.name), lv.name];
+    }
+
+
+    // Special case of arc/arete (edges) -> return a 6-uplet
+    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
+        let a=Env.getIdlv(lv.initial);
+        let b=Env.getIdlv(lv.terminal);
+        let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal; // A name (that cannot legally be a real name) for the arc/arete variable
+        let c=Env.getIdlv(cn); // Env for new local var (so local or global depending on scope). Shouldn't be anything else than Current (can't be declared as global)
+        return [a, lv.initial, b, lv.terminal, c, cn]; // 6-uple for arc l-val, made of both node and the arc/arete itself
+    }
+
+    // Case of `.` operator. That is l-value is a.f. a could be a struct, a node, an edge (`(a,b).f`), or a graph
+    else if(lv.t=="field") { // a.f=
+        let v=evaluate(lv.o);
+
+        if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
+            // If it is an attribute that change graph appearance, mark graph for change
+            if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v).change=true; 
+            return [v.marques, lv.f]; // Sommet
+        }
+        else if(v.t=="Arete"){
+            if(lv.f=="initial") return [v, "i"]; // Special attribute [a,b].initial is a
+            else if(lv.f=="terminal") return [v, "a"];  // Likewise for terminal
+            else if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v).change=true;
+            return [v.marques, lv.f]; // Arete, dans une variable (et non en tant que paire)
+        }
+        else if(v.t=="Arc"){
+            if(lv.f=="initial") return [v, "i"];
+            else if(lv.f=="terminal") return [v, "a"];
+            else if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v).change=true;
+            return [v.marques, lv.f];
+        }
+        else if(v.t=="Graphe"){
+            return [v.sommets, lv.f];
+        }
+        else if(v.t=="struct"){ // Struct
+            return [v.f, lv.f];
+        }
+        // Anything else is an error
+        throw {error:"type", name:"Pas une structure", 
+            msg:"tentative d'accéder à un champ d'un objet de type "+v.t, ln:lv.ln};
+    }
+
+    // Array element
+    else if(lv.t=="index"){ // a[12]=
+        let v=evaluate(lv.tab);
+        if(v.t!="array") throw{error:"type", name:"Pas un tableau", msg:"Un "+v.t+" n'est pas un tableau",ln:lv.ln};
+        let i=evaluate(lv.index);
+        if(i===undefined || !isNumeric(i)){
+            throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
+        }
+        return [ v.val, numericValue(i) ];
+    }
+
+    // Matrix element
+    else if(lv.t=="mindex"){ // M[1,2]=...
+        let v=evaluate(lv.mat);
+        if(v.t!="matrix") throw{error:"type", name:"Erreur de type", msg:"Pas une matrice", ln:lv.ln};
+        let i=evaluate(lv.i);
+        let j=evaluate(lv.j);
+        if(i===undefined || !isNumeric(i)){ 
+            throw {error:"type", name:"Index de ligne invalide",
+                msg:"Un élément de type "+i.t+" n'est pas un index de ligne valide", ln:lv.i.ln};
+        }
+        if(j===undefined || !isNumeric(j)){
+            throw {error:"type", name:"Index de colonne invalide",
+                msg:"Un élément de type "+j.t+" n'est pas un index de colonne valide", ln:lv.j.ln};
+        }
+        return [ v.val[numericValue(i)], numericValue(j) ];
+    }
+    else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
 }

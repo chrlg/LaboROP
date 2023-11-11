@@ -6,6 +6,7 @@ do
    if [[ grlang.jison -nt grlang.js ]]
    then
       jison grlang.jison
+      echo "export default grlang;" >> grlang.js
       echo jison done
    fi
    mark=0

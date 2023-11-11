@@ -1,12 +1,10 @@
 // © C. Le Gal, 2017-2018
-importScripts("lib/decimal.js");
-importScripts("grlang.js");
-importScripts("constants.js");
-importScripts("domcom.js");
-importScripts("environment.js");
-importScripts("expression.js");
+import {TRUE, FALSE, NULL} from "./constants.js";
+import grlang from "./grlang.js";
+import * as Env from "./environment.js";
+import {isNumeric, evaluate, evaluateLVal} from "./expression.js";
 
-let _env = new Environnement();
+let _env = null;
 
 let _modules = {}; // Modules importés
 
@@ -139,94 +137,6 @@ function evaluateArc(o, ln){
 }
 
 const _binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
-// Retourne la référence (une paire "objet/index" mutable) vers une l-value
-// Ou un quadruplet pour les arcs et aretes
-function evaluateLVal(lv, direct){
-
-   if(lv.t=="id") { // une variable (non prédéfinie) : a=
-      return [_env.getIdlv(lv.name), lv.name];
-   }
-
-   else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
-      if(lv.t=="arete" && _env.G.isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
-      if(lv.t=="arc" && !_env.G.isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
-      let a=_env.getIdlv(lv.initial);
-      let b=_env.getIdlv(lv.terminal);
-      let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
-      let c=_env.getIdlv(cn);
-      return [a, lv.initial, b, lv.terminal, c, cn];
-   }
-
-   else if(lv.t=="field") { // a.f=
-      let o=evaluateLVal(lv.o); // référence ver a
-      let e=o[0];  // Environnement de a
-      let i=o[1];  // Nom de a dans cet environnement
-      let v=getRef(o);
-
-      if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
-      else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
-         if(lv.f=="color" || lv.f=="val" || lv.f=="label") _env.grapheContaining(v).change=true;
-	 if(o.length==2) return [v.marques, lv.f]; // Sommet
-	 if(o.length==6) {
-	    let w=evaluateArc(o, lv.ln);
-	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
-	    return [w.marques, lv.f];
-	 }
-      }
-      else if(v.t=="Arete"){
-         if(lv.f=="initial") return [v, "i"];
-         else if(lv.f=="terminal") return [v, "a"];
-         return [v.marques, lv.f]; // Arete, dans une variable (et non en tant que paire)
-      }
-      else if(v.t=="Arc"){
-         if(lv.f=="initial") return [v, "i"];
-         else if(lv.f=="terminal") return [v, "a"];
-         return [v.marques, lv.f];
-      }
-      else if(v.t=="Graphe"){
-         return [v.sommets, lv.f];
-      }
-      else if(v.t!="struct"){ // Autre chose sans champ
-         throw {error:"type", name:"Pas une structure", 
-            msg:"tentative d'accéder à un champ d'un objet de type "+v.t, ln:lv.ln};
-      }
-      return [o[0][o[1]].f, lv.f];
-   }
-
-   else if(lv.t=="index"){ // a[12]=
-      let o=evaluateLVal(lv.tab); // o=référence vers a
-      let v=getRef(o); // valeur (evaluate(lv.tab))
-      if(v===undefined) o[0][o[1]] = {t:"array", val:[]}; // Une création de variable
-      else if(o[0]==_env.G.sommets)
-         throw{error:"env", name:"Les sommets ne sont pas des tableaux", msg:"", ln:lv.ln};
-      else if(v.t!="array") // Une variable qui était autre chose qu'un tableau, et devient un tableau
-         throw{error:"type", name:"Pas un tableau", msg:"Un "+v.t+" n'est pas un tableau",ln:lv.ln};
-      let i=evaluate(lv.index);
-      if(i===undefined || !isNumeric(i)){
-	 throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
-      }
-      return [ o[0][o[1]].val, numericValue(i) ];
-   }
-   else if(lv.t=="mindex"){ // M[1,2]=...
-      let o=evaluateLVal(lv.mat); 
-      let v=getRef(o);
-      if(v===undefined) o[0][o[1]] = preZero(); // Création implicite d'une matrice nulle
-      else if(v.t!="matrix") throw{error:"type", name:"Erreur de type",
-                                 msg:"Pas une matrice", ln:lv.ln};
-      let i=evaluate(lv.i);
-      let j=evaluate(lv.j);
-      if(i===undefined || !isNumeric(i)){ 
-         throw {error:"type", name:"Index de ligne invalide",
-                msg:"Un élément de type "+i.t+" n'est pas un index de ligne valide", ln:lv.i.ln};
-      }
-      if(j===undefined || !isNumeric(j)){
-         throw {error:"type", name:"Index de colonne invalide",
-                msg:"Un élément de type "+j.t+" n'est pas un index de colonne valide", ln:lv.j.ln};
-      }
-      return [ o[0][o[1]].val[numericValue(i)], numericValue(j) ];
-   }
-   else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
-}
 
 
 function multMat(a, b){
@@ -293,7 +203,7 @@ function evalSommet(som, creer, graphe){
     let S=null;
     if(som.t=="id"){
         if(graphe.sommets[som.name]!==undefined) return graphe.sommets[som.name]; // Sommet déjà existant (dans ce graphe)
-        if(_env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
+        if(Env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
     }
 
     if(str===null){
@@ -321,11 +231,7 @@ function evalSommet(som, creer, graphe){
 // Ajoute des sommets
 function interpCreerSommets(ins){
    let liste=ins.args;
-   let g=_env.G;
-   if(ins.g){
-      if(!_env.Graphes[ins.g]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-      g=_env.Graphes[ins.g];
-   }
+   let g=Env.getGraph(ins.g, ins.ln);
    for(let i=0; i<liste.length; i++){
       let ev=evalSommet(liste[i], false, g);
       // On a récupéré un sommet existant
@@ -451,12 +357,7 @@ function creerArc(ins){
    let left=ins.left;
    let right=ins.right;
 
-   // Graphe concerné
-   let g=_env.G;
-   if(ins.g){
-      g=_env.Graphes[ins.g];
-      if(!g) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-   }
+   let g=Env.getGraph(ins.g); // Graphe concerné
    // Un arc implique un graphe orienté
    if(g.isOrient()===undefined) g.setOrient(TRUE);
    if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
@@ -616,9 +517,11 @@ function interpPlusEgal(tree){
 }
 
 // LISTE D'INSTRUCTIONS
+let _ln = 0;
 function interpretWithEnv(tree, isloop){
     for(let ti of tree){
         if(_instrCnt++>100000) regularCheck();
+        _ln=ti.ln;
         if(ti.t=="SOMMET"){
             interpCreerSommets(ti);
             continue;
@@ -715,511 +618,13 @@ function interpretWithEnv(tree, isloop){
     return false;
 }
 
-function preRandom(args){
-   if(args.length==0){
-      return Math.random();
-   }
-   var a=evaluate(args[0]);
-   if(a.t=="number"){
-      if(args.length==2){
-         let b=evaluate(args[1]);
-         if(b.t!="number") throw {error:"type", name:"Mauvais argument pour random",
-            msg:"Un entier et un "+a.t+" ne sont pas des arguments valides", 
-            ln:args[1].ln};
-         return a.val+Math.floor(Math.random()*(b.val-a.val));
-      }
-      return Math.floor(Math.random()*a.val);
-   }
-   if(a.t!="array"){
-      throw {error:"type", name:"Mauvais argument pour random", 
-	 msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
-   }
-   if(a.val.length<=0){
-      return NULL;
-   }
-   var r=Math.floor(Math.random()*a.val.length);
-   if(args.length==1){
-      return a.val[r];
-   }
-   else{
-      // On parcours tous les éléments de la liste à partir du r
-      // et on retourne le premier qui vérifie la condition
-      for(var ii=0; ii<a.val.length; ii++){
-	 var i=(r+ii)%a.val.length;
-	 var cur=a.val[i];
-         // Environnement pour self
-         let envSelf={self:cur};
-         _localEnv=envSelf;
-         _stackEnv.push(envSelf);
-	 var env=false; // Environnement d'évaluation de la condition (champs des éléments)
-	 if(cur && cur.t=="struct") env=cur.f;
-	 if(cur && (cur.t=="Arc" || cur.t=="Arete" || cur.t=="Sommet")) env=cur.marques;
-	 if(env){ // S'il y a un environnement, on le push avant d'évaluer la condition
-	    _localEnv=env;
-	    _stackEnv.push(env);
-	 }
-	 var v=evaluate(args[1]);
-	 if(env){
-	    _stackEnv.pop();
-	    _localEnv = _stackEnv[_stackEnv.length-1];
-	 }
-         // Retrait de envSelf
-         _stackEnv.pop();
-         _localEnv = _stackEnv[_stackEnv.length-1];
-
-	 if(!v || v.t!="boolean") throw {error:"type", name:"Condition non booléenne",
-	    msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
-	 if(v.val) return cur;
-      }
-      return NULL; // Rien ne correspond à la condition
-   }
-}
-
-function prePremier(args, ln){
-   if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
-         msg:"Mauvais nombre d'arguments pour premier", ln:ln};
-   var l=evaluate(args[0]);
-   if(l.t!="array") throw {error:"type", name:"Erreur de type",
-         msg:"'premier' attend un argument de type tableau", ln:args[0].ln};
-   if(l.val.length<=0) return NULL;
-   else return l.val[0];
-}
-
-function preDernier(args, ln){
-   if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
-         msg:"Mauvais nombre d'arguments pour dernier", ln:ln};
-   var l=evaluate(args[0]);
-   if(l.t!="array") throw {error:"type", name:"Erreur de type",
-         msg:"'dernier' attend un argument de type tableau", ln:args[0].ln};
-   if(l.val.length<=0) return NULL;
-   else return l.val[l.val.length-1];
-}
-
-
-function prePrint(args){
-   function printRec(o){
-      if(typeof o=="object"){
-	 if(o.t=="Sommet") _str+=o.name;
-	 else if(o.t=="Arete") _str+="["+o.i.name+","+o.a.name+"]";
-	 else if(o.t=="Arc") _str+="("+o.i.name+","+o.a.name+")";
-	 else if(isNumeric(o)) _str+=(""+o.val);
-	 else if(o.t=="string") _str+=o.val;
-	 else if(o.t=="boolean") _str+= (o.val?"True":"False");
-	 else if(o.t=="array"){
-	    _str+="[";
-	    for(var i=0; i<o.val.length; i++){
-	       printRec(o.val[i]);
-	       if(i<o.val.length-1) _str+=",";
-	    }
-	    _str+="]";
-	 }
-         else if(o.t=="matrix"){
-            for(let i=0; i<o.val.length; i++){
-               _str+="[";
-               for(let j=0; j<o.val[i].length; j++){
-                  if(j>0) _str+=" ";
-                  _str+=o.val[i][j];
-               }
-               _str+="]\n";
-            }
-         }
-	 else if(o.t=="struct"){
-	    _str+="{";
-	    var first=true;
-	    for(var k in o.f){
-	       if(first) first=false;
-	       else _str+=" ";
-	       _str+=k;
-	       _str+=":";
-	       printRec(o.f[k]);
-	    }
-	    _str+="}";
-	 }
-	 else _str+="{"+o.t+"}";
-      }
-      else{
-         _str+=o;
-      }
-   }
-
-   for(var i=0; i<args.length; i++){
-      var a=evaluate(args[i]);
-      printRec(a);
-      _strChange=true;
-   }
-}
-
-function prePrintln(a){
-   prePrint(a);
-   _str+="\n";
-}
-
-function preM(args, ln, fname){
-   var M={t:"matrix", val:[]};
-   var k;
-   var arcs;
-   if(args){
-      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Adj ne peut prendre qu'un argument optionnel, le graphe"};
-      let g=evaluate(args[0]);
-      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Adj est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-      k=Object.keys(g.sommets);
-      arcs=g.arcs;
-   }
-   else {
-      k=Object.keys(_grapheEnv);
-      arcs=_arcs;
-   }
-   for(let i=0; i<k.length; i++){
-      M.val[i]=new Array(k.length).fill(0);
-      for(let j=0; j<k.length; j++){
-	 M.val[i][j]=0;
-         for(let ai=0; ai<arcs.length; ai++){
-            if(arcs[ai].i.name == k[i] && arcs[ai].a.name==k[j]) {;}
-            else if(_env.isOrient()) continue;
-            else if(arcs[ai].a.name==k[i] && arcs[ai].i.name==k[j]) {;}
-            else continue;
-            M.val[i][j]++;
-         }
-      }
-   }
-   return M;
-}
-
-function preId(args, ln, fname){
-   var M={t:"matrix", val:[]};
-   var n=0;
-   if(args){
-      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Id ne peut prendre qu'un argument optionnel, le graphe"};
-      let g=evaluate(args[0]);
-      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Id est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-      n=Object.keys(g.sommets).length;
-   }
-   else n=Object.keys(_grapheEnv).length;
-   for(let i=0; i<n; i++){
-      M.val[i]=new Array(n).fill(0);
-      M.val[i][i]=1;
-   }
-   return M;
-}
-
-function zeroDim(n){
-   var M={t:"matrix", val:[]};
-   for(let i=0; i<n; i++){
-      M.val[i]=new Array(n).fill(0);
-   }
-   return M;
-}
-
-function preZero(args, ln, fname){
-   var n=0;
-   if(args){
-      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Zero ne peut prendre qu'un argument optionnel, le graphe"};
-      let g=evaluate(args[0]);
-      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Zero est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-      n=Object.keys(g.sommets).length;
-   }
-   else n=Object.keys(_grapheEnv).length;
-   return zeroDim(n);
-}
-
-function preArcs(args, ln){
-   if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction arcs s'utilise avec au plus 2 arguments (graphe et/ou sommet)", ln:ln};
-   let arcs=false;
-   let s=false;
-   for(let a of args){
-      let ev=evaluate(a);
-      if(ev.t=="Graphe") arcs=ev.arcs;
-      else if(ev.t=="Sommet") s=ev;
-      else throw {error:"args", name:"Mauvais argument", 
-         msg:"Argument de type "+ev.t+" invalide pour arcs", ln:ln};
-   }
-   if(arcs===false){
-      if(s){ // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
-         for(let gn in _env.Graphes){
-            if(_env.Graphes[gn].sommets[s.name]===s) arcs=_env.Graphes[gn].arcs;
-         }
-      }
-      else arcs=_arcs;
-   }
-   if(s===false) {
-       if(_grapheDisc){
-           let orient=_env.isOrient();
-           if(orient){
-               return {t:"array", val: arcs.filter(a=>a.i.marques.visible)};
-           }
-           else{
-               return {t:"array", val: arcs.filter(a=>a.i.marques.visible || a.a.marques.visible)};
-           }
-       }
-       else{
-           return {t:"array", val:arcs};
-       }
-   }
-   if(arcs===false) return NULL;
-
-   if(_grapheDisc && !s.marques.visible) return NULL;
-   var rep=[];
-   for(var i=0; i<arcs.length; i++){
-      if(arcs[i].i==s) rep.push(arcs[i]);
-      else if(arcs[i].a==s && arcs[i].t=="Arete") {
-	 // Dans le cas précis de arete, on inverse les sommets
-	 // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
-	 // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
-	 var pivot=arcs[i].i;
-	 arcs[i].i=arcs[i].a;
-	 arcs[i].a=pivot;
-	 rep.push(arcs[i]);
-      }
-   }
-   return {t:"array", val:rep};
-}
-
-function preSommets(args, ln){
-   let g=_grapheEnv;
-   let idx=false;
-   if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction sommets s'utilise avec au plus 2 arguments (graphe et/ou index)", ln:ln};
-   for(let a of args){
-      let ev=evaluate(a);
-      if(ev.t=="Graphe") g=ev.sommets;
-      else if(ev.t=="number"){
-         if(idx!==false) throw {error:"args", name:"Mauvais arguments", 
-            msg:"La fonction sommets s'utilise avec au plus un argument index", ln:ln};
-         idx=ev.val;
-      }
-      else throw {error:"args", name:"Mauvais arguments",
-            msg:"La fonction sommets s'utilise sans argument, ou des arguements de type entier et graphe", ln:ln};
-   }
-   let t=Object.values(g);
-
-   if(_grapheDisc && !idx) return {t:"array", val:t.filter(s=>s.marques.visible)};
-   if(idx===false) return {t:"array", val:t};
-   if(idx<0 || idx>=t.length) throw {error:"exec", name:"Indice invalide",
-         msg:"Le sommet #"+idx+" n'existe pas", ln:ln};
-   if(_grapheDisc && !t[idx].marques.visible) throw {error:"exec", name: "Sommet inaccessible", msg:"Le sommet #"+idx+" n'est pas encore visible", ln:ln};
-   return t[idx];
-}
-
-function preLen(args, ln){
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction len s'utilise avec un et un seul argument", ln:ln};
-   let a=evaluate(args[0]);
-   if(a.t=="array") return {t:"number", val:a.val.length};
-   if(a.t=="matrix") return {t:"number", val:a.val.length};
-   if(a.t=="string") return {t:"number", val:a.val.length};
-   throw {error:"type", name:"Erreur de type", 
-      msg:"Mauvais type "+a.t+" pour la fonction len", ln:ln};
-}
-
-function preMaths1(args, ln, fname){
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction "+fname+" s'utilise avec un et un seul argument", ln:ln};
-   let a=evaluate(args[0]);
-   if(a.t!="number") throw {error:"type", name:"Mauvais type", 
-      msg:"La fonction "+fname+" s'utilise avec un argument numérique", ln:ln};
-   if(fname=="sqrt") return {t:"number", val:Math.sqrt(a.val)};
-   if(fname=="sqr") return {t:"number", val:a.val*a.val};
-   if(fname=="exp") return {t:"number", val:Math.exp(a.val)};
-   if(fname=="log") return {t:"number", val:Math.log(a.val)};
-   if(fname=="log10") return {t:"number", val:Math.log10(a.val)};
-   if(fname=="log2") return {t:"number", val:Math.log2(a.val)};
-   if(fname=="sin") return {t:"number", val:Math.sin(a.val)};
-   if(fname=="cos") return {t:"number", val:Math.cos(a.val)};
-   if(fname=="tan") return {t:"number", val:Math.tan(a.val)};
-   if(fname=="asin") return {t:"number", val:Math.asin(a.val)};
-   if(fname=="acos") return {t:"number", val:Math.acos(a.val)};
-   if(fname=="atan") return {t:"number", val:Math.atan(a.val)};
-   if(fname=="abs") return {t:"number", val:Math.abs(a.val)};
-   throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
-}
-
-function preRefresh(args, ln){
-   if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction refresh s'utilise sans argument", ln:ln};
-   _grapheChange=true;
-   _strChange=true;
-   regularCheck();
-}
-
-function preOpCnt(){
-   return {t:"number", val:_opCnt};
-}
-
-function importGraphe(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=_grapheEnv["S"+p[0]];
-      let s2=_grapheEnv["S"+p[1]];
-      let d={t:"number", val:0};
-      if(p.length==3) d.val=p[2];
-      else{
-         let x1=s1.marques.x;
-         let x2=s2.marques.x;
-         let y1=s1.marques.x;
-         let y2=s2.marques.x;
-         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-      }
-      if (v=="noValues") _arcs.push({t:"Arete", i:s1, a:s2, marques:{}});
-      else _arcs.push({t:"Arete", i:s1, a:s2, marques:{val:d}});
-   }
-   _grapheChange=true;
-   _grapheMode="map";
-}
-
-function importReseau(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      _env.G.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=_env.G.sommets["S"+p[0]];
-      let s2=_env.G.sommets["S"+p[1]];
-      let d={t:"number", val:0};
-      if(p.length==3) d.val=p[2];
-      else{
-         let x1=s1.marques.x;
-         let x2=s2.marques.x;
-         let y1=s1.marques.x;
-         let y2=s2.marques.x;
-         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-      }
-      if (v=="noValues") _env.G.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
-      else _env.G.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
-   }
-   _env.G.setOrient(TRUE);
-   _env.G.mode="dot";   
-   _env.G.change=true;
-}
-
-function importReseauValue(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=_grapheEnv["S"+p[0]];
-      let s2=_grapheEnv["S"+p[1]];
-      let d={t:"number", val:0};
-      d.val=p[2];
-      let c={t:"number", val:0};
-      c.val=p[3];
-      _arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d,t:"number",cout:c}});
-   }
-   _env.setOrient(TRUE);
-   _grapheMode="arrows";   
-   _grapheChange=true;
-}
-
-function preImport(args, ln){
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction import s'utilise avec un argument", ln:ln};
-   let e=evaluate(args[0]);
-   if(e.t!="string") throw {error:"args", name:"Mauvais type d'argument",
-      msg:"La fonction import attent une chaîne", ln:ln};
-   if(_modules[e.val]) return ; // Déjà importé
-   importScripts("Modules/mod_"+e.val+".js");
-   _modules[e.val]=true;
-}
-
-function prePop(args, ln){
-   if(args.length!=1 && args.length!=2) throw {error:"args", name:"Mauvais nombre d'arguments", 
-      msg:"pop(tableau [,indice]) s'utilise avec deux arguments", ln:ln};
-   let ref=evaluateLVal(args[0]);
-   let lvv=ref[0][ref[1]];
-   if(lvv.t!="array") throw {error:"type", name:"Mauvais type pour pop", 
-      msg:"Le premier argument de pop est obligatoirement un tableau", ln:args[0].ln};
-   let index=lvv.val.length-1;
-   if(args.length==2){
-      let argidx=evaluate(args[1]);
-      if(argidx.t!="number") throw {error:"args", name:"Mauvais type pour pop", 
-         msg:"Le deuxième argument de pop, s'il existe, est un entier (indice de retrait)", ln:args[1].ln};
-      index = argidx.val;
-   }
-   let r=lvv.val.splice(index,1);
-   if(r.length==0) {
-      if(lvv.val.length==0) throw {error:"exec", name:"Tableau vide", msg:"", ln:ln};
-      throw {error:"exec", name:"Index invalide",
-         msg:"L'élement d'index "+index+" n'existe pas", ln:ln};
-   }
-   return r[0];
-}
-
-function preClear(args, ln){
-    if(args.length==1){
-        console.log('clear args', args);
-    }
-    _env.G.sommets={};
-    _env.G.arcs.length=0;
-}
-
-function preGraphMode(args, ln){
-    if(args.length==0){
-        return {t:"string", val:_grapheMode};
-    }
-    _grapheMode = ''+args[0].val;
-    _grapheChange=true;
-    regularCheck();
-}
-
 function interpret(tree){
-   _grapheEnv={};
-   _arcs=[];
-   _env.Predef["clear"]={t:"predfn", f:preClear};
-   _env.Predef["Adj"]={t: "predvar", f:preM, optarg:true};
-   _env.Predef["Id"]={t: "predvar", f:preId, optarg:true};
-   _env.Predef["Zero"]={t: "predvar", f:preZero, optarg:true};
-   _env.Predef["OpCount"]={t:"predvar", f:preOpCnt};
-   _env.Predef["sommets"]={t:"predfn", f:preSommets};
-   _env.Predef["len"]={t:"predfn", f:preLen};
-   _env.Predef["True"]=TRUE;
-   _env.Predef["False"]=FALSE;
-   _env.Predef["pi"]={t:"number", val:Math.PI};
-   _env.Predef["random"]={t:"predfn", f:preRandom};
-   _env.Predef["print"]={t:"predfn", f:prePrint};
-   _env.Predef["refresh"]={t:"predfn", f:preRefresh};
-   _env.Predef["println"]={t:"predfn", f:prePrintln};
-   _env.Predef["arcs"]={t:"predfn", f:preArcs};
-   _env.Predef["aretes"]={t:"predfn", f:preArcs};
-   _env.Predef["null"]={t:"predvar", f:function(){return NULL;}};
-   _env.Predef["sqrt"]={t:"predfn", f:preMaths1};
-   _env.Predef["sqr"]={t:"predfn", f:preMaths1};
-   _env.Predef["exp"]={t:"predfn", f:preMaths1};
-   _env.Predef["log"]={t:"predfn", f:preMaths1};
-   _env.Predef["log10"]={t:"predfn", f:preMaths1};
-   _env.Predef["log2"]={t:"predfn", f:preMaths1};
-   _env.Predef["sin"]={t:"predfn", f:preMaths1};
-   _env.Predef["cos"]={t:"predfn", f:preMaths1};
-   _env.Predef["tan"]={t:"predfn", f:preMaths1};
-   _env.Predef["asin"]={t:"predfn", f:preMaths1};
-   _env.Predef["acos"]={t:"predfn", f:preMaths1};
-   _env.Predef["atan"]={t:"predfn", f:preMaths1};
-   _env.Predef["abs"]={t:"predfn", f:preMaths1};
-   _env.Predef["import"]={t:"predfn", f:preImport};
-   _env.Predef["pop"]={t:"predfn", f:prePop};
-   _env.Predef["Infinity"]={t:"number", val:Infinity};
-   _env.Predef["_grapheMode"]={t:"predfn", f:preGraphMode};
-   _globalEnv={};
-   _localEnv=_globalEnv;
-   _stackEnv=[_localEnv];
-   interpretWithEnv(tree, false, false);
-   regularCheck(true);
+    Env.reset();
+    interpretWithEnv(tree, false, false);
+    regularCheck(true);
 }
 
 onmessage = function (e){
-   if(e.data=="tick"){
-      var v=0;
-      if(_env.Global["tick"]) v=_env.Global["tick"].val;
-      v++;
-      _env.Global["tick"]={t:"number", val:v};
-      return;
-   }
    try{
       let str=parseTabulation(e.data);
       let out = grlang.parse(str);
@@ -1239,7 +644,7 @@ onmessage = function (e){
       }
       else {
          console.trace(e);
-         //postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e)});
+         postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e), ln:_ln});
          throw(e);
       }
    }

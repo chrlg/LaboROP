@@ -1203,4 +1203,9 @@ exports.main = function commonjsMain (args) {
 if (typeof module !== 'undefined' && require.main === module) {
   exports.main(process.argv.slice(1));
 }
+<<<<<<< HEAD
 }export default grlang;
+=======
+}
+export default grlang;
+>>>>>>> 4d6a0d4e6587f6a3cb3f88b50f67e2de6f81a3f1
