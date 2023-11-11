@@ -77,6 +77,15 @@ export function getGraph(name, ln){
    return G;
 }
 
+// Return graph containing a given node s
+function grapheContaining(s){
+    for(let i in Graphes){
+        let g=Graphes[i];
+        if(g.sommets[s.name]===s) return g;
+    }
+    return null;
+}
+
 // Retourne l'environnement concerné par un symbole
 // Usage prévu : il ne s'agit pas d'une L-value (et n'est pas utilisé comme tel dans le code : on ne modifie a priori jamais envinnemnt[index])
 // mais d'un pointeur, qui a l'avantage de connaitre la nouvelle valeur si elle change après l'appel à getRef
@@ -101,33 +110,22 @@ export function get(sym){
     return undefined;
 }
 
-export class Environnement {
-
-        
-
-
-    // Retourne le graphe contenant un sommet donné
-    grapheContaining(s){
-        for(let i in this.Graphes){
-            let g=this.Graphes[i];
-            if(g.sommets[s.name]===s) return g;
-        }
-        return null;
-    }
-    
-    // Environment concerné par un symbole en L-value
-    // Si c'est déjà un symbole prédéfini, alors, c'est une erreur
-    // Sinon, c'est par défaut l'environnement "Current" dans lequel on crée des valeurs (local ou global)
-    // Sauf si c'est explicitement précisé qu'on parle de l'environnement global
-    getIdlv(name){
-        if(this.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
-        if(this.Current[name]){
-            if(this.Current[name].t=='global') return this.Global;
-            return this.Current;
-        }
+// Environment concerned by a l-value symbol
+// It symbol is of a predefined function of var, that is an error
+// Otherwise, if that symbol has been declared as global, it is the global environment
+// Otherwise it is the current environment (that may be a local one, or the global one)
+function getIdlv(name){
+    if(this.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
+    if(this.Current[name]){
+        if(this.Current[name].t=='global') return this.Global;
         return this.Current;
     }
+    return this.Current;
+}
 
+
+export class Environnement {
+    
     // Même chose mais sous forme de L-value, c'est à dire de paire "environnement / index"
     // Et uniquement dans un environnement qu'on peut écrire sous forme d'affectation
     // (par exemple, pas sommets et graphes, puisqu'il est impossible d'écraser un sommet A en écrivant A=AutreSommet)

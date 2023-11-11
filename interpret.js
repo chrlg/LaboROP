@@ -2,7 +2,7 @@
 import {TRUE, FALSE, NULL} from "./constants.js";
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
-import {isNumeric, evaluate} from "./expression.js";
+import {isNumeric, evaluate, evaluateLVal} from "./expression.js";
 
 let _env = null;
 
@@ -137,94 +137,6 @@ function evaluateArc(o, ln){
 }
 
 const _binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
-// Retourne la référence (une paire "objet/index" mutable) vers une l-value
-// Ou un quadruplet pour les arcs et aretes
-function evaluateLVal(lv, direct){
-
-   if(lv.t=="id") { // une variable (non prédéfinie) : a=
-      return [_env.getIdlv(lv.name), lv.name];
-   }
-
-   else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
-      if(lv.t=="arete" && _env.G.isOrient()) throw {error:"type", name: "Arete dans un graphe orienté", msg:"", ln:lv.ln};
-      if(lv.t=="arc" && !_env.G.isOrient()) throw {error:"type", name:"Arc dans un graphe non orienté", msg:"", ln:lv.ln};
-      let a=_env.getIdlv(lv.initial);
-      let b=_env.getIdlv(lv.terminal);
-      let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal;
-      let c=_env.getIdlv(cn);
-      return [a, lv.initial, b, lv.terminal, c, cn];
-   }
-
-   else if(lv.t=="field") { // a.f=
-      let o=evaluateLVal(lv.o); // référence ver a
-      let e=o[0];  // Environnement de a
-      let i=o[1];  // Nom de a dans cet environnement
-      let v=getRef(o);
-
-      if(v===undefined) e[i]={t:"struct", f:{}}; // a n'existe pas encore. C'est une création implicite
-      else if(v.t=="Sommet"){ // Soit un sommet, soit un arc. Le champ fait donc référence à une marque
-         if(lv.f=="color" || lv.f=="val" || lv.f=="label") _env.grapheContaining(v).change=true;
-	 if(o.length==2) return [v.marques, lv.f]; // Sommet
-	 if(o.length==6) {
-	    let w=evaluateArc(o, lv.ln);
-	    if(w.t=="null") throw {error:"type", name:"Arc ou arête nul", msg:"", ln:lv.ln};
-	    return [w.marques, lv.f];
-	 }
-      }
-      else if(v.t=="Arete"){
-         if(lv.f=="initial") return [v, "i"];
-         else if(lv.f=="terminal") return [v, "a"];
-         return [v.marques, lv.f]; // Arete, dans une variable (et non en tant que paire)
-      }
-      else if(v.t=="Arc"){
-         if(lv.f=="initial") return [v, "i"];
-         else if(lv.f=="terminal") return [v, "a"];
-         return [v.marques, lv.f];
-      }
-      else if(v.t=="Graphe"){
-         return [v.sommets, lv.f];
-      }
-      else if(v.t!="struct"){ // Autre chose sans champ
-         throw {error:"type", name:"Pas une structure", 
-            msg:"tentative d'accéder à un champ d'un objet de type "+v.t, ln:lv.ln};
-      }
-      return [o[0][o[1]].f, lv.f];
-   }
-
-   else if(lv.t=="index"){ // a[12]=
-      let o=evaluateLVal(lv.tab); // o=référence vers a
-      let v=getRef(o); // valeur (evaluate(lv.tab))
-      if(v===undefined) o[0][o[1]] = {t:"array", val:[]}; // Une création de variable
-      else if(o[0]==_env.G.sommets)
-         throw{error:"env", name:"Les sommets ne sont pas des tableaux", msg:"", ln:lv.ln};
-      else if(v.t!="array") // Une variable qui était autre chose qu'un tableau, et devient un tableau
-         throw{error:"type", name:"Pas un tableau", msg:"Un "+v.t+" n'est pas un tableau",ln:lv.ln};
-      let i=evaluate(lv.index);
-      if(i===undefined || !isNumeric(i)){
-	 throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
-      }
-      return [ o[0][o[1]].val, numericValue(i) ];
-   }
-   else if(lv.t=="mindex"){ // M[1,2]=...
-      let o=evaluateLVal(lv.mat); 
-      let v=getRef(o);
-      if(v===undefined) o[0][o[1]] = preZero(); // Création implicite d'une matrice nulle
-      else if(v.t!="matrix") throw{error:"type", name:"Erreur de type",
-                                 msg:"Pas une matrice", ln:lv.ln};
-      let i=evaluate(lv.i);
-      let j=evaluate(lv.j);
-      if(i===undefined || !isNumeric(i)){ 
-         throw {error:"type", name:"Index de ligne invalide",
-                msg:"Un élément de type "+i.t+" n'est pas un index de ligne valide", ln:lv.i.ln};
-      }
-      if(j===undefined || !isNumeric(j)){
-         throw {error:"type", name:"Index de colonne invalide",
-                msg:"Un élément de type "+j.t+" n'est pas un index de colonne valide", ln:lv.j.ln};
-      }
-      return [ o[0][o[1]].val[numericValue(i)], numericValue(j) ];
-   }
-   else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
-}
 
 
 function multMat(a, b){
@@ -445,12 +357,7 @@ function creerArc(ins){
    let left=ins.left;
    let right=ins.right;
 
-   // Graphe concerné
-   let g=_env.G;
-   if(ins.g){
-      g=_env.Graphes[ins.g];
-      if(!g) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-   }
+   let g=Env.getGraph(ins.g); // Graphe concerné
    // Un arc implique un graphe orienté
    if(g.isOrient()===undefined) g.setOrient(TRUE);
    if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
