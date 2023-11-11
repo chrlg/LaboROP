@@ -82,7 +82,7 @@ export function getGraph(name, ln){
 // mais d'un pointeur, qui a l'avantage de connaitre la nouvelle valeur si elle change après l'appel à getRef
 // l'usage est par exemple pour les expr.l de l'évaluation d'expression : la décision de ce à quoi se réfère un symbole
 // est faite une fois pour toute, mais ensuite expr.l peut être appelé de nombreuses fois
-function getEnv(sym){
+export function getEnv(sym){
     const envs=[Local, Global, Graphes, G.sommets, Predef];
     for(let e of envs){
         if(e && e[sym]!==undefined){

@@ -1,6 +1,8 @@
 // © C. Le Gal 2017-2023. 
 // expression : evaluation des expressions du langage
 
+import * as Env from "./environment.js";
+
 // Retourne vrai ssi v est numérique, cad un nombre ou un décimal
 export function isNumeric(v){
    if(v.t=='number') return true;
@@ -30,7 +32,7 @@ function numericValue(v){
 // même après la création d'un x local valant 12
 // En python, un tel code déclencherait une erreur "symbol local utilisé avant l'affectation", car une vérification statique
 // aurait identifié que x est une variable locale
-function evaluate(expr){
+export function evaluate(expr){
     // JIT
     if(expr.l!==undefined) return expr.l();
 
@@ -43,7 +45,7 @@ function evaluate(expr){
     // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
     // (le langage interdit donc les pointeurs de fonctions)
     if(expr.t=="id"){
-        let e=_env.getEnv(expr.name);
+        let e=Env.getEnv(expr.name);
         if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
         expr.l=function(){return e[expr.name];}
         return e[expr.name];

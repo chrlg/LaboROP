@@ -2,7 +2,7 @@
 import {TRUE, FALSE, NULL} from "./constants.js";
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
-import {isNumeric} from "./expression.js";
+import {isNumeric, evaluate} from "./expression.js";
 
 let _env = null;
 
@@ -610,9 +610,11 @@ function interpPlusEgal(tree){
 }
 
 // LISTE D'INSTRUCTIONS
+let _ln = 0;
 function interpretWithEnv(tree, isloop){
     for(let ti of tree){
         if(_instrCnt++>100000) regularCheck();
+        _ln=ti.ln;
         if(ti.t=="SOMMET"){
             interpCreerSommets(ti);
             continue;
@@ -735,7 +737,7 @@ onmessage = function (e){
       }
       else {
          console.trace(e);
-         postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e)});
+         postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e), ln:_ln});
          throw(e);
       }
    }
