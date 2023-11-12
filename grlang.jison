@@ -27,7 +27,7 @@ let _clg_stringBuf='';
 
 [']			this.begin("stringq"); _clg_stringBuf="";
 <stringq>[']		this.popState(); yytext=_clg_stringBuf; return "STRING";
-<stringq>[^'\\\n]	_clg_stringBuf += yytext;
+<stringq>[^'\\\n]	_clg_stringBuf += yytext; console.log('lexNotN', _clg_stringBuf);
 <stringq>"\\n"		_clg_stringBuf += "\n";
 <string>"\\"[^\n]	_clg_stringBuf += yytext.slice(1);
 

@@ -1047,7 +1047,7 @@ case 12:this.begin("stringq"); _clg_stringBuf="";
 break;
 case 13:this.popState(); yy_.yytext=_clg_stringBuf; return "STRING";
 break;
-case 14:_clg_stringBuf += yy_.yytext;
+case 14:_clg_stringBuf += yy_.yytext; console.log('lexNotN', _clg_stringBuf);
 break;
 case 15:_clg_stringBuf += "\n";
 break;
