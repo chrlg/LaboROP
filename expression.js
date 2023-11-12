@@ -48,10 +48,15 @@ export function evaluate(expr){
     // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
     // (le langage interdit donc les pointeurs de fonctions)
     if(expr.t=="id"){
-        let e=Env.getEnv(expr.name);
-        if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+expr.name+" non défini", ln:expr.ln};
-        expr.l=function(){return e[expr.name];}
-        return e[expr.name];
+        let name=expr.name;
+        let e=Env.getEnv(name);
+        if(e===undefined) throw {error:"variable", name:"Symbole non défini", msg: "Symbole "+name+" non défini", ln:expr.ln};
+        if(e[name].t=='predvar'){
+            expr.l=e[name].f;
+            return expr.l();
+        }
+        else expr.l=function(){return e[name];}
+        return e[name];
     }
 
     // == ou !=

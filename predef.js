@@ -402,34 +402,31 @@ function preDernier(args, ln){
 
 
 function preM(args, ln, fname){
-   var M={t:"matrix", val:[]};
-   var k;
-   var arcs;
-   if(args){
-      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Adj ne peut prendre qu'un argument optionnel, le graphe"};
-      let g=evaluate(args[0]);
-      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Adj est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-      k=Object.keys(g.sommets);
-      arcs=g.arcs;
-   }
-   else {
-      k=Object.keys(_grapheEnv);
-      arcs=_arcs;
-   }
-   for(let i=0; i<k.length; i++){
-      M.val[i]=new Array(k.length).fill(0);
-      for(let j=0; j<k.length; j++){
-	 M.val[i][j]=0;
-         for(let ai=0; ai<arcs.length; ai++){
-            if(arcs[ai].i.name == k[i] && arcs[ai].a.name==k[j]) {;}
-            else if(_env.isOrient()) continue;
-            else if(arcs[ai].a.name==k[i] && arcs[ai].i.name==k[j]) {;}
-            else continue;
-            M.val[i][j]++;
-         }
-      }
-   }
-   return M;
+    let M={t:"matrix", val:[]};
+    let k,g;
+    let arcs;
+    if(args){
+        if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Adj ne peut prendre qu'un argument optionnel, le graphe"};
+        g=evaluate(args[0]);
+        if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Adj est utilisée avec un argument optionnel, cet argument doit être un graphe"};
+    }else g=Env.Gr;
+
+    k=Object.keys(g.sommets);
+    arcs=g.arcs;
+    for(let i=0; i<k.length; i++){
+        M.val[i]=new Array(k.length).fill(0);
+        for(let j=0; j<k.length; j++){
+            M.val[i][j]=0;
+            for(let ai=0; ai<arcs.length; ai++){
+                if(arcs[ai].i.name == k[i] && arcs[ai].a.name==k[j]) {;}
+                else if(g.isOrient()) continue;
+                else if(arcs[ai].a.name==k[i] && arcs[ai].i.name==k[j]) {;}
+                else continue;
+                M.val[i][j]++;
+            }
+        }
+    }
+    return M;
 }
 
 
