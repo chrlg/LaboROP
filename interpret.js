@@ -190,8 +190,9 @@ function boolPowMat(a,k){
 
 
 // Fonction interne d'ajout de sommet
-function addSommet(name, graphe){
-   graphe.sommets[name] = {t:"Sommet", name:name, marques:{}};
+function addSommet(name, graphe, ln){
+    if(graphe===Env.Gr && Env.Graphes[name]) throw{error:"env", name:"Nom de sommet illégal", msg:"Un sommet du graphe Gr ne peut porter le nom d'un graphe", ln:ln};
+    graphe.sommets[name] = {t:"Sommet", name:name, marques:{}};
 }
 
 // Récupère la valeur d'un sommet à partir d'une chaine ou d'une variable non identifiée
@@ -210,7 +211,6 @@ function evalSommet(som, creer, graphe){
         if(ev===undefined) throw {error:"type", name:"Sommet indéfini", msg: "", ln:som.ln};
         if(ev.t=="string") str=ev.val;
         else if(ev.t=="Sommet") str=ev.name; // Note : c'est forcément d'un autre graphe, sinon on ne serait plus là
-        else if(ev.t=="graphe") str=ev.name; // Il est possible de créer un sommet qui a le même nom qu'un graphe
         else throw {error:"type", name:"Ce n'est pas un sommet", msg:"Une expression de type '"+ev.t+"' n'est pas un sommet légal", ln:som.ln};
     }
     if(str===null) throw {error:"internal", name:"Sommet non défini", msg:"Erreur interne : le sommet est indéfini", ln:som.ln};
@@ -220,7 +220,7 @@ function evalSommet(som, creer, graphe){
     }
     if(graphe.sommets[str]) return graphe.sommets[str];
     if(creer) {
-        addSommet(str, graphe);
+        addSommet(str, graphe, som.ln);
         return graphe.sommets[str];
     }
     return str;
@@ -237,7 +237,7 @@ function interpCreerSommets(ins){
       if(ev.t=="Sommet") throw {error:"env", name:"Sommet déjà existant", msg:"Le sommet "+ev.name+" existe déjà", ln:liste[i].ln};
       // Un nom de sommet inexistant
       if(typeof ev == "string") {
-	 addSommet(ev, g);
+	 addSommet(ev, g, liste[i].ln);
       }
       // Autre chose ?
       else throw {error:"interne", name:"Erreur interne", msg:"Ni string, ni sommet dans creerSommet\nev:"+ev+"\nev.t="+ev.t, ln:liste[i].ln};
@@ -597,6 +597,8 @@ function interpretWithEnv(tree, isloop){
         if(ti.t=="Graphe"){
             if(Env.Predef[ti.name]) 
                 throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est réservé", ln:ti.ln};
+            if(Env.Gr.sommets[ti.name])
+                throw {error:"env", name:"Surdéfinition", mrg:`Le nom ${ti.name} est celui d'un sommet du graphe principal`, ln:ti.ln};
             if(Env.Graphes[ti.name]){
                 Env.Graphes[ti.name].sommets={};
                 Env.Graphes[ti.name].arcs.length=0;
