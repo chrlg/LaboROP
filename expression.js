@@ -150,7 +150,7 @@ export function evaluate(expr){
         expr.l=function(){
             let a=evaluate(expr.left);
             let b=evaluate(expr.right);
-            Env.OpCnt++;
+            Env.addCnt(1);
             if(isNumeric(a) && isNumeric(b)){
                 if(a.t=="number" && b.t=="number") return comp(a.val, b.val);
                 if(a.t=="decimal") return compd(a.val, b.val);
@@ -197,7 +197,7 @@ export function evaluate(expr){
         else newVal.val--;
 
         setRef(op, newVal, expr.ln);
-        Env.OpCnt++;
+        Env.addCnt(1);
 
         if(expr.left) return v;
         else return newVal;
