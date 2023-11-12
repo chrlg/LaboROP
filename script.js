@@ -135,7 +135,7 @@ function updateGraph(gr){
    let str=gr.graph;
    let name=gr.name;
    _graphes[name]=Viz(str);
-   if(name=="G") showGraph("G");
+   if(name=="Gr") showGraph("Gr");
    else createExtraGraph(name);
 }
 
