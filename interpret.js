@@ -3,13 +3,12 @@ import {TRUE, FALSE, NULL} from "./constants.js";
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {isNumeric, evaluate, evaluateLVal} from "./expression.js";
+import {regularCheck} from "./domcom.js";
 
 let _env = null;
 
 let _modules = {}; // Modules importés
 
-let _str=""; // Chaine "stdout" à envoyer à la console
-let _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 let _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
@@ -486,16 +485,6 @@ function interpExit(arg){
    throw {error:"type", name:"Mauvais type pour exit", msg:"", ln:arg.ln};
 }
 
-
-function regularCheck(force=false){
-    _instrCnt=0;
-    for(let i in Env.Graphes) Env.Graphes[i].redraw(force);
-    
-    if(_strChange){
-        _strChange=false;
-        postMessage({print: _str});
-    }
-}
 
 function interpPlusEgal(tree){
    let lv=evaluateLVal(tree.left);

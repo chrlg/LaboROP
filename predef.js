@@ -1,6 +1,7 @@
 import * as Cst from "./constants.js";
 import * as Env from "./environment.js";
 import {evaluate, isNumeric} from "./expression.js";
+import {regularCheck, print} from "./domcom.js";
 
 export default function populate(){
    Env.addPredfn("clear", preClear);
@@ -150,67 +151,63 @@ function preRandom(args){
 function prePrint(args){
    function printRec(o){
       if(typeof o=="object"){
-	 if(o.t=="Sommet") _str+=o.name;
-	 else if(o.t=="Arete") _str+="["+o.i.name+","+o.a.name+"]";
-	 else if(o.t=="Arc") _str+="("+o.i.name+","+o.a.name+")";
-	 else if(isNumeric(o)) _str+=(""+o.val);
-	 else if(o.t=="string") _str+=o.val;
-	 else if(o.t=="boolean") _str+= (o.val?"True":"False");
+	 if(o.t=="Sommet") print(o.name);
+	 else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
+	 else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
+	 else if(isNumeric(o)) print(''+o.val);
+	 else if(o.t=="string") print(o.val);
+	 else if(o.t=="boolean") print(o.val?"True":"False");
 	 else if(o.t=="array"){
-	    _str+="[";
-	    for(var i=0; i<o.val.length; i++){
+            print("[");
+	    for(let i=0; i<o.val.length; i++){
 	       printRec(o.val[i]);
-	       if(i<o.val.length-1) _str+=",";
+	       if(i<o.val.length-1) print(",");
 	    }
-	    _str+="]";
+            print("]");
 	 }
          else if(o.t=="matrix"){
             for(let i=0; i<o.val.length; i++){
-               _str+="[";
+               print("[");
                for(let j=0; j<o.val[i].length; j++){
-                  if(j>0) _str+=" ";
-                  _str+=o.val[i][j];
+                  if(j>0) print(" ");
+                  print(o.val[i][j]);
                }
-               _str+="]\n";
+               print("]\n");
             }
          }
 	 else if(o.t=="struct"){
-	    _str+="{";
-	    var first=true;
-	    for(var k in o.f){
+	    print("{");
+	    let first=true;
+	    for(let k in o.f){
 	       if(first) first=false;
-	       else _str+=" ";
-	       _str+=k;
-	       _str+=":";
+	       else print(" ");
+               print(k+":");
 	       printRec(o.f[k]);
 	    }
-	    _str+="}";
+            print("}");
 	 }
-	 else _str+="{"+o.t+"}";
+	 else print("{"+o.t+"}");
       }
       else{
-         _str+=o;
+         print(o);
       }
    }
 
    for(var i=0; i<args.length; i++){
-      var a=evaluate(args[i]);
+      let a=evaluate(args[i]);
       printRec(a);
-      _strChange=true;
    }
 }
 
 function prePrintln(a){
    prePrint(a);
-   _str+="\n";
+   print("\n");
 }
 
 function preRefresh(args, ln){
    if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction refresh s'utilise sans argument", ln:ln};
-   _grapheChange=true;
-   _strChange=true;
-   regularCheck();
+   regularCheck(true);
 }
 
 function preArcs(args, ln){
