@@ -512,12 +512,12 @@ function evaluateArc(expr){
     }
 
     let graphe = Env.grapheContaining(s1);
-    if(graphe===null) return NULL;
+    if(graphe===null) return Cst.NULL;
     for(let a of graphe.arcs){
         if(a.i===s1 && a.a===s2) return a; // a is (s1,s2) or [s1,s2]
         if(expr.t=="arete" && a.a===s1 && a.i===s2) return a;  // or [s2,s1] 
     }
-    return NULL;
+    return Cst.NULL;
 }
 
 
@@ -554,15 +554,11 @@ export function evaluateLVal(lv, direct){
             return [v.marques, lv.f]; // Sommet
         }
         else if(v.t=="Arete"){
-            if(lv.f=="initial") return [v, "i"]; // Special attribute [a,b].initial is a
-            else if(lv.f=="terminal") return [v, "a"];  // Likewise for terminal
-            else if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v).change=true;
+            if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v.i).change=true;
             return [v.marques, lv.f]; // Arete, dans une variable (et non en tant que paire)
         }
         else if(v.t=="Arc"){
-            if(lv.f=="initial") return [v, "i"];
-            else if(lv.f=="terminal") return [v, "a"];
-            else if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v).change=true;
+            if(lv.f=="color" || lv.f=="val" || lv.f=="label") Env.grapheContaining(v.i).change=true;
             return [v.marques, lv.f];
         }
         else if(v.t=="Graphe"){
