@@ -15,7 +15,6 @@ function myLog(msg){
 // Redraw graph is needed (or if force)
 // Send stdout string to console
 export function regularCheck(force=false){
-    _instrCnt=0;
     for(let i in Env.Graphes) Env.Graphes[i].redraw(force);
     
     if(_strChange || force){

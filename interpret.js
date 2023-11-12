@@ -451,7 +451,10 @@ function interpPlusEgal(tree){
 let _ln = 0;
 function interpretWithEnv(tree, isloop){
     for(let ti of tree){
-        if(_instrCnt++>100000) regularCheck();
+        if(_instrCnt++>100000) {
+            regularCheck();
+            _instrCnt=0;
+        }
         _ln=ti.ln;
         if(ti.t=="SOMMET"){
             interpCreerSommets(ti);
