@@ -146,19 +146,6 @@ function interpExit(arg){
 }
 
 
-function interpPlusEgal(tree){
-   let lv=evaluateLVal(tree.left);
-   let lvv = lv[0][lv[1]];
-   if(lvv.t=="array"){ // Pour les tableaux on fait une modification in situ
-      let r=evaluate(tree.right);
-      if(r.t=="array") lvv.val = lvv.val.concat(r.val);
-      else lvv.val.push(r);
-   }else{ // Pour les autres (pour l'instant) on transforme ça en a=a+b
-      let r=evaluate({t:"+", left:tree.left, right:tree.right, ln:tree.ln});
-      setRef(lv, r, tree.ln);
-   }
-}
-
 
 function interpret(tree){
     Env.reset();

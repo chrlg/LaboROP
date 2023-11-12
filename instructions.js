@@ -1,18 +1,16 @@
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
-import {evalSommet, addSommet, creerArc} from "./graphe.js";
+import {evalSommet, addSommet, creerArc, creerArete} from "./graphe.js";
 import {FALSE} from "./constants.js";
 
 export let Line = 0; // Default line number for internal error log
 let _instrCnt=0; // Number of executed instruction (for regular display refresh check)
 
-function setRef(ref, val, ln){
+// Affect l-value designated by ref with value val
+export function setRef(ref, val, ln){
     // Cas des arcs et arêtes
     if(ref.length==6){
-        if(ref[0]==Env.Gr.sommets || ref[2]==Env.Gr.sommets){ // Arc constitué d'un sommet immutable
-            throw {error:"env", name:"Surdéfinition d'un arc", msg:"Impossible d'écraser l'arc ou l'arête ("+ref[1]+","+ref[3]+")", ln:ln};
-        }
         if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
             setRef(ref.slice(0,2), val, ln);
             setRef(ref.slice(2,4), val, ln);
@@ -26,8 +24,6 @@ function setRef(ref, val, ln){
         setRef(ref.slice(4), val, ln);
         return;
     }
-    if(ref[0]==Env.Gr.sommets) throw {error:"env", name:"Surdéfinition d'un sommet", 
-        msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
 
    // Copy "profonde" pour les tableaux et structures (mais récursive, car si un item contient un truc qui ne
    // se copie pas, comme un sommet, y compris les attributs de ce sommet qui peuvent être toute une structure
@@ -308,7 +304,7 @@ function interpReturn(ins){
 
 function interpWhile(tant){
    for(;;){
-      var c=evaluate(tant.cond);
+      let c=evaluate(tant.cond);
       if(c.t=='null') c=FALSE;
       if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
 	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
@@ -318,5 +314,18 @@ function interpWhile(tant){
       if(b=="return") return "return";
    }
    return false;
+}
+
+function interpPlusEgal(tree){
+   let lv=evaluateLVal(tree.left);
+   let lvv = lv[0][lv[1]];
+   if(lvv.t=="array"){ // Pour les tableaux on fait une modification in situ
+      let r=evaluate(tree.right);
+      if(r.t=="array") lvv.val = lvv.val.concat(r.val);
+      else lvv.val.push(r);
+   }else{ // Pour les autres (pour l'instant) on transforme ça en a=a+b
+      let r=evaluate({t:"+", left:tree.left, right:tree.right, ln:tree.ln});
+      setRef(lv, r, tree.ln);
+   }
 }
 

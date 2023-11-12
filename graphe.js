@@ -206,7 +206,7 @@ export function addSommet(name, graphe, ln){
     graphe.sommets[name] = {t:"Sommet", name:name, marques:{}};
 }
 
-function creerArete(ins){
+export function creerArete(ins){
    let left=ins.left;
    let right=ins.right;
 
@@ -214,7 +214,7 @@ function creerArete(ins){
    let g=Env.getGraph(ins.g, ins.ln);
    // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
    if(g.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
-   if(g.isOrient()===undefined) g.setOrient(FALSE);
+   if(g.isOrient()===undefined) g.setOrient(false);
 
    let l=evalSommet(left, true, g);
    let r=evalSommet(right, true, g);
@@ -234,7 +234,7 @@ export function creerArc(ins){
 
    let g=Env.getGraph(ins.g, ins.ln); // Graphe concerné
    // Un arc implique un graphe orienté
-   if(g.isOrient()===undefined) g.setOrient(TRUE);
+   if(g.isOrient()===undefined) g.setOrient(true);
    if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
 
    let l=evalSommet(left, true, g);

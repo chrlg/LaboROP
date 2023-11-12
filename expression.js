@@ -3,8 +3,8 @@
 
 import * as Env from "./environment.js";
 import {FALSE, TRUE, NULL} from "./constants.js";
-import {evalSommet} from "./graphe.js";
-import {interpCall} from "./instructions.js";
+import {evalSommet, creerArete} from "./graphe.js";
+import {interpCall, setRef} from "./instructions.js";
 
 const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
