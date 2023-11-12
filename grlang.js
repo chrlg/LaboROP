@@ -1015,6 +1015,7 @@ stateStackSize:function stateStackSize() {
     },
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
+let _clg_stringBuf='';
 
 var YYSTATE=YY_START;
 switch($avoiding_name_collisions) {
@@ -1032,7 +1033,7 @@ case 5:return ";"
 break;
 case 6:return 52
 break;
-case 7:this.begin("string"); let _clg_stringBuf="";
+case 7:this.begin("string"); _clg_stringBuf="";
 break;
 case 8:this.popState(); yy_.yytext=_clg_stringBuf; return "STRING";
 break;
@@ -1042,7 +1043,7 @@ case 10:_clg_stringBuf += "\n";
 break;
 case 11:_clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 12:this.begin("stringq"); let _clg_stringBuf="";
+case 12:this.begin("stringq"); _clg_stringBuf="";
 break;
 case 13:this.popState(); yy_.yytext=_clg_stringBuf; return "STRING";
 break;

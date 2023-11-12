@@ -2,6 +2,7 @@
 %lex
 
 %{
+let _clg_stringBuf='';
 %}
 %x string
 %x stringq
@@ -18,13 +19,13 @@
 
 [0-9]+("."[0-9]+)?("E"[0-9]+)?\b	return 'NUMBER'
 
-["]			this.begin("string"); let _clg_stringBuf="";
+["]			this.begin("string"); _clg_stringBuf="";
 <string>["]		this.popState(); yytext=_clg_stringBuf; return "STRING";
 <string>[^"\\\n]	_clg_stringBuf += yytext;
 <string>"\\n"		_clg_stringBuf += "\n";
 <string>"\\"[^\n]		_clg_stringBuf += yytext.slice(1);
 
-[']			this.begin("stringq"); let _clg_stringBuf="";
+[']			this.begin("stringq"); _clg_stringBuf="";
 <stringq>[']		this.popState(); yytext=_clg_stringBuf; return "STRING";
 <stringq>[^'\\\n]	_clg_stringBuf += yytext;
 <stringq>"\\n"		_clg_stringBuf += "\n";
