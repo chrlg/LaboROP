@@ -1,5 +1,5 @@
 // © C. Le Gal, 2017-2018
-import {TRUE, FALSE} from "./constants.js";
+import {FALSE} from "./constants.js";
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
@@ -134,26 +134,6 @@ function boolPowMat(a,k){
    return HH;
 }
 
-
-function getRef(ref){
-   // Cas matriciel
-   if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
-   return ref[0][ref[1]];
-}
-
-function interpWhile(tant){
-   for(;;){
-      var c=evaluate(tant.cond);
-      if(c.t=='null') c=FALSE;
-      if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
-	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
-      if(!c.val) break;
-      var b=interpretWithEnv(tant["do"], true);
-      if(b=="break") break;
-      if(b=="return") return "return";
-   }
-   return false;
-}
 
 function interpExit(arg){
    var v=evaluate(arg);

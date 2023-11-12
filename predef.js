@@ -211,56 +211,50 @@ function preRefresh(args, ln){
 }
 
 function preArcs(args, ln){
-   if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction arcs s'utilise avec au plus 2 arguments (graphe et/ou sommet)", ln:ln};
-   let arcs=false;
-   let s=false;
-   for(let a of args){
-      let ev=evaluate(a);
-      if(ev.t=="Graphe") arcs=ev.arcs;
-      else if(ev.t=="Sommet") s=ev;
-      else throw {error:"args", name:"Mauvais argument", 
-         msg:"Argument de type "+ev.t+" invalide pour arcs", ln:ln};
-   }
-   if(arcs===false){
-      if(s){ // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
-         for(let gn in _env.Graphes){
-            if(_env.Graphes[gn].sommets[s.name]===s) arcs=_env.Graphes[gn].arcs;
-         }
-      }
-      else arcs=_arcs;
-   }
-   if(s===false) {
-       if(_grapheDisc){
-           let orient=_env.isOrient();
-           if(orient){
-               return {t:"array", val: arcs.filter(a=>a.i.marques.visible)};
-           }
-           else{
-               return {t:"array", val: arcs.filter(a=>a.i.marques.visible || a.a.marques.visible)};
-           }
-       }
-       else{
-           return {t:"array", val:arcs};
-       }
-   }
-   if(arcs===false) return Cst.NULL;
+    if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
+        msg:"La fonction arcs s'utilise avec au plus 2 arguments (graphe et/ou sommet)", ln:ln};
+    let s=false;
+    let g=false;
+    for(let a of args){
+        let ev=evaluate(a);
+        if(ev.t=="Graphe") g.ev;
+        else if(ev.t=="Sommet") s=ev;
+        else throw {error:"args", name:"Mauvais argument", msg:"Argument de type "+ev.t+" invalide pour arcs", ln:ln};
+    }
+    if(!g){
+        // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
+        if(s) g=Env.grapheContaining(s);
+        else g=Env.Gr;
+    }
+    if(s===false) {
+        if(g.discover){
+            if(g.isOrient()){
+                return {t:"array", val: g.arcs.filter(a=>a.i.marques.visible)};
+            }
+            else{
+                return {t:"array", val: g.arcs.filter(a=>a.i.marques.visible || a.a.marques.visible)};
+            }
+        }
+        else{
+            return {t:"array", val:g.arcs};
+        }
+    }
 
-   if(_grapheDisc && !s.marques.visible) return Cst.NULL;
-   var rep=[];
-   for(var i=0; i<arcs.length; i++){
-      if(arcs[i].i==s) rep.push(arcs[i]);
-      else if(arcs[i].a==s && arcs[i].t=="Arete") {
-	 // Dans le cas précis de arete, on inverse les sommets
-	 // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
-	 // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
-	 var pivot=arcs[i].i;
-	 arcs[i].i=arcs[i].a;
-	 arcs[i].a=pivot;
-	 rep.push(arcs[i]);
-      }
-   }
-   return {t:"array", val:rep};
+    if(g.discover && !s.marques.visible) return Cst.NULL;
+    let rep=[];
+    for(let i=0; i<g.arcs.length; i++){
+        if(g.arcs[i].i==s) rep.push(arcs[i]);
+        else if(g.arcs[i].a==s && g.arcs[i].t=="Arete") {
+            // Dans le cas précis de arete, on inverse les sommets
+            // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
+            // le but est de garantir que [x,y] in aretes(A) retourne toujours un y!=A (sauf pour la boucle)
+            let pivot=g.arcs[i].i;
+            g.arcs[i].i=g.arcs[i].a;
+            g.arcs[i].a=pivot;
+            rep.push(g.arcs[i]);
+        }
+    }
+    return {t:"array", val:rep};
 }
 
 function preImport(args, ln){

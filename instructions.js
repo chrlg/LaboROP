@@ -2,6 +2,7 @@ import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
 import {evalSommet, addSommet, creerArc} from "./graphe.js";
+import {FALSE} from "./constants.js";
 
 export let Line = 0; // Default line number for internal error log
 let _instrCnt=0; // Number of executed instruction (for regular display refresh check)
@@ -181,6 +182,7 @@ export function interpretWithEnv(tree, isloop){
                 throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est réservé", ln:ti.ln};
             if(Env.Gr.sommets[ti.name])
                 throw {error:"env", name:"Surdéfinition", mrg:`Le nom ${ti.name} est celui d'un sommet du graphe principal`, ln:ti.ln};
+            // Graph already exist. Then we just reset it
             if(Env.Graphes[ti.name]){
                 Env.Graphes[ti.name].sommets={};
                 Env.Graphes[ti.name].arcs.length=0;
@@ -302,5 +304,19 @@ function interpReturn(ins){
    if(v.length==1) Env.Local["*"]=v[0];
    else Env.Local["*"]={t:"tuple", v:v};
    return;
+}
+
+function interpWhile(tant){
+   for(;;){
+      var c=evaluate(tant.cond);
+      if(c.t=='null') c=FALSE;
+      if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
+	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
+      if(!c.val) break;
+      var b=interpretWithEnv(tant["do"], true);
+      if(b=="break") break;
+      if(b=="return") return "return";
+   }
+   return false;
 }
 

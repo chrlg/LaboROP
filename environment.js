@@ -71,8 +71,10 @@ export function addGraphe(name, ln){
     if(Graphes[name]){
         throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
     }
-    Graphes[name] = new Graphe(name);
-    if(name=='Gr') Gr = Graphes['Gr']
+    let g=new Graphe(name);
+    Graphes[name] = g;
+    if(name=='Gr') Gr = g;
+    return g;
 }
 
 // Get predefined value name

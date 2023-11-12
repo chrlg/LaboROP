@@ -56,6 +56,10 @@ export function evaluate(expr){
         if(e[name].t=='predvar'){
             expr.l=e[name].f;
             return expr.l();
+        // The 3 next case may seem strange (why not just return e[name]?)
+        // But those environment may change (at least Local/Current may. Global is just defensive)
+        // Calling getEnv again would be unnecessary: code structure won't change. So, if symbol is local, it is local forever
+        // Yet, Local env may not be, when expr.l will be called the same as e
         }else if(e===Env.Global){
             expr.l=function(){return Env.Global[name];};
         }else if(e===Env.Local){
@@ -179,7 +183,7 @@ export function evaluate(expr){
 
     // ++ / --
     if(expr.t=="++" || expr.t=="--"){
-        var op;
+        let op;
         if(expr.left) op=evaluateLVal(expr.left);
         else if(expr.right) op=evaluateLVal(expr.right);
         else throw {error:"interne", name:"++ ou -- sans opérande", msg:"", ln:expr.ln};
@@ -188,7 +192,7 @@ export function evaluate(expr){
         if(!v) throw {error:"env", name:"Variable non définie", msg:"", ln:expr.ln};
         if(v.t!="number") throw {error:"type", name:"Erreur de type", 
             msg:"++ ou -- attend un nombre et a été utilisé sur un "+v.t, ln:expr.ln};
-        var newVal={t:"number", val:v.val};
+        let newVal={t:"number", val:v.val};
         if(expr.t=="++") newVal.val++;
         else newVal.val--;
 
@@ -200,8 +204,8 @@ export function evaluate(expr){
     }
 
     if(binaryOp.indexOf(expr.t)>=0){
-        var a=evaluate(expr.left);
-        var b=evaluate(expr.right);
+        let a=evaluate(expr.left);
+        let b=evaluate(expr.right);
 
         // Cas particulier pour le + : on accepte aussi chaines et tableau, et booléens
         if(expr.t=="+"){
@@ -613,5 +617,12 @@ export function evaluateLVal(lv, direct){
         return [ v.val[numericValue(i)], numericValue(j) ];
     }
     else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
+}
+
+// For mixed cases, where a l-value is also an expression. So far, only for ++ --
+function getRef(ref){
+   // Cas matriciel
+   if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
+   return ref[0][ref[1]];
 }
 
