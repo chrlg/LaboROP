@@ -11,7 +11,6 @@ let _modules = {}; // Modules importés
 let _str=""; // Chaine "stdout" à envoyer à la console
 let _strChange=false; // true ssi _str a changé depuis la dernière fois qu'elle a été affichée
 let _instrCnt=0; // Nombre d'instruction exécutées (histoire de faire des vérifications régulières)
-let _opCnt=0; // Nombre d'opérations (pour tester le coût des algos)
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
@@ -149,7 +148,7 @@ function multMat(a, b){
          }
       }
    }
-   _opCnt += 2*n*n*n;
+   Env.OpCnt += 2*n*n*n;
    return R;
 }
 
@@ -166,7 +165,7 @@ function boolMultMat(a,b){
          }
       }
    }
-   _opCnt += 2*n*n*n;
+   Env.addCnt(2*n*n*n);
    return R;
 }
 
@@ -378,7 +377,7 @@ function interpDef(def){
 }
 
 function interpCall(call){
-   let fn=_env.get(call.f);
+   let fn=Env.get(call.f);
    if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
 	    msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
    if(fn.t=="predfn") return fn.f(call.args, call.ln, call.f);
@@ -626,7 +625,7 @@ onmessage = function (e){
       let str=parseTabulation(e.data);
       let out = grlang.parse(str);
       interpret(out);
-      postMessage({termine: 0, opcnt:_opCnt});
+      postMessage({termine: 0, opcnt:Env.OpCnt});
    }catch(e){
       if(e.error) {
 	 if(e.error=="exit") {

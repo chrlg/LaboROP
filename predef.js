@@ -1,5 +1,6 @@
 import * as Cst from "./constants.js";
 import * as Env from "./environment.js";
+import {evaluate, isNumeric} from "./expression.js";
 
 export default function populate(){
    Env.addPredfn("clear", preClear);
@@ -32,7 +33,7 @@ export default function populate(){
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Id", preId, true);
    Env.addPredvar("Zero", preZero, true);
-   Env.addPredvar("OpCount", () => { return {t:"number", val:_opCnt}});
+   Env.addPredvar("OpCount", () => { return {t:"number", val:Env.OpCnt}});
    Env.addPredvar("Time", () => {return {t:"number", val: (new Date()).valueOf()/1000.0}});
    Env.Predef["True"]=Cst.TRUE;
    Env.Predef["False"]=Cst.FALSE;

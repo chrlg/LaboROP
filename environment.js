@@ -30,6 +30,12 @@ export let Local = null;
 export let Current = Global;
 
 // Reset all modifiable env (for new interpret run)
+export let OpCnt=0; // Operation count (not directly related to environment, but this is where global vars are, and this is a virtual global var)
+
+export function addCnt(a){
+    OpCnt += a;
+}
+
 export function reset(){
     Graphes={};
     Global={};
@@ -37,6 +43,7 @@ export function reset(){
     Local=null;
     Current=Global;
     addGraphe("Gr", 0);
+    OpCnt=0;
 }
 
 // Add a new Graph to the environment

@@ -2,6 +2,7 @@
 // expression : evaluation des expressions du langage
 
 import * as Env from "./environment.js";
+import * as Cst from "./constants.js";
 
 const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
@@ -132,7 +133,7 @@ export function evaluate(expr){
         expr.l=function(){
             let a=evaluate(expr.left);
             let b=evaluate(expr.right);
-            _opCnt++;
+            Env.OpCnt++;
             if(isNumeric(a) && isNumeric(b)){
                 if(a.t=="number" && b.t=="number") return comp(a.val, b.val);
                 if(a.t=="decimal") return compd(a.val, b.val);
@@ -183,7 +184,7 @@ export function evaluate(expr){
         else newVal.val--;
 
         setRef(op, newVal, expr.ln);
-        _opCnt++;
+        Env.OpCnt++;
 
         if(expr.left) return v;
         else return newVal;
@@ -213,7 +214,7 @@ export function evaluate(expr){
                             R.val[i][j] = a.val[i][j] + b.val;
                         }
                     }
-                    _opCnt += a.val.length*a.val.length;
+                    Env.OpCnt += a.val.length*a.val.length;
                     return R;
                 }
                 if(b.t=="matrix"){
@@ -224,7 +225,7 @@ export function evaluate(expr){
                             R.val[i][j] = a.val[i][j] + b.val[i][j];
                         }
                     }
-                    _opCnt += a.val.length*a.val.length;
+                    Env.OpCnt += a.val.length*a.val.length;
                     return R;
                 }
             }
@@ -248,7 +249,7 @@ export function evaluate(expr){
         if(expr.t=="*"){
             // Et non paresseurx
             if(a.t=="boolean" && b.t=="boolean") {
-                _opCnt++;
+                Env.OpCnt++;
                 return (a.val&&b.val)?TRUE:FALSE;
             }
 
@@ -269,7 +270,7 @@ export function evaluate(expr){
         // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
         if(expr.t==".+"){
             if(a.t=="number" && b.t=="number") {
-                _opCnt++;
+                Ent.OpCnt++;
                 return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
@@ -282,14 +283,14 @@ export function evaluate(expr){
                     R.val[i][j] = (a.val[i][j]!=0 || b.val[i][j]!=0)?1:0;
                 }
             }
-            _opCnt += a.val.length*a.val.length;
+            Env.OpCnt += a.val.length*a.val.length;
             return R;
         }
 
         // ".*" sur matrices et nombres
         if(expr.t==".*"){
             if(a.t=="number" && b.t=="number") {
-                _opCnt++;
+                Env.OpCnt++;
                 return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
@@ -299,7 +300,7 @@ export function evaluate(expr){
         }
 
         if(!isNumeric(a) || !isNumeric(b)) throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
-        _opCnt++;
+        Env.addCnt(1);
 
         if(a.t=='number' && b.t=="number"){
             if(expr.t=="+") return {t:"number", val:a.val+b.val};
@@ -358,7 +359,7 @@ export function evaluate(expr){
 
     if(expr.t=="field"){
         let o=evaluate(expr.o);
-        let res=NULL;
+        let res=Cst.NULL;
         if(o.t=="struct") res=o.f[expr.f];
         else if(o.t=="Arc" || o.t=="Arete"){
             if(expr.f=="initial") res=o.i;
@@ -368,7 +369,7 @@ export function evaluate(expr){
         else if(o.t=="Sommet") res=o.marques[expr.f];
         else if(o.t=="graphe") res=o.sommets[expr.f];
         else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
-        if(res===undefined) return NULL;
+        if(res===undefined) return Cst.NULL;
         else return res;
     }
 
@@ -434,7 +435,7 @@ export function evaluate(expr){
 // Pour les vecteurs et structures : comparaison récursive
 function evaluateEqual(expr){
     function isEq(a,b){
-        _opCnt++;
+        Env.OpCnt++;
         // Comparaison avec chaine d'un sommet
         if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
         if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
@@ -454,7 +455,7 @@ function evaluateEqual(expr){
             for(let i=0; i<a.val.length; i++){
                 if(!isEq(a.val[i], b.val[i])) return false;
             }
-            _opCnt += a.val.length-1;
+            Env.OpCnt += a.val.length-1;
             return true;
         }
         // Idem pour les matrices. Si ce n'est qu'il n'y a pas besoin de rappeler récursivement isEq, 
@@ -465,7 +466,7 @@ function evaluateEqual(expr){
                     if(a.val[i][j] != b.val[i][j]) return false;
                 }
             }
-            _opCnt += a.val.length*a.val.length-1;
+            Env.OpCnt += a.val.length*a.val.length-1;
             return true;
         }
         // Enfin pour les struct, il faut comparer les champs
