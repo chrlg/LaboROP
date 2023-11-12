@@ -1,4 +1,6 @@
-import {UNDEFINED} from "./constants.js";
+import {FALSE, TRUE, UNDEFINED} from "./constants.js";
+import * as Env from "./environment.js";
+import {evaluate} from "./expression.js";
 
 // Chaque graphe de Graphes a la structure suivante :
 // * name : le nom du graphe. Le graphe par défaut s'appelle Gr
@@ -197,4 +199,85 @@ export class Graphe {
     }
 
 }
+
+// Fonction interne d'ajout de sommet
+export function addSommet(name, graphe, ln){
+    if(graphe.name=="Gr" && Env.Graphes[name]) throw{error:"env", name:"Nom de sommet illégal", msg:"Un sommet du graphe Gr ne peut porter le nom d'un graphe", ln:ln};
+    graphe.sommets[name] = {t:"Sommet", name:name, marques:{}};
+}
+
+function creerArete(ins){
+   let left=ins.left;
+   let right=ins.right;
+
+   // Graphe concerné
+   let g=Env.getGraph(ins.g, ins.ln);
+   // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
+   if(g.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
+   if(g.isOrient()===undefined) g.setOrient(FALSE);
+
+   let l=evalSommet(left, true, g);
+   let r=evalSommet(right, true, g);
+   if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
+   if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
+
+   let na={t:"Arete", i:l, a:r, marques:{}};
+   if(g.arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
+   g.arcs.push(na);
+   g.change=true;
+   return na;
+}
+
+export function creerArc(ins){
+   let left=ins.left;
+   let right=ins.right;
+
+   let g=Env.getGraph(ins.g, ins.ln); // Graphe concerné
+   // Un arc implique un graphe orienté
+   if(g.isOrient()===undefined) g.setOrient(TRUE);
+   if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
+
+   let l=evalSommet(left, true, g);
+   let r=evalSommet(right, true, g);
+   if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
+   if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
+
+   let na={t:"Arc", i:l, a:r, marques:{}};
+   if(g.arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
+   g.arcs.push(na);
+   g.change=true;
+   return na;
+}
+
+// Récupère la valeur d'un sommet à partir d'une chaine ou d'une variable non identifiée
+// Si creer est true, crée le sommet s'il n'existe pas
+// Si le sommet n'existe pas, et n'a pas été créé, retourne le nom à la place
+export function evalSommet(som, creer, graphe){
+    let str=null;
+    let S=null;
+    if(som.t=="id"){
+        if(graphe.sommets[som.name]!==undefined) return graphe.sommets[som.name]; // Sommet déjà existant (dans ce graphe)
+        if(Env.get(som.name)===undefined) str=som.name; // Identifiant non existant. Traité comme une chaîne
+    }
+
+    if(str===null){
+        let ev=evaluate(som); // Y compris un "id", mais qui peut être une variable de type chaine
+        if(ev===undefined) throw {error:"type", name:"Sommet indéfini", msg: "", ln:som.ln};
+        if(ev.t=="string") str=ev.val;
+        else if(ev.t=="Sommet") str=ev.name; // Note : c'est forcément d'un autre graphe, sinon on ne serait plus là
+        else throw {error:"type", name:"Ce n'est pas un sommet", msg:"Une expression de type '"+ev.t+"' n'est pas un sommet légal", ln:som.ln};
+    }
+    if(str===null) throw {error:"internal", name:"Sommet non défini", msg:"Erreur interne : le sommet est indéfini", ln:som.ln};
+    if(!str.match(/^[A-Za-z0-9_]*$/)){
+        throw{error: "type", name: "Nom de sommet illégal", 
+            msg: "Le nom d'un sommet ne doit contenir que\ndes caractères alphanumériques\nnom:"+str, ln: som.ln};
+    }
+    if(graphe.sommets[str]) return graphe.sommets[str];
+    if(creer) {
+        addSommet(str, graphe, som.ln);
+        return graphe.sommets[str];
+    }
+    return str;
+}
+
 

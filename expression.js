@@ -3,6 +3,8 @@
 
 import * as Env from "./environment.js";
 import * as Cst from "./constants.js";
+import {evalSommet} from "./graphe.js";
+import {interpCall} from "./instructions.js";
 
 const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
@@ -343,7 +345,7 @@ export function evaluate(expr){
     }
 
     if(expr.t=="call"){
-        var v=interpCall(expr);
+        let v=interpCall(expr);
         if(v===undefined || v.t=="empty") throw {error:"type", name:"Pas de valeur de retour",
             msg:"La fonction "+expr.f+" n'a retourné aucune valeur",
             ln:expr.ln};
@@ -606,3 +608,4 @@ export function evaluateLVal(lv, direct){
     }
     else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
 }
+

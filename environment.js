@@ -46,6 +46,25 @@ export function reset(){
     OpCnt=0;
 }
 
+export function push(env){
+    LocalEnvStack.push(env);
+    Local=env;
+    Current=env;
+}
+
+export function pop(){
+    if(LocalEnvStack.length==0) throw {error:"interne", name:"Erreur interne", msg:"Pop env of empty stack", ln:0};
+    let e=LocalEnvStack.pop();
+    if(LocalEnvStack.length==0){
+        Local=null;
+        Current=Global;
+    }else{
+        Local=LocalEnvStack[LocalEnvStack.length-1];
+        Current=Local;
+    }
+    return e;
+}
+
 // Add a new Graph to the environment
 // If that graphe name is Gr, then, update helper global value Gr
 export function addGraphe(name, ln){

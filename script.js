@@ -347,7 +347,7 @@ function init(){
       showTab(t, $(this));
    });
    $("#tabs button[data-target='show']").click(function() {
-      if(_graphes["G"]) showGraph("G");
+      if(_graphes["Gr"]) showGraph("Gr");
    });
 
    // Fichiers

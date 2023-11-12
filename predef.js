@@ -67,9 +67,9 @@ function preSommets(args, ln){
       else throw {error:"args", name:"Mauvais arguments",
             msg:"La fonction sommets s'utilise sans argument, ou des arguements de type entier et graphe", ln:ln};
    }
-   let t=Object.values(g);
+   let t=Object.values(g.sommets);
 
-   if(_grapheDisc && !idx) return {t:"array", val:t.filter(s=>s.marques.visible)};
+   if(g.discover && !idx) return {t:"array", val:t.filter(s=>s.marques.visible)};
    if(idx===false) return {t:"array", val:t};
    if(idx<0 || idx>=t.length) throw {error:"exec", name:"Indice invalide",
          msg:"Le sommet #"+idx+" n'existe pas", ln:ln};
