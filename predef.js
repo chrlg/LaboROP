@@ -45,12 +45,12 @@ function preClear(args, ln){
     if(args.length==1){
         console.log('clear args', args);
     }
-    Env.G.sommets={};
-    Env.G.arcs.length=0;
+    Env.Gr.sommets={};
+    Env.Gr.arcs.length=0;
 }
 
 function preSommets(args, ln){
-   let g=Env.G;
+   let g=Env.Gr;
    let idx=false;
    if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction sommets s'utilise avec au plus 2 arguments (graphe et/ou index)", ln:ln};
@@ -359,11 +359,11 @@ function importReseau(g,v){
    for(let i=0; i<g[0].length; i++){
       let x={t:"number", val:g[0][i][0]};
       let y={t:"number", val:g[0][i][1]};
-      _env.G.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
+      Env.Gr.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
    }
    for(let p of g[1]){
-      let s1=_env.G.sommets["S"+p[0]];
-      let s2=_env.G.sommets["S"+p[1]];
+      let s1=env.Gr.sommets["S"+p[0]];
+      let s2=env.Gr.sommets["S"+p[1]];
       let d={t:"number", val:0};
       if(p.length==3) d.val=p[2];
       else{
@@ -373,12 +373,12 @@ function importReseau(g,v){
          let y2=s2.marques.x;
          d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
       }
-      if (v=="noValues") _env.G.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
-      else _env.G.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
+      if (v=="noValues") Env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
+      else env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
    }
-   _env.G.setOrient(TRUE);
-   _env.G.mode="dot";   
-   _env.G.change=true;
+   env.Gr.setOrient(TRUE);
+   env.Gr.mode="dot";   
+   env.Gr.change=true;
 }
 
 function prePremier(args, ln){

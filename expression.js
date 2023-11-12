@@ -3,6 +3,8 @@
 
 import * as Env from "./environment.js";
 
+const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
+
 // Retourne vrai ssi v est numérique, cad un nombre ou un décimal
 export function isNumeric(v){
    if(v.t=='number') return true;
@@ -187,7 +189,7 @@ export function evaluate(expr){
         else return newVal;
     }
 
-    if(_binaryOp.indexOf(expr.t)>=0){
+    if(binaryOp.indexOf(expr.t)>=0){
         var a=evaluate(expr.left);
         var b=evaluate(expr.right);
 
@@ -347,12 +349,7 @@ export function evaluate(expr){
     }
 
     if(expr.t=="SOMMET"){
-        let g=_env.G;
-        if(expr.g) {
-            if(_env.Graphes[expr.g]===undefined) throw {error:"env", name:"Graphe inexistant", 
-                msg:"Le graphe "+expr.g+" n'existe pas", ln:expr.ln};
-            g=_env.Graphes[expr.g];
-        }
+        let g=Env.getGraph(expr.g);
         let v=evalSommet(expr.arg, true, g);
         if(!v || v.t!="Sommet") throw {error:"type", name:"Pas un sommet", 
             msg:"Un "+v.t+" n'est pas un sommet valide", ln:expr.arg.ln};
@@ -502,16 +499,16 @@ function evaluateEqual(expr){
 export function evaluateLVal(lv, direct){
 
     if(lv.t=="id") { // Just an identifier: a=  Note that getIdLv(...) would raise an error if that identifier is not mutable (predef)
-        return [Env.getIdlv(lv.name), lv.name];
+        return [Env.getIdlv(lv.name, lv.ln), lv.name];
     }
 
 
     // Special case of arc/arete (edges) -> return a 6-uplet
     else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
-        let a=Env.getIdlv(lv.initial);
-        let b=Env.getIdlv(lv.terminal);
+        let a=Env.getIdlv(lv.initial, lv.ln);
+        let b=Env.getIdlv(lv.terminal, lv.ln);
         let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal; // A name (that cannot legally be a real name) for the arc/arete variable
-        let c=Env.getIdlv(cn); // Env for new local var (so local or global depending on scope). Shouldn't be anything else than Current (can't be declared as global)
+        let c=Env.getIdlv(cn, lv.ln); // Env for new local var (so local or global depending on scope). Shouldn't be anything else than Current (can't be declared as global)
         return [a, lv.initial, b, lv.terminal, c, cn]; // 6-uple for arc l-val, made of both node and the arc/arete itself
     }
 

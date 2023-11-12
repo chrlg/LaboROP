@@ -136,7 +136,6 @@ function evaluateArc(o, ln){
    //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
 }
 
-const _binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
 
 function multMat(a, b){
@@ -253,26 +252,26 @@ function getRef(ref){
 }
 
 function setRef(ref, val, ln){
-   // Cas des arcs et arêtes
-   if(ref.length==6){
-      if(ref[0]==_env.G.sommets || ref[2]==_env.G.sommets){ // Arc constitué d'un sommet immutable
-         throw {error:"env", name:"Surdéfinition d'un arc", msg:"Impossible d'écraser l'arc ou l'arête ("+ref[1]+","+ref[3]+")", ln:ln};
-      }
-      if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
-	 setRef(ref.slice(0,2), val, ln);
-	 setRef(ref.slice(2,4), val, ln);
-	 setRef(ref.slice(4), val, ln);
-	 return;
-      }
-      if(val.t!="Arc" && val.t!="Arete") throw {error:"type", name:"Erreur de type",
-	    msg:"Impossible d'affecter un "+val.t+ " à un arc ou une arête", ln:ln};
-      setRef(ref.slice(0,2), val.i, ln);
-      setRef(ref.slice(2,4), val.a, ln);
-      setRef(ref.slice(4), val, ln);
-      return;
-   }
-   if(ref[0]==_env.G.sommets) throw {error:"env", name:"Surdéfinition d'un sommet", 
-	    msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
+    // Cas des arcs et arêtes
+    if(ref.length==6){
+        if(ref[0]==Env.Gr.sommets || ref[2]==Env.Gr.sommets){ // Arc constitué d'un sommet immutable
+            throw {error:"env", name:"Surdéfinition d'un arc", msg:"Impossible d'écraser l'arc ou l'arête ("+ref[1]+","+ref[3]+")", ln:ln};
+        }
+        if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
+            setRef(ref.slice(0,2), val, ln);
+            setRef(ref.slice(2,4), val, ln);
+            setRef(ref.slice(4), val, ln);
+            return;
+        }
+        if(val.t!="Arc" && val.t!="Arete") throw {error:"type", name:"Erreur de type",
+            msg:"Impossible d'affecter un "+val.t+ " à un arc ou une arête", ln:ln};
+        setRef(ref.slice(0,2), val.i, ln);
+        setRef(ref.slice(2,4), val.a, ln);
+        setRef(ref.slice(4), val, ln);
+        return;
+    }
+    if(ref[0]==Env.Gr.sommets) throw {error:"env", name:"Surdéfinition d'un sommet", 
+        msg:"Impossible d'écraser le sommet "+ref[1], ln:ln};
 
    // Copy "profonde" pour les tableaux et structures (mais récursive, car si un item contient un truc qui ne
    // se copie pas, comme un sommet, y compris les attributs de ce sommet qui peuvent être toute une structure
@@ -312,19 +311,19 @@ function setRef(ref, val, ln){
 // Affectation lvalue,lvalue,lvalue,...=expr,expr,expr,...
 // Note le tuple expr,expr ne peut être que le résultat d'une fonction
 function interpAffect(ins){
-   var v=evaluate(ins.right);
-   if(!v) throw {error:"type", name:"Valeur invalide", msg:"Valeur undefined invalide", ln:ins.right.ln};
-   // Si c'est un tuple, il doit correspondre au nombre de lvalues. Sinon, il doit n'y avoir qu'une lvalue
-   if(v.t=="tuple" && v.v.length != ins.left.length) throw {error:"type", name:"Nombre d'expressions invalide",
-	 msg:"Les nombres de valeurs à droite et à gauche du '=' ne correspondent pas", ln:ins.ln};
-   if(v.t!="tuple" && ins.left.length!=1) throw {error:"type", name:"Nombre d'expressions invalide",
-	 msg:"Une seule expression pour remplir plusieurs destinations", ln:ins.ln};
-   // Affectation de chaque lvalue
-   for(let i=0; i<ins.left.length; i++){
-      let o=evaluateLVal(ins.left[i]);
-      if(v.t=="tuple") setRef(o, v.v[i], ins.left[i].ln);
-      else setRef(o, v, ins.left[i].ln);
-   }
+    let v=evaluate(ins.right);
+    if(!v) throw {error:"type", name:"Valeur invalide", msg:"Valeur undefined invalide", ln:ins.right.ln};
+    // Si c'est un tuple, il doit correspondre au nombre de lvalues. Sinon, il doit n'y avoir qu'une lvalue
+    if(v.t=="tuple" && v.v.length != ins.left.length) throw {error:"type", name:"Nombre d'expressions invalide",
+        msg:"Les nombres de valeurs à droite et à gauche du '=' ne correspondent pas", ln:ins.ln};
+    if(v.t!="tuple" && ins.left.length!=1) throw {error:"type", name:"Nombre d'expressions invalide",
+        msg:"Une seule expression pour remplir plusieurs destinations", ln:ins.ln};
+    // Affectation de chaque lvalue
+    for(let i=0; i<ins.left.length; i++){
+        let o=evaluateLVal(ins.left[i]);
+        if(v.t=="tuple") setRef(o, v.v[i], ins.left[i].ln);
+        else setRef(o, v, ins.left[i].ln);
+    }
 }
 
 function creerArete(ins){
@@ -332,11 +331,7 @@ function creerArete(ins){
    let right=ins.right;
 
    // Graphe concerné
-   let g=_env.G;
-   if(ins.g){
-      g=_env.Graphes[ins.g];
-      if(!g) throw {error:"graphe", name:"Graphe inexistant", msg:"Le graphe "+ins.g+" n'existe pas", ln:ins.ln};
-   }
+   let g=Env.getGraph(ins.g, ins.ln);
    // Une arête implique un graphe non orienté. Fixer l'orientation si pas encore fait. Sinon, lever une erreur si contradictoire
    if(g.isOrient()) throw {error:"graphe", name: "Erreur de graphe", msg: "Un graphe orienté ne peut contenir d'arêtes", ln: ins.ln};
    if(g.isOrient()===undefined) g.setOrient(FALSE);
@@ -357,7 +352,7 @@ function creerArc(ins){
    let left=ins.left;
    let right=ins.right;
 
-   let g=Env.getGraph(ins.g); // Graphe concerné
+   let g=Env.getGraph(ins.g, ins.ln); // Graphe concerné
    // Un arc implique un graphe orienté
    if(g.isOrient()===undefined) g.setOrient(TRUE);
    if(!g.isOrient()) throw {error:"graphe", name:"Erreur de graphe", msg:"Un graphe non orienté ne peut contenir d'arcs", ln:left.ln};
@@ -375,11 +370,11 @@ function creerArc(ins){
 }
 
 function interpDef(def){
-   if(_env.getPredef(def.nom)) throw {error:"type",
+   if(Env.getPredef(def.nom)) throw {error:"type",
       name: "Surdéfinition", msg: "Impossible de redéfinir le symbole prédéfini "+def.nom,
       ln:def.ln};
-   if(_env.Global[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
-   _env.Global[def.nom] = def;
+   if(Env.Global[def.nom]!==undefined) throw {error:"type", name: "Surdéfinition", msg: "Fonction "+def.nom+" déjà définie", ln: def.ln};
+   Env.Global[def.nom] = def;
 }
 
 function interpCall(call){
@@ -495,7 +490,7 @@ function interpExit(arg){
 
 function regularCheck(force=false){
     _instrCnt=0;
-    for(let i in _env.Graphes) _env.Graphes[i].redraw(force);
+    for(let i in Env.Graphes) Env.Graphes[i].redraw(force);
     
     if(_strChange){
         _strChange=false;
@@ -600,13 +595,13 @@ function interpretWithEnv(tree, isloop){
             continue;
         }
         if(ti.t=="Graphe"){
-            if(_env.Predef[ti.name]) 
+            if(Env.Predef[ti.name]) 
                 throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est réservé", ln:ti.ln};
-            if(_env.Graphes[ti.name]){
-                _env.Graphes[ti.name].sommets={};
-                _env.Graphes[ti.name].arcs.length=0;
+            if(Env.Graphes[ti.name]){
+                Env.Graphes[ti.name].sommets={};
+                Env.Graphes[ti.name].arcs.length=0;
             }else{
-                _env.addGraphe(ti.name, ti.ln);
+                Env.addGraphe(ti.name, ti.ln);
             }
             continue;
         }

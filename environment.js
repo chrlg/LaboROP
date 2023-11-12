@@ -4,7 +4,7 @@ import populatePredef from "./predef.js";
 // Les environnements
 // Il y a 4 environnements globaux: predef qui contient les constantes et fonctions fournies
 // Graphes, qui contient les graphes, désignés par leurs noms
-// Graphes.G.sommets qui contient les sommets du graph principal désignés par leurs noms
+// Graphes.Gr.sommets qui contient les sommets du graph principal désignés par leurs noms
 // Global, qui contient les variables globales et fonctions définies par l'utilisateur
 // Et 1 environnement local, qui est créé à chaque appel de fonction
 // Par défaut, l'envionnement local est l'environnement global. 
@@ -13,9 +13,9 @@ import populatePredef from "./predef.js";
 // Il est interdit de les écraser
 export let Predef = {};
 
-// Les Graphes. Dont le graphe par défaut, G
+// Les Graphes. Dont le graphe par défaut, Gr
 export let Graphes = {};
-export let G=null;
+export let Gr=null;
 
 // Les variables globales
 export let Global = {};
@@ -36,17 +36,17 @@ export function reset(){
     LocalEnvStack=[];
     Local=null;
     Current=Global;
-    addGraphe("G", 0);
+    addGraphe("Gr", 0);
 }
 
 // Add a new Graph to the environment
-// If that graphe name is G, then, update helper global value G
+// If that graphe name is Gr, then, update helper global value Gr
 export function addGraphe(name, ln){
     if(Graphes[name]){
         throw {error: "internal", msg: `Le graphe ${name} existe déjà`, name: "Erreur Interne", ln:ln}; 
     }
     Graphes[name] = new Graphe(name);
-    if(name=='G') G = Graphes['G']
+    if(name=='Gr') Gr = Graphes['Gr']
 }
 
 // Get predefined value name
@@ -68,13 +68,13 @@ export function addPredvar(name, fn, optarg=true){
 }
 
 // Get a graphe by its name
-// If name is false/undefined, return graph G
+// If name is false/undefined, return graph Gr
 export function getGraph(name, ln){
    if(name){
       if(!Graphes[name]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+name+" n'existe pas", ln:ln};
       return Graphes[name];
    }
-   return G;
+   return Gr;
 }
 
 // Return graph containing a given node s
@@ -92,7 +92,7 @@ function grapheContaining(s){
 // l'usage est par exemple pour les expr.l de l'évaluation d'expression : la décision de ce à quoi se réfère un symbole
 // est faite une fois pour toute, mais ensuite expr.l peut être appelé de nombreuses fois
 export function getEnv(sym){
-    const envs=[Local, Global, Graphes, G.sommets, Predef];
+    const envs=[Local, Global, Graphes, Gr.sommets, Predef];
     for(let e of envs){
         if(e && e[sym]!==undefined){
             if(e[sym].t=="global") continue; // Si ça existe dans l'environnement local, mais déclaré "global",
@@ -114,25 +114,16 @@ export function get(sym){
 // It symbol is of a predefined function of var, that is an error
 // Otherwise, if that symbol has been declared as global, it is the global environment
 // Otherwise it is the current environment (that may be a local one, or the global one)
-function getIdlv(name){
-    if(this.Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:lv.ln};
-    if(this.Current[name]){
-        if(this.Current[name].t=='global') return this.Global;
-        return this.Current;
+export function getIdlv(name, ln){
+    if(Predef[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez modifier une variable prédéfinie", ln:ln};
+    if(Gr.sommets[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez pas affecter un sommet existant", ln:ln};
+    if(Graphes[name]) throw{error:"env", name:"Surdéfinition", msg:"Vous ne pouvez pas affecter un graphe existant", ln:ln};
+    if(Current[name]){
+        if(Current[name].t=='global') return Global;
+        return Current;
     }
-    return this.Current;
+    return Current;
 }
 
-
-export class Environnement {
-    
-    // Même chose mais sous forme de L-value, c'est à dire de paire "environnement / index"
-    // Et uniquement dans un environnement qu'on peut écrire sous forme d'affectation
-    // (par exemple, pas sommets et graphes, puisqu'il est impossible d'écraser un sommet A en écrivant A=AutreSommet)
-    getLVal(name){
-        return [getIdlv(name), name]
-    }
-
-}
 
 populatePredef();
