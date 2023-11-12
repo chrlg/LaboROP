@@ -157,11 +157,7 @@ export function evaluate(expr){
 
     // Arete ou arc
     if(expr.t=="arete" || expr.t=="arc"){
-        console.log('evaluate', expr, _env.get(">S,A"));
-        let ref=evaluateLVal(expr);
-        if(ref.length!=6) throw {error:"interne", name:"Erreur interne", msg:"L-Value d'une arête mal évaluée",
-            ln:expr.ln};
-        var v=evaluateArc(ref, expr.ln);
+        let v=evaluateArc(expr);
         if(v===undefined) throw {error:"type", name:"Arc ou arête inexistant", msg:"", ln:expr.ln};
         if(v.t=="null") return v;
         if(v.t=="Arc" || v.t=="Arete") return v;
@@ -489,6 +485,41 @@ function evaluateEqual(expr){
     }
     return expr.l();
 }
+
+// Subfunction for arc (as expression) evaluation
+// Outside `Arc (a,b)` declarations, or l-value `(a,b)`, which should not be treated as expressions,
+// the only case where `(a,b)` or `[a,b]` may appear 
+// in the code are `(a,b)` where a previous `(a,b)` as l-value has been defined
+function evaluateArc(expr){
+    let cn=((expr.t=="arc")?">":"-") + expr.initial + "," + expr.terminal; // A name (that cannot legally be a real name) for the arc/arete variable
+    let w=Env.get(cn); // Edge itself
+    let s1=Env.get(expr.initial);
+    let s2=Env.get(expr.terminal);
+
+    // If arc exist in env (as previous l-val), that is if (a,b)=... has been previously done
+    if(w && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) {
+        // And if nodes hasn't changed since (we could have (a,b)=... then a=...
+        if(s1==w.i && s2==w.a) return w;
+    }
+    // So, if we are still here, it is either because arc doesn't exist as itself (no (a,b)=...), or because 
+    // it did, but nodes has changed ((a,b)=... then a=...)
+    // Let's check if nodes (s1, s2) match an existing edge
+
+    // No chance if s1 and s2 are not nodes
+    if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
+        throw {error:"type", name:"Pas un arc ou une arête", 
+            msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
+    }
+
+    let graphe = Env.grapheContaining(s1);
+    if(graphe===null) return NULL;
+    for(let a of graphe.arcs){
+        if(a.i===s1 && a.a===s2) return a; // a is (s1,s2) or [s1,s2]
+        if(expr.t=="arete" && a.a===s1 && a.i===s2) return a;  // or [s2,s1] 
+    }
+    return NULL;
+}
+
 
 // Return a pointer to a L-value
 // A L-value is represented by a mutable pair oject/index. That is that object[index] should be modifiable

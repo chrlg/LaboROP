@@ -82,58 +82,6 @@ function parseTabulation(str){
    return out;
 }
 
-// Etant donnée une référence o (un "pointeur" en quelques sortes) vers un arc
-// donne la valeur de l'arc (l'objet de _arcs)
-// Note: une référence (cf plus loin) est une paire (object / nom) tel que
-// objet.nom désigne l'objet référé
-// Ça me sert ici de pointeur, puisque ça veut dire que je peux modifier la valeur
-// de l'objet référé
-// o est donc un tableau de dimension 2
-// o[0] est donc classiquement un environnement, et o[1] le nom d'une variable
-// définie dans cet environnement. Donc o[0][o[1]] sa valeur
-// o[0] peut également être le champ "f" (liste des champs) d'une structure
-// et donc o[1] le nom d'un champ. Donc o[0][o[1]] est structure.champ
-// o[0] peut aussi être le champ val d'un tableau, et o[1] l'indice (un nombre donc)
-// Ce qui là encore veut dire que o[0][o[1]] = la valeur référencée
-// Le cas des arcs est toutefois particulier. Car un arc [a,b] dans la syntaxe particulière 
-// du langage, c'est à la fois juste une paire de sommet ([a,b]=random(arcs(S)) signifie que a
-// et b sont de nouvelles variables de type sommet), mais aussi un pointeur vers l'objet arc lui
-// même (on peut ensuite écrire [a,b].champ=12. Ce qui ne touche pas aux sommets, mais aux
-// champs de l'arc lui-même)
-// Pour cette raison la référence vers un arc n'est pas de longueur 2 mais 6
-// Avec o[0][o[1]] étant la référence vers le 1er sommet, o[2][o[3]] vers le 2e sommet
-// et o[4][o[5]] vers l'arc
-function evaluateArc(o, ln){
-   if(o.length!=6) throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:ln};
-   var w=o[4][o[5]]; // L'arc lui-même
-   var s1=o[0][o[1]]; // Ses 2 sommets
-   var s2=o[2][o[3]];
-
-   // Arc qui a déjà été défini directement dans l'environnement. cad (a,b)=... a déjà été fait
-   // Cad que 
-   if(w!==undefined && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) {
-      // Il faut toutefois vérifier que les sommets n'ont pas changé depuis la définition
-      // de l'arc (eg, (x,y)=(A,B) puis x=C
-      if(s1==w.i && s2==w.a) return w;
-   }
-
-   // Arc indéfini (il n'a pas été affecté, c'est la première fois qu'on en parle
-   // ou alors ses sommets ont été changés indépendemment depuis qu'on en a parlé. 
-   // mais peut-être que les sommets qui le constituent correspondent bien à un arc
-   if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
-      throw {error:"type", name:"Pas un arc ou une arête", 
-	 msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
-   }
-   let graphe = _env.grapheContaining(s1);
-   if(graphe===null) return NULL;
-   for(let a of graphe.arcs){
-      if(a.i===s1 && a.a===s2) return a;
-      if(o[5][0]=="-" && a.a===s1 && a.i===s2) return a;
-   }
-   return NULL;
-   //throw {error:"type", name:"Arc ou arête inexistant", msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
-}
-
 
 
 function multMat(a, b){

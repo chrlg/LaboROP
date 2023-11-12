@@ -85,7 +85,7 @@ export function getGraph(name, ln){
 }
 
 // Return graph containing a given node s
-function grapheContaining(s){
+export function grapheContaining(s){
     for(let i in Graphes){
         let g=Graphes[i];
         if(g.sommets[s.name]===s) return g;
