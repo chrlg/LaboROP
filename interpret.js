@@ -141,15 +141,6 @@ function getRef(ref){
    return ref[0][ref[1]];
 }
 
-function interpIf(si, isloop){
-   var c=evaluate(si.cond);
-   if(c.t=='null') c=FALSE;
-   if(c.t != "boolean") throw {error:"type", name: "Condition non booléenne",
-           msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
-   if(c.val) return interpretWithEnv(si["do"], isloop);
-   else return interpretWithEnv(si["else"], isloop);
-}
-
 function interpWhile(tant){
    for(;;){
       var c=evaluate(tant.cond);
@@ -162,40 +153,6 @@ function interpWhile(tant){
       if(b=="return") return "return";
    }
    return false;
-}
-
-function interpFor(ins){
-   var comptRef = evaluateLVal(ins.compteur);
-   var start=evaluate(ins.start);
-   var end=evaluate(ins.end);
-   var step={t:"number", val:1};
-   if(ins.step) step=evaluate(ins.step);
-   if(start===undefined || start.t!="number") throw {error:"type", name:"Bornes du for non numériques",
-	 msg:"Le point de départ d'un range doit être un nombre", ln:ins.start.ln};
-   if(end===undefined || end.t!="number") throw {error:"type", name:"Bornes du for non numériques",
-	 msg:"La fin d'un range doit être un nombre", ln:ins.end.ln};
-   if(step===undefined || step.t!="number") throw {error:"type", name:"Bornes du for non numériques",
-	 msg:"Le pas d'un range doit être un nombre", ln:ins.step.ln};
-   for(let i=start.val; i<end.val; i+=step.val){
-      setRef(comptRef, {t:"number", val:i});
-      let b=interpretWithEnv(ins.do, true);
-      if(b=="break") break;
-      if(b=="return") return "return";
-   }
-   return false;
-}
-
-function interpReturn(ins){
-   if(_localEnv["*"]===undefined){
-      throw {error:"exec", name:"Return en dehors d'une fonction",
-             msg:"'return' ne peut être utilisé qu'à l'intérieur d'une fonction",
-	     ln:ins.ln};
-   }
-   if(ins.val===undefined) return;
-   var v=ins.val.map(evaluate);
-   if(v.length==1) _localEnv["*"]=v[0];
-   else _localEnv["*"]={t:"tuple", v:v};
-   return;
 }
 
 function interpExit(arg){

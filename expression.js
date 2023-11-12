@@ -2,7 +2,7 @@
 // expression : evaluation des expressions du langage
 
 import * as Env from "./environment.js";
-import * as Cst from "./constants.js";
+import {FALSE, TRUE, NULL} from "./constants.js";
 import {evalSommet} from "./graphe.js";
 import {interpCall} from "./instructions.js";
 
@@ -56,8 +56,14 @@ export function evaluate(expr){
         if(e[name].t=='predvar'){
             expr.l=e[name].f;
             return expr.l();
+        }else if(e===Env.Global){
+            expr.l=function(){return Env.Global[name];};
+        }else if(e===Env.Local){
+            expr.l=function(){return Env.Local[name];};
+        }else if(e===Env.Current){
+            expr.l=function(){return Env.Current[name];};
         }
-        else expr.l=function(){return e[name];}
+        else expr.l=function(){return Env.get(name);}
         return e[name];
     }
 
@@ -362,7 +368,7 @@ export function evaluate(expr){
 
     if(expr.t=="field"){
         let o=evaluate(expr.o);
-        let res=Cst.NULL;
+        let res=NULL;
         if(o.t=="struct") res=o.f[expr.f];
         else if(o.t=="Arc" || o.t=="Arete"){
             if(expr.f=="initial") res=o.i;
@@ -372,7 +378,7 @@ export function evaluate(expr){
         else if(o.t=="Sommet") res=o.marques[expr.f];
         else if(o.t=="graphe") res=o.sommets[expr.f];
         else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
-        if(res===undefined) return Cst.NULL;
+        if(res===undefined) return NULL;
         else return res;
     }
 
@@ -438,7 +444,7 @@ export function evaluate(expr){
 // Pour les vecteurs et structures : comparaison récursive
 function evaluateEqual(expr){
     function isEq(a,b){
-        Env.OpCnt++;
+        Env.addCnt(1);
         // Comparaison avec chaine d'un sommet
         if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
         if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
@@ -519,12 +525,12 @@ function evaluateArc(expr){
     }
 
     let graphe = Env.grapheContaining(s1);
-    if(graphe===null) return Cst.NULL;
+    if(graphe===null) return NULL;
     for(let a of graphe.arcs){
         if(a.i===s1 && a.a===s2) return a; // a is (s1,s2) or [s1,s2]
         if(expr.t=="arete" && a.a===s1 && a.i===s2) return a;  // or [s2,s1] 
     }
-    return Cst.NULL;
+    return NULL;
 }
 
 

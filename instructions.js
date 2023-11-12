@@ -1,6 +1,6 @@
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
-import {regularCheck} from "./domcom.js";
+import {regularCheck, print} from "./domcom.js";
 import {evalSommet, addSommet, creerArc} from "./graphe.js";
 
 export let Line = 0; // Default line number for internal error log
@@ -190,7 +190,7 @@ export function interpretWithEnv(tree, isloop){
             continue;
         }
         if(ti.t=="$"){
-            prePrintln([{t:"string", val:JSON.stringify(eval(ti.i.slice(1))), ln:ti.ln}]);
+            print(JSON.stringify(eval(ti.i.slice(1)))+"\n");
             continue;
         }
     }
@@ -258,5 +258,49 @@ function interpForeach(ins){
       if(b=="return") return "return";
    }
    return false;
+}
+
+// For i in range(...)
+function interpFor(ins){
+   let comptRef = evaluateLVal(ins.compteur);
+   let start=evaluate(ins.start);
+   let end=evaluate(ins.end);
+   let step={t:"number", val:1};
+   if(ins.step) step=evaluate(ins.step);
+   if(start===undefined || start.t!="number") throw {error:"type", name:"Bornes du for non numériques",
+	 msg:"Le point de départ d'un range doit être un nombre", ln:ins.start.ln};
+   if(end===undefined || end.t!="number") throw {error:"type", name:"Bornes du for non numériques",
+	 msg:"La fin d'un range doit être un nombre", ln:ins.end.ln};
+   if(step===undefined || step.t!="number") throw {error:"type", name:"Bornes du for non numériques",
+	 msg:"Le pas d'un range doit être un nombre", ln:ins.step.ln};
+   for(let i=start.val; i<end.val; i+=step.val){
+      setRef(comptRef, {t:"number", val:i});
+      let b=interpretWithEnv(ins.do, true);
+      if(b=="break") break;
+      if(b=="return") return "return";
+   }
+   return false;
+}
+
+function interpIf(si, isloop){
+   let c=evaluate(si.cond);
+   if(c.t=='null') c=FALSE;
+   if(c.t != "boolean") throw {error:"type", name: "Condition non booléenne",
+           msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
+   if(c.val) return interpretWithEnv(si["do"], isloop);
+   else return interpretWithEnv(si["else"], isloop);
+}
+
+function interpReturn(ins){
+   if(Env.Local==null || Env.Local['*']===undefined){
+      throw {error:"exec", name:"Return en dehors d'une fonction",
+             msg:"'return' ne peut être utilisé qu'à l'intérieur d'une fonction",
+	     ln:ins.ln};
+   }
+   if(ins.val===undefined) return;
+   let v=ins.val.map(evaluate);
+   if(v.length==1) Env.Local["*"]=v[0];
+   else Env.Local["*"]={t:"tuple", v:v};
+   return;
 }
 
