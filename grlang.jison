@@ -2,7 +2,6 @@
 %lex
 
 %{
-let _clg_stringBuf='';
 %}
 %x string
 %x stringq
@@ -19,17 +18,17 @@ let _clg_stringBuf='';
 
 [0-9]+("."[0-9]+)?("E"[0-9]+)?\b	return 'NUMBER'
 
-["]			this.begin("string"); _clg_stringBuf="";
-<string>["]		this.popState(); yytext=_clg_stringBuf; return "STRING";
-<string>[^"\\\n]	_clg_stringBuf += yytext;
-<string>"\\n"		_clg_stringBuf += "\n";
-<string>"\\"[^\n]		_clg_stringBuf += yytext.slice(1);
+["]			this.begin("string"); yy._clg_stringBuf="";
+<string>["]		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<string>[^"\\\n]	yy._clg_stringBuf += yytext;
+<string>"\\n"		yy._clg_stringBuf += "\n";
+<string>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
 
-[']			this.begin("stringq"); _clg_stringBuf="";
-<stringq>[']		this.popState(); yytext=_clg_stringBuf; return "STRING";
-<stringq>[^'\\\n]	_clg_stringBuf += yytext; console.log('lexNotN', _clg_stringBuf);
-<stringq>"\\n"		_clg_stringBuf += "\n";
-<string>"\\"[^\n]	_clg_stringBuf += yytext.slice(1);
+[']			this.begin("stringq"); yy._clg_stringBuf="";
+<stringq>[']		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<stringq>[^'\\\n]	yy._clg_stringBuf += yytext;
+<stringq>"\\n"		yy._clg_stringBuf += "\n";
+<stringq>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
 
 "+="			return "+="
 "++"			return "++"

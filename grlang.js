@@ -1015,7 +1015,6 @@ stateStackSize:function stateStackSize() {
     },
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
-let _clg_stringBuf='';
 
 var YYSTATE=YY_START;
 switch($avoiding_name_collisions) {
@@ -1033,25 +1032,25 @@ case 5:return ";"
 break;
 case 6:return 52
 break;
-case 7:this.begin("string"); _clg_stringBuf="";
+case 7:this.begin("string"); yy._clg_stringBuf="";
 break;
-case 8:this.popState(); yy_.yytext=_clg_stringBuf; return "STRING";
+case 8:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
-case 9:_clg_stringBuf += yy_.yytext;
+case 9:yy._clg_stringBuf += yy_.yytext;
 break;
-case 10:_clg_stringBuf += "\n";
+case 10:yy._clg_stringBuf += "\n";
 break;
-case 11:_clg_stringBuf += yy_.yytext.slice(1);
+case 11:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 12:this.begin("stringq"); _clg_stringBuf="";
+case 12:this.begin("stringq"); yy._clg_stringBuf="";
 break;
-case 13:this.popState(); yy_.yytext=_clg_stringBuf; return "STRING";
+case 13:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
-case 14:_clg_stringBuf += yy_.yytext; console.log('lexNotN', _clg_stringBuf);
+case 14:yy._clg_stringBuf += yy_.yytext;
 break;
-case 15:_clg_stringBuf += "\n";
+case 15:yy._clg_stringBuf += "\n";
 break;
-case 16:_clg_stringBuf += yy_.yytext.slice(1);
+case 16:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
 case 17:return "+="
 break;
@@ -1176,7 +1175,7 @@ break;
 }
 },
 rules: [/^(?:#.*)/,/^(?: +)/,/^(?:[\n])/,/^(?:§\{)/,/^(?:§\})/,/^(?:§;)/,/^(?:[0-9]+(\.[0-9]+)?(E[0-9]+)?\b)/,/^(?:["])/,/^(?:["])/,/^(?:[^"\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:['])/,/^(?:['])/,/^(?:[^'\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:\+=)/,/^(?:\+\+)/,/^(?:--)/,/^(?:==)/,/^(?:-=)/,/^(?:\*\*)/,/^(?:\^)/,/^(?:!=)/,/^(?:<=)/,/^(?:>=)/,/^(?:&&)/,/^(?:and\b)/,/^(?:\|\|)/,/^(?:or\b)/,/^(?:xor\b)/,/^(?:\^\^)/,/^(?:\.\+)/,/^(?:\.\*)/,/^(?:\.\^)/,/^(?:\[\])/,/^(?:\{\})/,/^(?:=)/,/^(?:\[)/,/^(?:\])/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?::)/,/^(?:\.)/,/^(?:\+)/,/^(?:<)/,/^(?:>)/,/^(?:-)/,/^(?:\*)/,/^(?:%)/,/^(?:\/)/,/^(?:\?)/,/^(?:!)/,/^(?:\$.*)/,/^(?:Sommet\b)/,/^(?:Arete\b)/,/^(?:Graphe\b)/,/^(?:Arc\b)/,/^(?:def\b)/,/^(?:for\b)/,/^(?:while\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:elif\b)/,/^(?:continue\b)/,/^(?:break\b)/,/^(?:pass\b)/,/^(?:in\b)/,/^(?:global\b)/,/^(?:return\b)/,/^(?:range\b)/,/^(?:exit\b)/,/^(?:[A-Za-z_][A-Za-z0-9_]*)/,/^(?:$)/,/^(?:.)/],
-conditions: {"stringq":{"rules":[13,14,15],"inclusive":false},"string":{"rules":[8,9,10,11,16],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,12,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76],"inclusive":true}}
+conditions: {"stringq":{"rules":[13,14,15,16],"inclusive":false},"string":{"rules":[8,9,10,11],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,12,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76],"inclusive":true}}
 });
 return lexer;
 })();
