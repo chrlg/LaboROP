@@ -403,16 +403,15 @@ function preDernier(args, ln){
 
 function preM(args, ln, fname){
     let M={t:"matrix", val:[]};
-    let k,g;
-    let arcs;
+    let g=Env.Gr;
     if(args){
         if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Adj ne peut prendre qu'un argument optionnel, le graphe"};
         g=evaluate(args[0]);
         if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Adj est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-    }else g=Env.Gr;
+    };
 
-    k=Object.keys(g.sommets);
-    arcs=g.arcs;
+    let k=Object.keys(g.sommets);
+    let arcs=g.arcs;
     for(let i=0; i<k.length; i++){
         M.val[i]=new Array(k.length).fill(0);
         for(let j=0; j<k.length; j++){
@@ -431,20 +430,20 @@ function preM(args, ln, fname){
 
 
 function preId(args, ln, fname){
-   var M={t:"matrix", val:[]};
-   var n=0;
-   if(args){
-      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Id ne peut prendre qu'un argument optionnel, le graphe"};
-      let g=evaluate(args[0]);
-      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Id est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-      n=Object.keys(g.sommets).length;
-   }
-   else n=Object.keys(_grapheEnv).length;
-   for(let i=0; i<n; i++){
-      M.val[i]=new Array(n).fill(0);
-      M.val[i][i]=1;
-   }
-   return M;
+    let M={t:"matrix", val:[]};
+    let n=0;
+    let g=Env.Gr;
+    if(args){
+        if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Id ne peut prendre qu'un argument optionnel, le graphe"};
+        g=evaluate(args[0]);
+        if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Id est utilisée avec un argument optionnel, cet argument doit être un graphe"};
+    }
+    n=Object.keys(g.sommets).length;
+    for(let i=0; i<n; i++){
+        M.val[i]=new Array(n).fill(0);
+        M.val[i][i]=1;
+    }
+    return M;
 }
 
 function zeroDim(n){
@@ -456,15 +455,14 @@ function zeroDim(n){
 }
 
 function preZero(args, ln, fname){
-   var n=0;
-   if(args){
-      if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Zero ne peut prendre qu'un argument optionnel, le graphe"};
-      let g=evaluate(args[0]);
-      if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Zero est utilisée avec un argument optionnel, cet argument doit être un graphe"};
-      n=Object.keys(g.sommets).length;
-   }
-   else n=Object.keys(_grapheEnv).length;
-   return zeroDim(n);
+    let g=Env.Gr;
+    if(args){
+        if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Zero ne peut prendre qu'un argument optionnel, le graphe"};
+        g=evaluate(args[0]);
+        if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Zero est utilisée avec un argument optionnel, cet argument doit être un graphe"};
+    }
+    let n=Object.keys(g.sommets).length;
+    return zeroDim(n);
 }
 
 

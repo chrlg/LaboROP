@@ -1,16 +1,9 @@
-# BEGIN Cache-Control Headers
 <IfModule mod_headers.c>
-	<FilesMatch "(interpret|grlang|script|codepredef|mod_.*)\.js$">
-		Header set Cache-Control "max-age=20, private"
-	</FilesMatch>
-	<FilesMatch "(.*)\.js$">
-		Header set Cache-Control "max-age=30, private"
-	</FilesMatch>
-	<FilesMatch "(index\.html|style\.css)$">
-		Header set Cache-Control "max-age=40000, private"
-	</FilesMatch>
+    <FilesMatch "(.*)\.js$">
+        Header set Cache-Control "max-age=30, private"
+    </FilesMatch>
+    <FilesMatch "(index\.html|style\.css|script\.js)$">
+        Header set Cache-Control "max-age=40000, private"
+    </FilesMatch>
 </IfModule>
-#AuthType CAS
-#AuthName "Labo ROP"
-#Require valid-user
-# END Cache-Control Headers
+
