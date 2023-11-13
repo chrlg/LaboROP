@@ -243,7 +243,7 @@ function preArcs(args, ln){
     if(g.discover && !s.marques.visible) return Cst.NULL;
     let rep=[];
     for(let i=0; i<g.arcs.length; i++){
-        if(g.arcs[i].i==s) rep.push(arcs[i]);
+        if(g.arcs[i].i==s) rep.push(g.arcs[i]);
         else if(g.arcs[i].a==s && g.arcs[i].t=="Arete") {
             // Dans le cas précis de arete, on inverse les sommets
             // Avant de retourner le résultat. C'est un peu pourri comme méthode. Mais
