@@ -433,6 +433,13 @@ export function evaluate(expr){
     if(expr.t=="Arete"){
         return creerArete(expr);
     }
+    if(expr.t=="exprArray"){
+        let l=[];
+        for(let a of expr.args){
+            l.push(evaluate(a));
+        }
+        return {t:"array", val:l};
+    }
     console.trace("Cannot evaluate", expr);
 }
 
