@@ -362,6 +362,9 @@ expr
       | "[]" {
 	 $$={t: "array", val:[], ln:@1.first_line};
       }
+      | "[" expr "]" {
+         $$={t: "exprArray", args:[$2], ln:@1.first_line};
+      }
       | "{}" {
          $$={t:"struct", f:[], ln:@1.first_line};
       }
