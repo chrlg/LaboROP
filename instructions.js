@@ -180,8 +180,7 @@ export function interpretWithEnv(tree, isloop){
                 throw {error:"env", name:"Surdéfinition", mrg:`Le nom ${ti.name} est celui d'un sommet du graphe principal`, ln:ti.ln};
             // Graph already exist. Then we just reset it
             if(Env.Graphes[ti.name]){
-                Env.Graphes[ti.name].sommets={};
-                Env.Graphes[ti.name].arcs.length=0;
+                Env.Graphes[ti.name].reset();
             }else{
                 Env.addGraphe(ti.name, ti.ln);
             }

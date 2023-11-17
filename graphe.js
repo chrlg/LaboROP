@@ -12,14 +12,21 @@ import {evaluate, isNumeric} from "./expression.js";
 export class Graphe {
     constructor(name){
         this.name = name;  // nom du graphe
+        this.t = "graphe" ;  // Pour être utilisé comme objet du langage
         this.sommets = {}; // dictionnaire de ses sommets
         this.arcs = [];    // liste de ses arcs
         this.mode = "dot"; // mode d'affichage. 'dot' utilise graphviz
         this.change = false;        // le graphe a-t-il changé depuis son dernier affichage
         this.oriented = undefined;   // s'agit-il d'un graphe orienté ou non
         this.discover = false ;     // mode "découverte" ou non : les sommets et arrêtent n'apparaissent pas dans les fonctions 
-        this.t = "graphe" ;  // Pour être utilisé comme objet du langage
-        // de parcours tant qu'ils n'ont pas été marqués découverts
+                    // de parcours tant qu'ils n'ont pas été marqués découverts
+    }
+
+    reset(){
+        this.sommets = {};
+        this.arcs.length=0;
+        this.oriented=undefined;
+        this.change=true;
     }
 
     // Ce graphe est-il orienté ou non?
