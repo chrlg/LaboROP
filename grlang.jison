@@ -262,7 +262,7 @@ exprArith
 	 $$={t:"number", val:parseFloat($1), ln:@1.first_line};
       }
       | DECIMAL {
-         $$={t:"DECIMAL", s:$1, ln:@1.first_line};
+         $$={t:"DECIMAL", s:$1.slice(0,-1), ln:@1.first_line};
       }
       | exprArith "<" exprArith {
 	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};

@@ -275,7 +275,7 @@ case 41:
 break;
 case 42:
 
-         this.$={t:"DECIMAL", s:$$[$0], ln:_$[$0].first_line};
+         this.$={t:"DECIMAL", s:$$[$0].slice(0,-1), ln:_$[$0].first_line};
       
 break;
 case 43:
