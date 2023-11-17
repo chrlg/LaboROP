@@ -16,7 +16,7 @@
 "§}"			return "END";
 "§;"			return ";"
 
-[0-9]+("."[0-9]+)?("E"[0-9]+)?\b	return 'NUMBER'
+[0-9]+("."[0-9]+)?(("E"|"e")[0-9]+)?\b	return 'NUMBER'
 
 ["]			this.begin("string"); yy._clg_stringBuf="";
 <string>["]		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
@@ -116,12 +116,6 @@
 %start program
 
 %% 
-
-id 
-      : ID {
-	 $$ = {t:"id", name:$1, ln:@1.first_line};
-      }
-      ;
 
 instructionNoColon
       : Sommet grapheSpec listeExpr {
@@ -262,27 +256,33 @@ listeExpr
       }
       ;
 
-expr
-      : lvalue {
-	 $$=$1;
+exprArith
+      : NUMBER {
+	 $$={t:"number", val:parseFloat($1), ln:@1.first_line};
+      }
+      | exprArith "<" exprArith {
+	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};
       }
       | STRING {
 	 $$={t:"string", val:$1, ln:@1.first_line};
       }
-      | NUMBER {
-	 $$={t:"number", val:parseFloat($1), ln:@1.first_line};
+      ;
+
+expr
+      : rlvalue {
+	 $$=$1;
+      }
+      | exprArith {
+         $$=$1;
+      }
+      | lvarete {
+         $$=$1;
       }
       | expr "==" expr {
 	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
       }
-      | expr "=" expr {
-	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
-      }
       | expr "!=" expr {
 	 $$ = {t:"!=", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr "<" expr {
-	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};
       }
       | expr ">" expr {
 	 $$ = {t:">", left:$1, right:$3, ln:@2.first_line};
@@ -365,6 +365,9 @@ expr
       | "[" expr "]" {
          $$={t: "exprArray", args:[$2], ln:@1.first_line};
       }
+      | "@" expr "," expr "," expr "]" {
+         $$={t: "exprArray", args:[$2], ln:@1.first_line};
+      }
       | "{}" {
          $$={t:"struct", f:[], ln:@1.first_line};
       }
@@ -377,7 +380,7 @@ expr
       | "Arete" grapheSpec "[" expr "," expr "]" {
 	 $$ = { t:"Arete", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
-      | lvalue "[" borne ":" borne "]" {
+      | rlvalue "[" borne ":" borne "]" {
          $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
       }
       ;
@@ -391,24 +394,36 @@ borne
       }
       ;
 
-lvalue
-      : id {
-	 $$=$1;
+rlvalue
+      : ID {
+	 $$ = {t:"id", name:$1, ln:@1.first_line};
       } 
       | "(" ID "," ID ")" {
 	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
-      | "[" ID "," ID "]" {
-	 $$={t:"arete", initial: $2, terminal: $4, ln:@3.first_line};
-      }
-      | lvalue "." ID {
+      | rlvalue "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
       }
-      | lvalue "[" expr "]" {
+      | rlvalue "[" expr "]" {
 	 $$={t:"index", tab:$1, index:$3, ln:@2.first_line};
       }
-      | lvalue "[" expr "," expr "]" {
+      | rlvalue "[" expr "," expr "]" {
          $$={t:"mindex", mat:$1, i:$3, j:$5, ln:@2.first_line};
+      }
+      ;
+
+lvalue
+      : lvarete {
+         $$=$1;
+      }
+      | rlvalue {
+         $$=$1;
+      }
+      ;
+
+lvarete
+      : "[" ID "," ID "]" {
+	 $$={t:"arete", initial: $2, terminal: $4, ln:@3.first_line};
       }
       ;
 
