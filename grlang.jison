@@ -16,8 +16,8 @@
 "§}"			return "END";
 "§;"			return ";"
 
-[0-9]+("."[0-9]+)?(("E"|"e")[0-9]+)?\b	return 'NUMBER'
 [0-9]+("."[0-9]+)?(("E"|"e")[0-9]+)?("d"|"D")\b	return 'DECIMAL'
+[0-9]+("."[0-9]+)?(("E"|"e")[0-9]+)?\b	return 'NUMBER'
 
 ["]			this.begin("string"); yy._clg_stringBuf="";
 <string>["]		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
