@@ -58,7 +58,7 @@ export class Graphe {
 
     addArete(i, a, m){
         if(m===undefined) m={};
-        let na={t:"Arc", i:i, a:a, marques:m};
+        let na={t:"Arete", i:i, a:a, marques:m};
         this.arcs.push(na);
         this.change=true;
         return na;
