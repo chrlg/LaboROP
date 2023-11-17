@@ -2,9 +2,10 @@
 // expression : evaluation des expressions du langage
 
 import * as Env from "./environment.js";
-import * as Cst from "./constants.js";
-import {evalSommet} from "./graphe.js";
-import {interpCall} from "./instructions.js";
+import * as Mat from "./matrix.js";
+import {FALSE, TRUE, NULL} from "./constants.js";
+import {evalSommet, creerArete} from "./graphe.js";
+import {interpCall, setRef} from "./instructions.js";
 
 const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
@@ -56,8 +57,18 @@ export function evaluate(expr){
         if(e[name].t=='predvar'){
             expr.l=e[name].f;
             return expr.l();
+        // The 3 next case may seem strange (why not just return e[name]?)
+        // But those environment may change (at least Local/Current may. Global is just defensive)
+        // Calling getEnv again would be unnecessary: code structure won't change. So, if symbol is local, it is local forever
+        // Yet, Local env may not be, when expr.l will be called the same as e
+        }else if(e===Env.Global){
+            expr.l=function(){return Env.Global[name];};
+        }else if(e===Env.Local){
+            expr.l=function(){return Env.Local[name];};
+        }else if(e===Env.Current){
+            expr.l=function(){return Env.Current[name];};
         }
-        else expr.l=function(){return e[name];}
+        else expr.l=function(){return Env.get(name);}
         return e[name];
     }
 
@@ -140,7 +151,7 @@ export function evaluate(expr){
         expr.l=function(){
             let a=evaluate(expr.left);
             let b=evaluate(expr.right);
-            Env.OpCnt++;
+            Env.addCnt(1);
             if(isNumeric(a) && isNumeric(b)){
                 if(a.t=="number" && b.t=="number") return comp(a.val, b.val);
                 if(a.t=="decimal") return compd(a.val, b.val);
@@ -173,7 +184,7 @@ export function evaluate(expr){
 
     // ++ / --
     if(expr.t=="++" || expr.t=="--"){
-        var op;
+        let op;
         if(expr.left) op=evaluateLVal(expr.left);
         else if(expr.right) op=evaluateLVal(expr.right);
         else throw {error:"interne", name:"++ ou -- sans opérande", msg:"", ln:expr.ln};
@@ -182,20 +193,20 @@ export function evaluate(expr){
         if(!v) throw {error:"env", name:"Variable non définie", msg:"", ln:expr.ln};
         if(v.t!="number") throw {error:"type", name:"Erreur de type", 
             msg:"++ ou -- attend un nombre et a été utilisé sur un "+v.t, ln:expr.ln};
-        var newVal={t:"number", val:v.val};
+        let newVal={t:"number", val:v.val};
         if(expr.t=="++") newVal.val++;
         else newVal.val--;
 
         setRef(op, newVal, expr.ln);
-        Env.OpCnt++;
+        Env.addCnt(1);
 
         if(expr.left) return v;
         else return newVal;
     }
 
     if(binaryOp.indexOf(expr.t)>=0){
-        var a=evaluate(expr.left);
-        var b=evaluate(expr.right);
+        let a=evaluate(expr.left);
+        let b=evaluate(expr.right);
 
         // Cas particulier pour le + : on accepte aussi chaines et tableau, et booléens
         if(expr.t=="+"){
@@ -257,49 +268,41 @@ export function evaluate(expr){
             }
 
             // Multiplication matricielle
-            if(a.t=="matrix" && b.t=="matrix") return multMat(a,b);
+            if(a.t=="matrix" && b.t=="matrix") return Mat.mul(a,b);
         }
 
         // Cas particulier pour **
         if(expr.t=="**"){
-            if(a.t=="matrix" && b.t=="number") return powMat(a, b.val);
+            if(a.t=="matrix" && b.t=="number") return Map.pow(a, b.val);
         }
 
         if(expr.t==".^"){
-            if(a.t=="matrix" && b.t=="number") return boolPowMat(a, b.val);
+            if(a.t=="matrix" && b.t=="number") return Mat.boolPow(a, b.val);
             if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0)?1:0};
         }
 
         // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
         if(expr.t==".+"){
             if(a.t=="number" && b.t=="number") {
-                Ent.OpCnt++;
+                Env.addCnt(1);
                 return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
-            let n=a.val.length;
-            let R=zeroDim(n);
-            for(let i=0; i<n; i++){
-                for(let j=0; j<n; j++){
-                    R.val[i][j] = (a.val[i][j]!=0 || b.val[i][j]!=0)?1:0;
-                }
-            }
-            Env.OpCnt += a.val.length*a.val.length;
-            return R;
+            return Mat.sum(a,b);
         }
 
         // ".*" sur matrices et nombres
         if(expr.t==".*"){
             if(a.t=="number" && b.t=="number") {
-                Env.OpCnt++;
+                Env.addCnt(1);
                 return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .*", ln:expr.ln};
-            return boolMultMat(a,b);
+            return Mat.boolMul(a,b);
         }
 
         if(!isNumeric(a) || !isNumeric(b)) throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
@@ -362,7 +365,7 @@ export function evaluate(expr){
 
     if(expr.t=="field"){
         let o=evaluate(expr.o);
-        let res=Cst.NULL;
+        let res=NULL;
         if(o.t=="struct") res=o.f[expr.f];
         else if(o.t=="Arc" || o.t=="Arete"){
             if(expr.f=="initial") res=o.i;
@@ -372,7 +375,7 @@ export function evaluate(expr){
         else if(o.t=="Sommet") res=o.marques[expr.f];
         else if(o.t=="graphe") res=o.sommets[expr.f];
         else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
-        if(res===undefined) return Cst.NULL;
+        if(res===undefined) return NULL;
         else return res;
     }
 
@@ -438,7 +441,7 @@ export function evaluate(expr){
 // Pour les vecteurs et structures : comparaison récursive
 function evaluateEqual(expr){
     function isEq(a,b){
-        Env.OpCnt++;
+        Env.addCnt(1);
         // Comparaison avec chaine d'un sommet
         if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
         if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
@@ -519,12 +522,12 @@ function evaluateArc(expr){
     }
 
     let graphe = Env.grapheContaining(s1);
-    if(graphe===null) return Cst.NULL;
+    if(graphe===null) return NULL;
     for(let a of graphe.arcs){
         if(a.i===s1 && a.a===s2) return a; // a is (s1,s2) or [s1,s2]
         if(expr.t=="arete" && a.a===s1 && a.i===s2) return a;  // or [s2,s1] 
     }
-    return Cst.NULL;
+    return NULL;
 }
 
 
@@ -607,5 +610,12 @@ export function evaluateLVal(lv, direct){
         return [ v.val[numericValue(i)], numericValue(j) ];
     }
     else throw {error:"interne", name:"Erreur interne", msg:"EvaluateLVal appelé sur non-LValue", ln:lv.ln};
+}
+
+// For mixed cases, where a l-value is also an expression. So far, only for ++ --
+function getRef(ref){
+   // Cas matriciel
+   if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
+   return ref[0][ref[1]];
 }
 

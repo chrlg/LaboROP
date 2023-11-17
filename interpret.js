@@ -1,15 +1,9 @@
 // © C. Le Gal, 2017-2018
-import {TRUE, FALSE} from "./constants.js";
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck} from "./domcom.js";
 import {interpretWithEnv, Line} from "./instructions.js";
-
-let _env = null;
-
-let _modules = {}; // Modules importés
-
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
@@ -84,119 +78,6 @@ function parseTabulation(str){
 
 
 
-function multMat(a, b){
-   let R={t:"matrix", val:new Array(a.val.length)};
-   let n=a.val.length;
-   for(let i=0; i<n; i++){
-      R.val[i]=new Array(n).fill(0);
-      for(let j=0; j<n; j++){
-         for(let k=0; k<n; k++){
-            R.val[i][j] += a.val[i][k]*b.val[k][j];
-         }
-      }
-   }
-   Env.OpCnt += 2*n*n*n;
-   return R;
-}
-
-function boolMultMat(a,b){
-   let n=a.val.length;
-   let R=zeroDim(n);
-   for(let i=0; i<n; i++){
-      for(let j=0; j<n; j++){
-         for(let k=0; k<n; k++){
-            if(a.val[i][k]!=0 && b.val[k][j]!=0){
-               R.val[i][j]=1;
-               break;
-            }
-         }
-      }
-   }
-   Env.addCnt(2*n*n*n);
-   return R;
-}
-
-function powMat(a, k){
-   if(k==0) return preId();
-   if(k==1) return a;
-   var H=powMat(a, Math.trunc(k/2));
-   var HH=multMat(H,H);
-   if(k%2) return multMat(HH,a);
-   return HH;
-}
-
-function boolPowMat(a,k){
-   if(k==0) return preId();
-   if(k==1) return a;
-   var H=boolPowMat(a, Math.trunc(k/2));
-   var HH=boolMultMat(H,H);
-   if(k%2) return boolMultMat(HH,a);
-   return HH;
-}
-
-
-function getRef(ref){
-   // Cas matriciel
-   if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
-   return ref[0][ref[1]];
-}
-
-function interpIf(si, isloop){
-   var c=evaluate(si.cond);
-   if(c.t=='null') c=FALSE;
-   if(c.t != "boolean") throw {error:"type", name: "Condition non booléenne",
-           msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
-   if(c.val) return interpretWithEnv(si["do"], isloop);
-   else return interpretWithEnv(si["else"], isloop);
-}
-
-function interpWhile(tant){
-   for(;;){
-      var c=evaluate(tant.cond);
-      if(c.t=='null') c=FALSE;
-      if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
-	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
-      if(!c.val) break;
-      var b=interpretWithEnv(tant["do"], true);
-      if(b=="break") break;
-      if(b=="return") return "return";
-   }
-   return false;
-}
-
-function interpFor(ins){
-   var comptRef = evaluateLVal(ins.compteur);
-   var start=evaluate(ins.start);
-   var end=evaluate(ins.end);
-   var step={t:"number", val:1};
-   if(ins.step) step=evaluate(ins.step);
-   if(start===undefined || start.t!="number") throw {error:"type", name:"Bornes du for non numériques",
-	 msg:"Le point de départ d'un range doit être un nombre", ln:ins.start.ln};
-   if(end===undefined || end.t!="number") throw {error:"type", name:"Bornes du for non numériques",
-	 msg:"La fin d'un range doit être un nombre", ln:ins.end.ln};
-   if(step===undefined || step.t!="number") throw {error:"type", name:"Bornes du for non numériques",
-	 msg:"Le pas d'un range doit être un nombre", ln:ins.step.ln};
-   for(let i=start.val; i<end.val; i+=step.val){
-      setRef(comptRef, {t:"number", val:i});
-      let b=interpretWithEnv(ins.do, true);
-      if(b=="break") break;
-      if(b=="return") return "return";
-   }
-   return false;
-}
-
-function interpReturn(ins){
-   if(_localEnv["*"]===undefined){
-      throw {error:"exec", name:"Return en dehors d'une fonction",
-             msg:"'return' ne peut être utilisé qu'à l'intérieur d'une fonction",
-	     ln:ins.ln};
-   }
-   if(ins.val===undefined) return;
-   var v=ins.val.map(evaluate);
-   if(v.length==1) _localEnv["*"]=v[0];
-   else _localEnv["*"]={t:"tuple", v:v};
-   return;
-}
 
 function interpExit(arg){
    var v=evaluate(arg);
@@ -208,19 +89,6 @@ function interpExit(arg){
    throw {error:"type", name:"Mauvais type pour exit", msg:"", ln:arg.ln};
 }
 
-
-function interpPlusEgal(tree){
-   let lv=evaluateLVal(tree.left);
-   let lvv = lv[0][lv[1]];
-   if(lvv.t=="array"){ // Pour les tableaux on fait une modification in situ
-      let r=evaluate(tree.right);
-      if(r.t=="array") lvv.val = lvv.val.concat(r.val);
-      else lvv.val.push(r);
-   }else{ // Pour les autres (pour l'instant) on transforme ça en a=a+b
-      let r=evaluate({t:"+", left:tree.left, right:tree.right, ln:tree.ln});
-      setRef(lv, r, tree.ln);
-   }
-}
 
 
 function interpret(tree){
