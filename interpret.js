@@ -1,15 +1,9 @@
 // © C. Le Gal, 2017-2018
-import {FALSE} from "./constants.js";
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck} from "./domcom.js";
 import {interpretWithEnv, Line} from "./instructions.js";
-
-let _env = null;
-
-let _modules = {}; // Modules importés
-
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
@@ -83,56 +77,6 @@ function parseTabulation(str){
 }
 
 
-
-function multMat(a, b){
-   let R={t:"matrix", val:new Array(a.val.length)};
-   let n=a.val.length;
-   for(let i=0; i<n; i++){
-      R.val[i]=new Array(n).fill(0);
-      for(let j=0; j<n; j++){
-         for(let k=0; k<n; k++){
-            R.val[i][j] += a.val[i][k]*b.val[k][j];
-         }
-      }
-   }
-   Env.OpCnt += 2*n*n*n;
-   return R;
-}
-
-function boolMultMat(a,b){
-   let n=a.val.length;
-   let R=zeroDim(n);
-   for(let i=0; i<n; i++){
-      for(let j=0; j<n; j++){
-         for(let k=0; k<n; k++){
-            if(a.val[i][k]!=0 && b.val[k][j]!=0){
-               R.val[i][j]=1;
-               break;
-            }
-         }
-      }
-   }
-   Env.addCnt(2*n*n*n);
-   return R;
-}
-
-function powMat(a, k){
-   if(k==0) return preId();
-   if(k==1) return a;
-   var H=powMat(a, Math.trunc(k/2));
-   var HH=multMat(H,H);
-   if(k%2) return multMat(HH,a);
-   return HH;
-}
-
-function boolPowMat(a,k){
-   if(k==0) return preId();
-   if(k==1) return a;
-   var H=boolPowMat(a, Math.trunc(k/2));
-   var HH=boolMultMat(H,H);
-   if(k%2) return boolMultMat(HH,a);
-   return HH;
-}
 
 
 function interpExit(arg){

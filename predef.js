@@ -1,5 +1,7 @@
 import * as Cst from "./constants.js";
 import * as Env from "./environment.js";
+import * as Mod from "./modules.js";
+import * as Mat from "./matrix.js";
 import {evaluate, isNumeric} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
 
@@ -258,14 +260,12 @@ function preArcs(args, ln){
 }
 
 function preImport(args, ln){
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction import s'utilise avec un argument", ln:ln};
-   let e=evaluate(args[0]);
-   if(e.t!="string") throw {error:"args", name:"Mauvais type d'argument",
-      msg:"La fonction import attent une chaîne", ln:ln};
-   if(_modules[e.val]) return ; // Déjà importé
-   importScripts("Modules/mod_"+e.val+".js");
-   _modules[e.val]=true;
+    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+        msg:"La fonction import s'utilise avec un argument", ln:ln};
+    let e=evaluate(args[0]);
+    if(e.t!="string") throw {error:"args", name:"Mauvais type d'argument",
+        msg:"La fonction import attent une chaîne", ln:ln};
+    Mod.load(e.val, args[0].ln);
 }
 
 function prePop(args, ln){
@@ -292,12 +292,19 @@ function prePop(args, ln){
 }
 
 function preGraphMode(args, ln){
-    if(args.length==0){
-        return {t:"string", val:_grapheMode};
+    let g=Env.Gr;
+    let m=undefined;
+    for(let a of args){
+        let e=evaluate(a);
+        if(e.t=='graphe') g=e;
+        else if(e.t=='string') m=e.val;
+        else throw {error:"type", name:"Type incorrect pour _grapheMode", msg:`Le type ${e.t} est incorrect`, ln:ln};
     }
-    _grapheMode = ''+args[0].val;
-    _grapheChange=true;
+    if(m===undefined) return {t:"string", val:g.mode};
+    g.mode=m;
+    g.change=true;
     regularCheck();
+    return {t:'string', val:g.name};
 }
 
 function preMaths1(args, ln, fname){
@@ -320,31 +327,6 @@ function preMaths1(args, ln, fname){
    if(fname=="atan") return {t:"number", val:Math.atan(a.val)};
    if(fname=="abs") return {t:"number", val:Math.abs(a.val)};
    throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
-}
-
-function importGraphe(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=_grapheEnv["S"+p[0]];
-      let s2=_grapheEnv["S"+p[1]];
-      let d={t:"number", val:0};
-      if(p.length==3) d.val=p[2];
-      else{
-         let x1=s1.marques.x;
-         let x2=s2.marques.x;
-         let y1=s1.marques.x;
-         let y2=s2.marques.x;
-         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-      }
-      if (v=="noValues") _arcs.push({t:"Arete", i:s1, a:s2, marques:{}});
-      else _arcs.push({t:"Arete", i:s1, a:s2, marques:{val:d}});
-   }
-   _grapheChange=true;
-   _grapheMode="map";
 }
 
 function importReseau(g,v){
@@ -424,7 +406,6 @@ function preM(args, ln, fname){
 
 
 function preId(args, ln, fname){
-    let M={t:"matrix", val:[]};
     let n=0;
     let g=Env.Gr;
     if(args){
@@ -433,19 +414,7 @@ function preId(args, ln, fname){
         if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Id est utilisée avec un argument optionnel, cet argument doit être un graphe"};
     }
     n=Object.keys(g.sommets).length;
-    for(let i=0; i<n; i++){
-        M.val[i]=new Array(n).fill(0);
-        M.val[i][i]=1;
-    }
-    return M;
-}
-
-function zeroDim(n){
-   var M={t:"matrix", val:[]};
-   for(let i=0; i<n; i++){
-      M.val[i]=new Array(n).fill(0);
-   }
-   return M;
+    return Mat.id(n);
 }
 
 function preZero(args, ln, fname){
@@ -456,7 +425,7 @@ function preZero(args, ln, fname){
         if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Zero est utilisée avec un argument optionnel, cet argument doit être un graphe"};
     }
     let n=Object.keys(g.sommets).length;
-    return zeroDim(n);
+    return Mat.zeroDim(n);
 }
 
 

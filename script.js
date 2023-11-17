@@ -472,10 +472,9 @@ function initFiles(){
    });
 }
 
-export function importPyroFile(txt){
+function importPyroFile(txt){
     editor.setValue(txt, -1);
 }
-window.importPyroFile=importPyroFile;
 
 
 var listFiles, currentFilename, currentFile;

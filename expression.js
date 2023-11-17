@@ -2,6 +2,7 @@
 // expression : evaluation des expressions du langage
 
 import * as Env from "./environment.js";
+import * as Mat from "./matrix.js";
 import {FALSE, TRUE, NULL} from "./constants.js";
 import {evalSommet, creerArete} from "./graphe.js";
 import {interpCall, setRef} from "./instructions.js";
@@ -267,49 +268,41 @@ export function evaluate(expr){
             }
 
             // Multiplication matricielle
-            if(a.t=="matrix" && b.t=="matrix") return multMat(a,b);
+            if(a.t=="matrix" && b.t=="matrix") return Mat.mul(a,b);
         }
 
         // Cas particulier pour **
         if(expr.t=="**"){
-            if(a.t=="matrix" && b.t=="number") return powMat(a, b.val);
+            if(a.t=="matrix" && b.t=="number") return Map.pow(a, b.val);
         }
 
         if(expr.t==".^"){
-            if(a.t=="matrix" && b.t=="number") return boolPowMat(a, b.val);
+            if(a.t=="matrix" && b.t=="number") return Mat.boolPow(a, b.val);
             if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0)?1:0};
         }
 
         // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
         if(expr.t==".+"){
             if(a.t=="number" && b.t=="number") {
-                Ent.OpCnt++;
+                Env.addCnt(1);
                 return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
-            let n=a.val.length;
-            let R=zeroDim(n);
-            for(let i=0; i<n; i++){
-                for(let j=0; j<n; j++){
-                    R.val[i][j] = (a.val[i][j]!=0 || b.val[i][j]!=0)?1:0;
-                }
-            }
-            Env.OpCnt += a.val.length*a.val.length;
-            return R;
+            return Mat.sum(a,b);
         }
 
         // ".*" sur matrices et nombres
         if(expr.t==".*"){
             if(a.t=="number" && b.t=="number") {
-                Env.OpCnt++;
+                Env.addCnt(1);
                 return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .*", ln:expr.ln};
-            return boolMultMat(a,b);
+            return Mat.boolMul(a,b);
         }
 
         if(!isNumeric(a) || !isNumeric(b)) throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};

@@ -1,6 +1,6 @@
 import {FALSE, TRUE, UNDEFINED} from "./constants.js";
 import * as Env from "./environment.js";
-import {evaluate} from "./expression.js";
+import {evaluate, isNumeric} from "./expression.js";
 
 // Chaque graphe de Graphes a la structure suivante :
 // * name : le nom du graphe. Le graphe par défaut s'appelle Gr
@@ -8,7 +8,7 @@ import {evaluate} from "./expression.js";
 // * arcs : la liste des arcs
 // * mode : le mode d'affichage. "dot" par défaut, pour Gr. "dot"=rendu avec GraphViz. "map"=rendu des arcs seulement
 // * change : true si le graphe a changé depuis la dernière fois qu'il a été affiché
-// * oriente : true si le graphe est orienté, false s'il ne l'est pas, undefined si on n'a pas encore décidé
+// * oriented : true si le graphe est orienté, false s'il ne l'est pas, undefined si on n'a pas encore décidé
 export class Graphe {
     constructor(name){
         this.name = name;  // nom du graphe
@@ -16,7 +16,7 @@ export class Graphe {
         this.arcs = [];    // liste de ses arcs
         this.mode = "dot"; // mode d'affichage. 'dot' utilise graphviz
         this.change = false;        // le graphe a-t-il changé depuis son dernier affichage
-        this.oriente = UNDEFINED;   // s'agit-il d'un graphe orienté ou non
+        this.oriented = undefined;   // s'agit-il d'un graphe orienté ou non
         this.discover = false ;     // mode "découverte" ou non : les sommets et arrêtent n'apparaissent pas dans les fonctions 
         this.t = "graphe" ;  // Pour être utilisé comme objet du langage
         // de parcours tant qu'ils n'ont pas été marqués découverts
@@ -24,12 +24,39 @@ export class Graphe {
 
     // Ce graphe est-il orienté ou non?
     isOrient(){
-        return this.oriente.val;
+        return this.oriented;
     }
     // setter
     setOrient(o){
-        this.oriente.val = o;
+        this.oriented = o;
     }
+
+    // Add a node to a graph
+    addNode(name, ln){
+        if(this.name=="Gr" && Env.Graphes[name]) 
+            throw{error:"env", name:"Nom de sommet illégal", msg:"Un sommet du graphe Gr ne peut porter le nom d'un graphe", ln:ln};
+        let s= {t:"Sommet", name:name, marques:{}};
+        this.sommets[name] = s;
+        this.change=true;
+        return s;
+    }
+
+    addArc(i, a, m){
+        if(m===undefined) m={};
+        let na={t:"Arc", i:i, a:a, marques:m};
+        this.arcs.push(na);
+        this.change=true;
+        return na;
+    }
+
+    addArete(i, a, m){
+        if(m===undefined) m={};
+        let na={t:"Arc", i:i, a:a, marques:m};
+        this.arcs.push(na);
+        this.change=true;
+        return na;
+    }
+
 
     // regénère une description à envoyer au thread d'affichage, si nécessaire (si le graphe a changé,
     // ou si un argument force est passé)
@@ -200,12 +227,6 @@ export class Graphe {
 
 }
 
-// Fonction interne d'ajout de sommet
-export function addSommet(name, graphe, ln){
-    if(graphe.name=="Gr" && Env.Graphes[name]) throw{error:"env", name:"Nom de sommet illégal", msg:"Un sommet du graphe Gr ne peut porter le nom d'un graphe", ln:ln};
-    graphe.sommets[name] = {t:"Sommet", name:name, marques:{}};
-}
-
 export function creerArete(ins){
    let left=ins.left;
    let right=ins.right;
@@ -221,11 +242,8 @@ export function creerArete(ins){
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour une arête", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour une arête", ln:right.ln};
 
-   let na={t:"Arete", i:l, a:r, marques:{}};
    if(g.arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
-   g.arcs.push(na);
-   g.change=true;
-   return na;
+   return g.addArete(l, r);
 }
 
 export function creerArc(ins){
@@ -242,11 +260,8 @@ export function creerArc(ins){
    if(!l || l.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+left.t+" n'est pas un sommet gauche légal pour un arc", ln:left.ln};
    if(!r || r.t !== "Sommet") throw {error:"type", name: "Erreur de type", msg: "Un "+right.t+" n'est pas un sommet droit légal pour un arc", ln:right.ln};
 
-   let na={t:"Arc", i:l, a:r, marques:{}};
    if(g.arcs.length>10000) throw {error:"memory", name:"Too many arcs", msg:"oom", ln:left.ln};
-   g.arcs.push(na);
-   g.change=true;
-   return na;
+   return g.addArc(l,r);
 }
 
 // Récupère la valeur d'un sommet à partir d'une chaine ou d'une variable non identifiée
@@ -274,7 +289,7 @@ export function evalSommet(som, creer, graphe){
     }
     if(graphe.sommets[str]) return graphe.sommets[str];
     if(creer) {
-        addSommet(str, graphe, som.ln);
+        graphe.addNode(str, som.ln);
         return graphe.sommets[str];
     }
     return str;

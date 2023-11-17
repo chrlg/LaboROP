@@ -1,7 +1,7 @@
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
-import {evalSommet, addSommet, creerArc, creerArete} from "./graphe.js";
+import {evalSommet, creerArc, creerArete} from "./graphe.js";
 import {FALSE} from "./constants.js";
 
 export let Line = 0; // Default line number for internal error log
@@ -197,20 +197,20 @@ export function interpretWithEnv(tree, isloop){
 
 // Ajoute des sommets
 function interpCreerSommets(ins){
-   let liste=ins.args;
-   let g=Env.getGraph(ins.g, ins.ln);
-   for(let i=0; i<liste.length; i++){
-      let ev=evalSommet(liste[i], false, g);
-      // On a récupéré un sommet existant
-      if(ev.t=="Sommet") throw {error:"env", name:"Sommet déjà existant", msg:"Le sommet "+ev.name+" existe déjà", ln:liste[i].ln};
-      // Un nom de sommet inexistant
-      if(typeof ev == "string") {
-	 addSommet(ev, g, liste[i].ln);
-      }
-      // Autre chose ?
-      else throw {error:"interne", name:"Erreur interne", msg:"Ni string, ni sommet dans creerSommet\nev:"+ev+"\nev.t="+ev.t, ln:liste[i].ln};
-   }
-   g.change=true;
+    let liste=ins.args;
+    let g=Env.getGraph(ins.g, ins.ln);
+    for(let i=0; i<liste.length; i++){
+        let ev=evalSommet(liste[i], false, g);
+        // On a récupéré un sommet existant
+        if(ev.t=="Sommet") throw {error:"env", name:"Sommet déjà existant", msg:"Le sommet "+ev.name+" existe déjà", ln:liste[i].ln};
+        // Un nom de sommet inexistant
+        if(typeof ev == "string") {
+            g.addNode(ev, liste[i].ln);
+        }
+        // Autre chose ?
+        else throw {error:"interne", name:"Erreur interne", msg:"Ni string, ni sommet dans creerSommet\nev:"+ev+"\nev.t="+ev.t, ln:liste[i].ln};
+    }
+    g.change=true;
 }
 
 // Affectation lvalue,lvalue,lvalue,...=expr,expr,expr,...
