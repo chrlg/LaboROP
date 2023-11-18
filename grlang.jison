@@ -288,7 +288,7 @@ placeExpr
       : ID {
 	 $$ = {t:"id", name:$1, ln:@1.first_line};
       }
-      | placeExpr "." ID {
+      | expr "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
       }
       | placeExpr "[" expr "]" {
