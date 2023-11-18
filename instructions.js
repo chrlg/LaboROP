@@ -173,6 +173,10 @@ export function interpretWithEnv(tree, isloop){
             interpPlusEgal(ti);
             continue;
         }
+        if(ti.t=="*="){
+            interpFoisEgal(ti);
+            continue;
+        }
         if(ti.t=="Graphe"){
             if(Env.Predef[ti.name]) 
                 throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est réservé", ln:ti.ln};
@@ -326,5 +330,11 @@ function interpPlusEgal(tree){
       let r=evaluate({t:"+", left:tree.left, right:tree.right, ln:tree.ln});
       setRef(lv, r, tree.ln);
    }
+}
+
+function interpFoisEgal(tree){
+    let lv=evaluateLVal(tree.left);
+    let r=evaluate({t:'*', left:tree.left, right:tree.right, ln:tree.ln});
+    setRef(lv, r, tree.ln);
 }
 
