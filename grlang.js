@@ -1102,146 +1102,154 @@ case 11:yy._clg_stringBuf += "\n";
 break;
 case 12:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 13:this.begin("stringq"); yy._clg_stringBuf="";
+case 13:this.begin("stringqqq"); yy._clg_stringBuf="";
 break;
 case 14:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
 case 15:yy._clg_stringBuf += yy_.yytext;
 break;
-case 16:yy._clg_stringBuf += "\n";
+case 16:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 17:yy._clg_stringBuf += yy_.yytext.slice(1);
+case 17:this.begin("stringq"); yy._clg_stringBuf="";
 break;
-case 18:return "+="
+case 18:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
-case 19:return "*="
+case 19:yy._clg_stringBuf += yy_.yytext;
 break;
-case 20:return "-="
+case 20:yy._clg_stringBuf += "\n";
 break;
-case 21:return "/="
+case 21:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 22:return "++"
+case 22:return "+="
 break;
-case 23:return "--"
+case 23:return "*="
 break;
-case 24:return "=="
+case 24:return "-="
 break;
-case 25:return "**"
+case 25:return "/="
 break;
-case 26:return "!="
+case 26:return "++"
 break;
-case 27:return "<="
+case 27:return "--"
 break;
-case 28:return ">="
+case 28:return "=="
 break;
-case 29:return "&&"
+case 29:return "**"
 break;
-case 30:return "&&"
+case 30:return "!="
 break;
-case 31:return "||"
+case 31:return "<="
 break;
-case 32:return "||"
+case 32:return ">="
 break;
-case 33:return "xor"
+case 33:return "&&"
 break;
-case 34:return "xor"
+case 34:return "&&"
 break;
-case 35:return ".+"
+case 35:return "||"
 break;
-case 36:return ".^"
+case 36:return "||"
 break;
-case 37:return "**"
+case 37:return "xor"
 break;
-case 38:return ".*"
+case 38:return "xor"
 break;
-case 39:return ".^"
+case 39:return ".+"
 break;
-case 40:return "[]"
+case 40:return ".^"
 break;
-case 41:return "{}"
+case 41:return "**"
 break;
-case 42:return "="
+case 42:return ".*"
 break;
-case 43:return "["
+case 43:return ".^"
 break;
-case 44:return "]"
+case 44:return "[]"
 break;
-case 45:return ","
+case 45:return "{}"
 break;
-case 46:return "("
+case 46:return "="
 break;
-case 47:return ")"
+case 47:return "["
 break;
-case 48:return ":"
+case 48:return "]"
 break;
-case 49:return "."
+case 49:return ","
 break;
-case 50:return "+"
+case 50:return "("
 break;
-case 51:return "<"
+case 51:return ")"
 break;
-case 52:return ">"
+case 52:return ":"
 break;
-case 53:return "-"
+case 53:return "."
 break;
-case 54:return "*"
+case 54:return "+"
 break;
-case 55:return "%"
+case 55:return "<"
 break;
-case 56:return "/"
+case 56:return ">"
 break;
-case 57:return "?"
+case 57:return "-"
 break;
-case 58:return "!"
+case 58:return "*"
 break;
-case 59:return "$"
+case 59:return "%"
 break;
-case 60:return "Sommet"
+case 60:return "/"
 break;
-case 61:return "Arete"
+case 61:return "?"
 break;
-case 62:return "Graphe"
+case 62:return "!"
 break;
-case 63:return "Arc"
+case 63:return "$"
 break;
-case 64:return "def"
+case 64:return "Sommet"
 break;
-case 65:return "for"
+case 65:return "Arete"
 break;
-case 66:return "while"
+case 66:return "Graphe"
 break;
-case 67:return "if"
+case 67:return "Arc"
 break;
-case 68:return "else"
+case 68:return "def"
 break;
-case 69:return "elif"
+case 69:return "for"
 break;
-case 70:return "continue"
+case 70:return "while"
 break;
-case 71:return "break"
+case 71:return "if"
 break;
-case 72:return "pass"
+case 72:return "else"
 break;
-case 73:return "in"
+case 73:return "elif"
 break;
-case 74:return "global"
+case 74:return "continue"
 break;
-case 75:return "return"
+case 75:return "break"
 break;
-case 76:return "range"
+case 76:return "pass"
 break;
-case 77:return "exit"
+case 77:return "in"
 break;
-case 78:return "ID"
+case 78:return "global"
 break;
-case 79:return 88
+case 79:return "return"
 break;
-case 80:return 'INVALID'
+case 80:return "range"
+break;
+case 81:return "exit"
+break;
+case 82:return "ID"
+break;
+case 83:return 88
+break;
+case 84:return 'INVALID'
 break;
 }
 },
-rules: [/^(?:#.*)/,/^(?: +)/,/^(?:[\n])/,/^(?:§\{)/,/^(?:§\})/,/^(?:§;)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)(-)?[0-9]+)?(d|D)\b)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)-?[0-9]+)?\b)/,/^(?:["])/,/^(?:["])/,/^(?:[^"\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:['])/,/^(?:['])/,/^(?:[^'\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:\+=)/,/^(?:\*=)/,/^(?:-=)/,/^(?:\/=)/,/^(?:\+\+)/,/^(?:--)/,/^(?:==)/,/^(?:\^)/,/^(?:!=)/,/^(?:<=)/,/^(?:>=)/,/^(?:&&)/,/^(?:and\b)/,/^(?:\|\|)/,/^(?:or\b)/,/^(?:xor\b)/,/^(?:\^\^)/,/^(?:\.\+)/,/^(?:\.\*\*)/,/^(?:\*\*)/,/^(?:\.\*)/,/^(?:\.\^)/,/^(?:\[\])/,/^(?:\{\})/,/^(?:=)/,/^(?:\[)/,/^(?:\])/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?::)/,/^(?:\.)/,/^(?:\+)/,/^(?:<)/,/^(?:>)/,/^(?:-)/,/^(?:\*)/,/^(?:%)/,/^(?:\/)/,/^(?:\?)/,/^(?:!)/,/^(?:\$.*)/,/^(?:Sommet\b)/,/^(?:Arete\b)/,/^(?:Graphe\b)/,/^(?:Arc\b)/,/^(?:def\b)/,/^(?:for\b)/,/^(?:while\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:elif\b)/,/^(?:continue\b)/,/^(?:break\b)/,/^(?:pass\b)/,/^(?:in\b)/,/^(?:global\b)/,/^(?:return\b)/,/^(?:range\b)/,/^(?:exit\b)/,/^(?:[A-Za-z_][A-Za-z0-9_]*)/,/^(?:$)/,/^(?:.)/],
-conditions: {"stringq":{"rules":[14,15,16,17],"inclusive":false},"string":{"rules":[9,10,11,12],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,13,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80],"inclusive":true}}
+rules: [/^(?:#.*)/,/^(?: +)/,/^(?:[\n])/,/^(?:§\{)/,/^(?:§\})/,/^(?:§;)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)(-)?[0-9]+)?(d|D)\b)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)-?[0-9]+)?\b)/,/^(?:["])/,/^(?:["])/,/^(?:[^"\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:''')/,/^(?:''')/,/^(?:[^\\])/,/^(?:\\.)/,/^(?:['])/,/^(?:['])/,/^(?:[^'\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:\+=)/,/^(?:\*=)/,/^(?:-=)/,/^(?:\/=)/,/^(?:\+\+)/,/^(?:--)/,/^(?:==)/,/^(?:\^)/,/^(?:!=)/,/^(?:<=)/,/^(?:>=)/,/^(?:&&)/,/^(?:and\b)/,/^(?:\|\|)/,/^(?:or\b)/,/^(?:xor\b)/,/^(?:\^\^)/,/^(?:\.\+)/,/^(?:\.\*\*)/,/^(?:\*\*)/,/^(?:\.\*)/,/^(?:\.\^)/,/^(?:\[\])/,/^(?:\{\})/,/^(?:=)/,/^(?:\[)/,/^(?:\])/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?::)/,/^(?:\.)/,/^(?:\+)/,/^(?:<)/,/^(?:>)/,/^(?:-)/,/^(?:\*)/,/^(?:%)/,/^(?:\/)/,/^(?:\?)/,/^(?:!)/,/^(?:\$.*)/,/^(?:Sommet\b)/,/^(?:Arete\b)/,/^(?:Graphe\b)/,/^(?:Arc\b)/,/^(?:def\b)/,/^(?:for\b)/,/^(?:while\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:elif\b)/,/^(?:continue\b)/,/^(?:break\b)/,/^(?:pass\b)/,/^(?:in\b)/,/^(?:global\b)/,/^(?:return\b)/,/^(?:range\b)/,/^(?:exit\b)/,/^(?:[A-Za-z_][A-Za-z0-9_]*)/,/^(?:$)/,/^(?:.)/],
+conditions: {"stringq":{"rules":[18,19,20,21],"inclusive":false},"string":{"rules":[9,10,11,12],"inclusive":false},"stringqqq":{"rules":[14,15,16],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,13,17,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84],"inclusive":true}}
 });
 return lexer;
 })();

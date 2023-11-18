@@ -3,6 +3,7 @@
 
 %{
 %}
+%x stringqqq
 %x string
 %x stringq
 
@@ -25,11 +26,17 @@
 <string>"\\n"		yy._clg_stringBuf += "\n";
 <string>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
 
+"'''"                   this.begin("stringqqq"); yy._clg_stringBuf="";
+<stringqqq>"'''"        this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<stringqqq>[^\\]        yy._clg_stringBuf += yytext;
+<stringqqq>"\\".        yy._clg_stringBuf += yytext.slice(1);
+
 [']			this.begin("stringq"); yy._clg_stringBuf="";
 <stringq>[']		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
 <stringq>[^'\\\n]	yy._clg_stringBuf += yytext;
 <stringq>"\\n"		yy._clg_stringBuf += "\n";
 <stringq>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
+
 
 "+="			return "+="
 "*="                    return "*="
