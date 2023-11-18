@@ -79,18 +79,6 @@ function parseTabulation(str){
 
 
 
-function interpExit(arg){
-   var v=evaluate(arg);
-   if(v.t=="boolean" || v.t=="string" || v.t=="number")
-      throw {error:"exit", val:v.val, ln:arg.ln};
-   if(v.t=="Sommet") throw {error:"exit", val:v.name, ln:arg.ln};
-   if(v.t=="Arc") throw {error:"exit", val:v.i.name+"->"+v.a.name, ln:arg.ln};
-   if(v.t=="Arete") throw {error:"exit", val:v.i.name+"--"+v.a.name, ln:arg.ln};
-   throw {error:"type", name:"Mauvais type pour exit", msg:"", ln:arg.ln};
-}
-
-
-
 function interpret(tree){
     Env.reset();
     interpretWithEnv(tree, false);
