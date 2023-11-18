@@ -8,6 +8,8 @@ import {evalSommet, creerArete} from "./graphe.js";
 import {interpCall, setRef} from "./instructions.js";
 import Decimal from "./lib/decimal.mjs";
 
+Decimal.set({precision:50});
+
 const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
 // Retourne vrai ssi v est numérique, cad un nombre ou un décimal
