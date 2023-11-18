@@ -32,6 +32,7 @@
 <stringq>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
 
 "+="			return "+="
+"*="                    return "*="
 "++"			return "++"
 "--"			return "--"
 "=="			return "=="
@@ -136,6 +137,9 @@ instructionNoColon
       }
       | lvalue "+=" expr {
          $$ = { t:"+=", left:$1, right:$3, ln:@2.first_line};
+      }
+      | lvalue "*=" expr {
+         $$ = { t:"*=", left:$1, right:$3, ln:@2.first_line};
       }
       | lvalue "-=" expr {
 	 $$ = { t:"=", left: [$1], right: {t:"-", left:$1, right:$3, ln:@2.first_line}, ln:@2.first_line};
