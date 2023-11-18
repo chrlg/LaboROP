@@ -10,7 +10,7 @@ import Decimal from "./lib/decimal.mjs";
 
 Decimal.set({precision:50});
 
-const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
+const binaryOp = ["+", "-", "*", "/", "//", "%", "**", ".+", ".*", ".^"];
 
 // Retourne vrai ssi v est numérique, cad un nombre ou un décimal
 export function isNumeric(v){
@@ -321,6 +321,7 @@ export function evaluate(expr){
             if(expr.t=="-") return {t:"number", val:a.val-b.val};
             if(expr.t=="*") return {t:"number", val:a.val*b.val};
             if(expr.t=="/") return {t:"number", val:a.val/b.val};
+            if(expr.t=="//") return {t:"number", val:(a.val-a.val%b.val)/b.val};
             if(expr.t=="%") return {t:"number", val:a.val%b.val};
             if(expr.t=="**") return {t:"number", val:a.val**b.val};
         }
@@ -337,6 +338,7 @@ export function evaluate(expr){
             if(expr.t=="-") return {t:"decimal", val:va.minus(b.val)};
             if(expr.t=="*") return {t:"decimal", val:va.mul(b.val)};
             if(expr.t=="/") return {t:"decimal", val:va.div(b.val)};
+            if(expr.t=="//") return {t:"decimal", val:va.dividedToIntegerBy(b.val)};
             if(expr.t=="%") return {t:"decimal", val:va.mod(b.val)};
             if(expr.t=="**") return {t:"decimal", val:va.pow(b.val)};
         }
