@@ -208,10 +208,10 @@ instruction
       : instructionNoColon ";" {
          $$ = $1;
       }
-      | for lvalue "in" expr ":" blocOuSingle ";" {
+      | "for" lvalue "in" expr ":" blocOuSingle ";" {
 	 $$ = { t:"foreach", compteur:$2, range:$4, do:$6, ln:@1.first_line};
       }
-      | for lvalue "in" "range" "(" expr "," expr rangeStep ")" ":" blocOuSingle ";" {
+      | "for" lvalue "in" "range" "(" expr "," expr rangeStep ")" ":" blocOuSingle ";" {
 	 $$ = { t:"for", compteur:$2, start:$6, end:$8, do:$12, step:$9, ln:@1.first_line};
       }
       | "for" lvalue "in" "range" "(" expr ")" ":" blocOuSingle ";" {
@@ -257,30 +257,61 @@ listeExpr
       }
       ;
 
-exprArith
+atomicExpr
       : NUMBER {
 	 $$={t:"number", val:parseFloat($1), ln:@1.first_line};
       }
       | DECIMAL {
          $$={t:"DECIMAL", s:$1.slice(0,-1), ln:@1.first_line};
       }
-      | exprArith "<" exprArith {
-	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};
-      }
       | STRING {
 	 $$={t:"string", val:$1, ln:@1.first_line};
       }
+      | ID '(' ')' {
+	 $$={t: "call", f:$1, args:[], ln:@1.first_line};
+      }
+      | ID '(' listeExpr ')' {
+	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
+      }
+      | "[]" {
+	 $$={t: "array", val:[], ln:@1.first_line};
+      }
+      | "{}" {
+         $$={t:"struct", f:[], ln:@1.first_line};
+      }
+      | "(" ID "," ID ")" {
+	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
+      }
       ;
 
+placeExpr 
+      : ID {
+	 $$ = {t:"id", name:$1, ln:@1.first_line};
+      }
+      | placeExpr "." ID {
+	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
+      }
+      | placeExpr "[" expr "]" {
+	 $$={t:"index", tab:$1, index:$3, ln:@2.first_line};
+      }
+      | placeExpr "[" expr "," expr "]" {
+         $$={t:"mindex", mat:$1, i:$3, j:$5, ln:@2.first_line};
+      }
+      | placeExpr "[" borne ":" borne "]" {
+         $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
+      }
+      ;
+      
+
 expr
-      : rlvalue {
-	 $$=$1;
+      : atomicExpr {
+         $$ = $1;
       }
-      | exprArith {
-         $$=$1;
+      | placeExpr {
+         $$ = $1;
       }
-      | lvarete {
-         $$=$1;
+      | expr "<" expr {
+	 $$ = {t:"<", left:$1, right:$3, ln:@2.first_line};
       }
       | expr "==" expr {
 	 $$ = {t:"==", left:$1, right:$3, ln:@2.first_line};
@@ -357,24 +388,6 @@ expr
       | "(" expr ")" {
 	 $$ = $2;
       }
-      | ID '(' ')' {
-	 $$={t: "call", f:$1, args:[], ln:@1.first_line};
-      }
-      | ID '(' listeExpr ')' {
-	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
-      }
-      | "[]" {
-	 $$={t: "array", val:[], ln:@1.first_line};
-      }
-      | "[" expr "]" {
-         $$={t: "exprArray", args:[$2], ln:@1.first_line};
-      }
-      | "@" expr "," expr "," expr "]" {
-         $$={t: "exprArray", args:[$2], ln:@1.first_line};
-      }
-      | "{}" {
-         $$={t:"struct", f:[], ln:@1.first_line};
-      }
       | "Sommet" grapheSpec expr {
 	 $$={t:"SOMMET", g:$2, arg:$3, ln:@1.first_line};
       }
@@ -384,8 +397,46 @@ expr
       | "Arete" grapheSpec "[" expr "," expr "]" {
 	 $$ = { t:"Arete", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
-      | rlvalue "[" borne ":" borne "]" {
-         $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
+      | "[" bracketExpr "]" {
+         $$ = $2;
+         $$.ln=@1.first_line;
+      }
+      ;
+
+bracketExpr 
+      : expr {
+         $$ = {t:"staticArray", args:[$1], ln:@1.first_line};
+      }
+      | expr "," bracketExpr2 {
+         if($1.t=="id" && $3.t=="id"){
+	    $$={t:"arete", initial: $1.name, terminal: $3.name, ln:@1.first_line};
+         }else if($3.t=="id"){
+            $$ = {t:"staticArray", args:[$1, $3], ln:@1.first_line};
+         }else{
+            $$ = {t:"staticArray", args:[$1].concat($3.l), ln:@1.first_line};
+         }
+      }
+      ;
+
+bracketExpr2 
+      : {
+         $$={t:"list", l:[]};
+      }
+      | expr {
+         if($1.t=="id") $$=$1;
+         else $$={t:"list", l:[$1]};
+      }
+      | expr "," bracketExpr3 {
+         $$={t:"list", l:[$1].concat($3)};
+      }
+      ;
+
+bracketExpr3
+      : {
+         $$=[];
+      }
+      | listeExpr {
+         $$=$1;
       }
       ;
 
@@ -398,36 +449,24 @@ borne
       }
       ;
 
-rlvalue
+lvalue
       : ID {
 	 $$ = {t:"id", name:$1, ln:@1.first_line};
-      } 
+      }
       | "(" ID "," ID ")" {
 	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
-      | rlvalue "." ID {
+      | "[" ID "," ID "]" {
+	 $$={t:"arete", initial: $2, terminal: $4, ln:@3.first_line};
+      }
+      | lvalue "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
       }
-      | rlvalue "[" expr "]" {
+      | lvalue "[" expr "]" {
 	 $$={t:"index", tab:$1, index:$3, ln:@2.first_line};
       }
-      | rlvalue "[" expr "," expr "]" {
+      | lvalue "[" expr "," expr "]" {
          $$={t:"mindex", mat:$1, i:$3, j:$5, ln:@2.first_line};
-      }
-      ;
-
-lvalue
-      : lvarete {
-         $$=$1;
-      }
-      | rlvalue {
-         $$=$1;
-      }
-      ;
-
-lvarete
-      : "[" ID "," ID "]" {
-	 $$={t:"arete", initial: $2, terminal: $4, ln:@3.first_line};
       }
       ;
 
