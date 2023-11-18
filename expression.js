@@ -6,6 +6,7 @@ import * as Mat from "./matrix.js";
 import {FALSE, TRUE, NULL} from "./constants.js";
 import {evalSommet, creerArete} from "./graphe.js";
 import {interpCall, setRef} from "./instructions.js";
+import Decimal from "./lib/decimal.mjs";
 
 const binaryOp = ["+", "-", "*", "/", "%", "**", ".+", ".*", ".^"];
 
@@ -43,9 +44,14 @@ export function evaluate(expr){
     if(expr.l!==undefined) return expr.l();
 
     // Les valeurs natives. 
-    if(expr.t=="string" || expr.t=="number" || expr.t=="boolean" || expr.t=="decimal"){
+    if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
         expr.l=function(){return expr;};
         return expr;
+    }
+    if(expr.t=="DECIMAL"){
+        let d={t:"decimal", val:Decimal(expr.s)};
+        expr.l=function(){return d;};
+        return d;
     }
 
     // Accès à une variable. Pour être une expression, il ne peut s'agir d'une fonction
@@ -433,7 +439,7 @@ export function evaluate(expr){
     if(expr.t=="Arete"){
         return creerArete(expr);
     }
-    if(expr.t=="exprArray"){
+    if(expr.t=="staticArray"){
         let l=[];
         for(let a of expr.args){
             l.push(evaluate(a));

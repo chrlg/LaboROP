@@ -5,5 +5,8 @@
     <FilesMatch "(index\.html|style\.css|script\.js)$">
         Header set Cache-Control "max-age=40000, private"
     </FilesMatch>
+    <IfModule mod_mime.c>
+      AddType text/javascript js mjs
+    </IfModule>
 </IfModule>
 
