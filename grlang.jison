@@ -200,6 +200,9 @@ instructionNoColon
       | "$" {
 	 $$ = {t:"$", i:$1};
       }
+      | STRING {
+         $$ = {t:"string", val:$1, ln:@1.first_line};
+      }
       ;
 manySemis
       : {
