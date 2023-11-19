@@ -69,13 +69,34 @@ export function interpCall(call){
     if(fn.t=="predvar" && fn.optarg) return fn.f(call.args, call.ln, call.f);
     if(fn.t!="DEF") throw {error:"type", name:"Pas une fonction",
         msg:"Tentative d'appeler "+call.f+", qui n'est pas une fonction", ln:call.ln};
-    if(fn.args.length != call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
+    if(fn.args.length > call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
         msg:"Appel de "+call.f+" avec "+call.args.length+" argument(s) alors que "+
-            fn.args.length+" sont attendus", ln:call.ln};
+            fn.args.length+" au moins sont attendus", ln:call.ln};
+    if(fn.args.length+fn.opt.length < call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
+        msg:"Appel de "+call.f+" avec "+call.args.length+" argument(s) alors que "+
+            (fn.args.length+fn.opt.length)+" au plus sont attendus", ln:call.ln};
     let newEnv = {};
-    for(let i=0; i<call.args.length; i++){
+    // Positional arguments
+    for(let i=0; i<fn.args.length; i++){
         let v=evaluate(call.args[i]);
         newEnv[fn.args[i]] = v;
+    }
+    // Extra positional arguments are to fill named arguments
+    for(let i=fn.args.length; i<call.args.length; i++){
+        let v=evaluate(call.args[i]);
+        newEnv[fn.opt[i-fn.args.length].name] = v;
+    }
+    // Optional arguments fill the environment (not needed to match a param. It is just in the env.
+    // So function definition could be all without params, and function calls with named arguments
+    for(let a of call.named){
+        let v=evaluate(a.a);
+        newEnv[a.name] = v;
+    }
+    // At last, all optional parameters that have no value yet are evaluated to their default
+    for(let p of fn.opt){
+        if(newEnv[p.name]) continue;
+        let v=evaluate(p.v);
+        newEnv[p.name]=v;
     }
     newEnv["*"]={t:"empty"};
     Env.push(newEnv);

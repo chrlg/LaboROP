@@ -187,7 +187,7 @@ function prePrint(args){
       }
    }
 
-   for(var i=0; i<args.length; i++){
+   for(let i=0; i<args.length; i++){
       let a=evaluate(args[i]);
       printRec(a);
    }
