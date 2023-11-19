@@ -13,7 +13,8 @@ export default function populate(){
    Env.addPredfn("premier", prePremier);
    Env.addPredfn("dernier", preDernier);
    Env.addPredfn("print", prePrint);
-   Env.addPredfn("println", prePrintln);
+   Env.addPredfn("println", prePrint);
+   Env.addPredfn("printnr", prePrint);
    Env.addPredfn("refresh", preRefresh);
    Env.addPredfn("arcs", preArcs);
    Env.addPredfn("aretes", preArcs);
@@ -45,7 +46,7 @@ export default function populate(){
    Env.Predef["Infinity"]=Cst.INFINITY;
 }
 
-function preClear(args, ln){
+function preClear(args, named, ln, fname){
     if(args.length==1){
         console.log('clear args', args);
     }
@@ -53,7 +54,7 @@ function preClear(args, ln){
     Env.Gr.arcs.length=0;
 }
 
-function preSommets(args, ln){
+function preSommets(args, named, ln, fname){
    let g=Env.Gr;
    let idx=false;
    if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
@@ -79,7 +80,7 @@ function preSommets(args, ln){
    return t[idx];
 }
 
-function preLen(args, ln){
+function preLen(args, named, ln, fname){
    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction len s'utilise avec un et un seul argument", ln:ln};
    let a=evaluate(args[0]);
@@ -95,7 +96,7 @@ function preLen(args, ln){
 // With 1 number -> an integer between 0 and that number
 // With 2 numbers -> an integer between the 2 numbers
 // With an array -> a choice
-function preRandom(args){
+function preRandom(args, named, ln, fname){
     // No arg => U([0,1])
     if(args.length==0){
         return Math.random();
@@ -142,69 +143,80 @@ function preRandom(args){
         msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
 }
 
-function prePrint(args){
-   function printRec(o){
-      if(typeof o=="object"){
-	 if(o.t=="Sommet") print(o.name);
-	 else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
-	 else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
-	 else if(isNumeric(o)) print(''+o.val);
-	 else if(o.t=="string") print(o.val);
-	 else if(o.t=="boolean") print(o.val?"True":"False");
-	 else if(o.t=="array"){
-            print("[");
-	    for(let i=0; i<o.val.length; i++){
-	       printRec(o.val[i]);
-	       if(i<o.val.length-1) print(",");
-	    }
-            print("]");
-	 }
-         else if(o.t=="matrix"){
-            for(let i=0; i<o.val.length; i++){
-               print("[");
-               for(let j=0; j<o.val[i].length; j++){
-                  if(j>0) print(" ");
-                  print(o.val[i][j]);
-               }
-               print("]\n");
+function prePrint(args, named, ln, fname){
+    function printRec(o){
+        if(typeof o=="object"){
+            if(o.t=="Sommet") print(o.name);
+            else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
+            else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
+            else if(isNumeric(o)) print(''+o.val);
+            else if(o.t=="string") print(o.val);
+            else if(o.t=="boolean") print(o.val?"True":"False");
+            else if(o.t=="array"){
+                print("[");
+                for(let i=0; i<o.val.length; i++){
+                    printRec(o.val[i]);
+                    if(i<o.val.length-1) print(",");
+                }
+                print("]");
             }
-         }
-	 else if(o.t=="struct"){
-	    print("{");
-	    let first=true;
-	    for(let k in o.f){
-	       if(first) first=false;
-	       else print(" ");
-               print(k+":");
-	       printRec(o.f[k]);
-	    }
-            print("}");
-	 }
-	 else print("{"+o.t+"}");
-      }
-      else{
-         print(o);
-      }
-   }
+            else if(o.t=="matrix"){
+                for(let i=0; i<o.val.length; i++){
+                    print("[");
+                    for(let j=0; j<o.val[i].length; j++){
+                        if(j>0) print(" ");
+                        print(o.val[i][j]);
+                    }
+                    print("]\n");
+                }
+            }
+            else if(o.t=="struct"){
+                print("{");
+                let first=true;
+                for(let k in o.f){
+                    if(first) first=false;
+                    else print(" ");
+                    print(k+":");
+                    printRec(o.f[k]);
+                }
+                print("}");
+            }
+            else print("{"+o.t+"}");
+        }
+        else{
+            print(o);
+        }
+    }
 
-   for(let i=0; i<args.length; i++){
-      let a=evaluate(args[i]);
-      printRec(a);
-   }
+    let sep=(fname=='print')?' ':'';
+    let end=(fname=='printnr')?'':'\n';
+    for(let x of named){
+        if(x.name=='sep'){
+            let v=evaluate(x.a);
+            if(v.t!='string') throw {error:"type", name:"Erreur de type", msg:"sep doit être une chaîne de caractères", ln:x.ln};
+            sep=v.val;
+        }else if(x.name=='end'){
+            let v=evaluate(x.a);
+            if(v.t!='string') throw {error:"type", name:"Erreur de type", msg:"end doit être une chaîne de caractères", ln:x.ln};
+            end=v.val;
+        }
+    }
+
+    for(let i=0; i<args.length; i++){
+        if(i) print(sep);
+        let a=evaluate(args[i]);
+        printRec(a);
+    }
+    print(end);
 }
 
-function prePrintln(a){
-   prePrint(a);
-   print("\n");
-}
-
-function preRefresh(args, ln){
+function preRefresh(args, named, ln, fname){
    if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction refresh s'utilise sans argument", ln:ln};
    regularCheck(true);
 }
 
-function preArcs(args, ln){
+function preArcs(args, named, ln, fname){
     if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
         msg:"La fonction arcs s'utilise avec au plus 2 arguments (graphe et/ou sommet)", ln:ln};
     let s=false;
@@ -251,7 +263,7 @@ function preArcs(args, ln){
     return {t:"array", val:rep};
 }
 
-function preImport(args, ln){
+function preImport(args, named, ln, fname){
     if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
         msg:"La fonction import s'utilise avec un argument", ln:ln};
     let e=evaluate(args[0]);
@@ -260,7 +272,7 @@ function preImport(args, ln){
     Mod.load(e.val, args[0].ln);
 }
 
-function prePop(args, ln){
+function prePop(args, named, ln, fname){
    if(args.length!=1 && args.length!=2) throw {error:"args", name:"Mauvais nombre d'arguments", 
       msg:"pop(tableau [,indice]) s'utilise avec deux arguments", ln:ln};
    let ref=evaluateLVal(args[0]);
@@ -283,7 +295,7 @@ function prePop(args, ln){
    return r[0];
 }
 
-function preGraphMode(args, ln){
+function preGraphMode(args, named, ln, fname){
     let g=Env.Gr;
     let m=undefined;
     for(let a of args){
@@ -299,7 +311,7 @@ function preGraphMode(args, ln){
     return {t:'string', val:g.name};
 }
 
-function preMaths1(args, ln, fname){
+function preMaths1(args, named, ln, fname){
    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction "+fname+" s'utilise avec un et un seul argument", ln:ln};
    let a=evaluate(args[0]);
@@ -321,33 +333,7 @@ function preMaths1(args, ln, fname){
    throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
 }
 
-function importReseau(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      Env.Gr.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=env.Gr.sommets["S"+p[0]];
-      let s2=env.Gr.sommets["S"+p[1]];
-      let d={t:"number", val:0};
-      if(p.length==3) d.val=p[2];
-      else{
-         let x1=s1.marques.x;
-         let x2=s2.marques.x;
-         let y1=s1.marques.x;
-         let y2=s2.marques.x;
-         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-      }
-      if (v=="noValues") Env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
-      else env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
-   }
-   env.Gr.setOrient(TRUE);
-   env.Gr.mode="dot";   
-   env.Gr.change=true;
-}
-
-function prePremier(args, ln){
+function prePremier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
          msg:"Mauvais nombre d'arguments pour premier", ln:ln};
    var l=evaluate(args[0]);
@@ -357,7 +343,7 @@ function prePremier(args, ln){
    else return l.val[0];
 }
 
-function preDernier(args, ln){
+function preDernier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
          msg:"Mauvais nombre d'arguments pour dernier", ln:ln};
    var l=evaluate(args[0]);
@@ -368,8 +354,7 @@ function preDernier(args, ln){
 }
 
 
-
-function preM(args, ln, fname){
+function preM(args, named, ln, fname){
     let M={t:"matrix", val:[]};
     let g=Env.Gr;
     if(args){
@@ -397,7 +382,7 @@ function preM(args, ln, fname){
 }
 
 
-function preId(args, ln, fname){
+function preId(args, named, ln, fname){
     let n=0;
     let g=Env.Gr;
     if(args){
@@ -409,7 +394,8 @@ function preId(args, ln, fname){
     return Mat.id(n);
 }
 
-function preZero(args, ln, fname){
+
+function preZero(args, named, ln, fname){
     let g=Env.Gr;
     if(args){
         if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Zero ne peut prendre qu'un argument optionnel, le graphe"};
@@ -418,6 +404,33 @@ function preZero(args, ln, fname){
     }
     let n=Object.keys(g.sommets).length;
     return Mat.zeroDim(n);
+}
+
+
+function importReseau(g,v){
+   for(let i=0; i<g[0].length; i++){
+      let x={t:"number", val:g[0][i][0]};
+      let y={t:"number", val:g[0][i][1]};
+      Env.Gr.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
+   }
+   for(let p of g[1]){
+      let s1=env.Gr.sommets["S"+p[0]];
+      let s2=env.Gr.sommets["S"+p[1]];
+      let d={t:"number", val:0};
+      if(p.length==3) d.val=p[2];
+      else{
+         let x1=s1.marques.x;
+         let x2=s2.marques.x;
+         let y1=s1.marques.x;
+         let y2=s2.marques.x;
+         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+      }
+      if (v=="noValues") Env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
+      else env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
+   }
+   env.Gr.setOrient(TRUE);
+   env.Gr.mode="dot";   
+   env.Gr.change=true;
 }
 
 

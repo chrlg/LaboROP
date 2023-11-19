@@ -65,8 +65,8 @@ export function interpCall(call){
     let fn=Env.get(call.f);
     if(fn===undefined) throw {error:"symbol", name: "Fonction non définie",
         msg:"La fonction "+call.f+" n'existe pas", ln: call.ln};
-    if(fn.t=="predfn") return fn.f(call.args, call.ln, call.f);
-    if(fn.t=="predvar" && fn.optarg) return fn.f(call.args, call.ln, call.f);
+    if(fn.t=="predfn") return fn.f(call.args, call.named, call.ln, call.f);
+    if(fn.t=="predvar" && fn.optarg) return fn.f(call.args, call.named, call.ln, call.f);
     if(fn.t!="DEF") throw {error:"type", name:"Pas une fonction",
         msg:"Tentative d'appeler "+call.f+", qui n'est pas une fonction", ln:call.ln};
     if(fn.args.length > call.args.length) throw {error: "type", name:"Mauvais nombre d'arguments",
