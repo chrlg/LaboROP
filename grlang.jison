@@ -173,10 +173,10 @@ instructionNoColon
 	 $$ = { t:"--", right: $1, ln:@1.first_line};
       }
       | ID '(' ')' {
-	 $$ = { t:"call", f:$1, args:[], ln:@1.first_line};
+	 $$ = { t:"call", f:$1, args:[], named:[], ln:@1.first_line};
       }
       | ID '(' listArg ')' {
-	 $$ = { t:"call", f:$1, args:$3, ln:@1.first_line};
+	 $$ = { t:"call", f:$1, args:$3.p, named:$3.o, ln:@1.first_line};
       }
       | break {
 	 $$ = {t:"break", ln:@1.first_line};
@@ -272,24 +272,30 @@ rangeStep
       }
       ;
 
-argument
-      : expr {
-        $$ = $1;
+namedArgs
+      : ID "=" expr {
+        $$ = [{name:$1, a:$3}];
       }
-      | ID "=" expr {
-        $$ = {t:"namedArg", a:$1};
+      | ID "=" expr "," namedArgs {
+        $$ = $5;
+        $$.o.unshift({name:$1, a:$3});
       }
       ;
 
 listArg
-      : argument {
-        $$ = [$1];
+      : namedArgs {
+         $$ = {p:[], o:$1};
       }
-      | listArg "," argument {
-	 $$ = $1; $$.push($3);
+      | expr {
+        $$ = {p:[$1], o:[]};
+      }
+      | expr "," listArg {
+        $$=$3;
+        $$.p.unshift($1);
       }
       ;
-
+      
+      
 listeExpr
       : expr {
 	 $$ = [$1];
@@ -309,10 +315,10 @@ atomicExpr
 	 $$={t:"string", val:$1, ln:@1.first_line};
       }
       | ID '(' ')' {
-	 $$={t: "call", f:$1, args:[], ln:@1.first_line};
+	 $$={t: "call", f:$1, args:[], named:[], ln:@1.first_line};
       }
       | ID '(' listArg ')' {
-	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
+	 $$={t: "call", f:$1, args:$3.p, named:$3.o, ln:@1.first_line};
       }
       | "[]" {
 	 $$={t: "array", val:[], ln:@1.first_line};
