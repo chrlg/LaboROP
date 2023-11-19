@@ -236,7 +236,7 @@ export function evaluate(expr){
                             R.val[i][j] = a.val[i][j] + b.val;
                         }
                     }
-                    Env.OpCnt += a.val.length*a.val.length;
+                    Env.addCnt(a.val.length*a.val.length);
                     return R;
                 }
                 if(b.t=="matrix"){
@@ -247,7 +247,7 @@ export function evaluate(expr){
                             R.val[i][j] = a.val[i][j] + b.val[i][j];
                         }
                     }
-                    Env.OpCnt += a.val.length*a.val.length;
+                    Env.addCnt(a.val.length*a.val.length);
                     return R;
                 }
             }
@@ -271,7 +271,7 @@ export function evaluate(expr){
         if(expr.t=="*"){
             // Et non paresseurx
             if(a.t=="boolean" && b.t=="boolean") {
-                Env.OpCnt++;
+                Env.addCnt(1);
                 return (a.val&&b.val)?TRUE:FALSE;
             }
 
@@ -478,7 +478,7 @@ function evaluateEqual(expr){
             for(let i=0; i<a.val.length; i++){
                 if(!isEq(a.val[i], b.val[i])) return false;
             }
-            Env.OpCnt += a.val.length-1;
+            Env.addCnt(a.val.length-1);
             return true;
         }
         // Idem pour les matrices. Si ce n'est qu'il n'y a pas besoin de rappeler récursivement isEq, 
@@ -489,7 +489,7 @@ function evaluateEqual(expr){
                     if(a.val[i][j] != b.val[i][j]) return false;
                 }
             }
-            Env.OpCnt += a.val.length*a.val.length-1;
+            Env.addCnt(a.val.length*a.val.length-1);
             return true;
         }
         // Enfin pour les struct, il faut comparer les champs
