@@ -553,12 +553,12 @@ listInst
       ;
 
 definition
-      : "def" ID listArgs ":" bloc ";" {
+      : "def" ID listParams ":" bloc ";" {
 	 $$ = {t:"DEF", nom: $2, args:$3, insts: $5, ln:@1.first_line};
       }
       ;
 
-listArgs
+listParams
       : "(" ")" {
 	 $$=[];
       }
