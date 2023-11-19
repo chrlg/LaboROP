@@ -553,17 +553,46 @@ listInst
       ;
 
 definition
-      : "def" ID listParams ":" bloc ";" {
+      : "def" ID listParamsParenthesis ":" bloc ";" {
 	 $$ = {t:"DEF", nom: $2, args:$3, insts: $5, ln:@1.first_line};
       }
       ;
 
-listParams
+listParamsParenthesis
       : "(" ")" {
 	 $$=[];
       }
-      | "(" listID ")" {
+      | "(" listParams ")" {
 	 $$=$2;
+      }
+      ;
+
+listParams
+      : ID {
+        $$=[$1];
+      }
+      | ID "," listParams {
+	 $$=$3;
+	 $$.unshift($1);
+      }
+      | optParams {
+        $$=$1;
+      }
+      ;
+
+optParam 
+      : ID "=" expr {
+        $$={t:"optParam", name:$1, v:$3};
+      }
+      ;
+
+optParams
+      : optParam {
+        $$=[$1];
+      }
+      | optParam "," optParams {
+	 $$=$3;
+	 $$.unshift($1);
       }
       ;
 
