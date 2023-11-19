@@ -50,6 +50,7 @@ export function push(env){
     LocalEnvStack.push(env);
     Local=env;
     Current=env;
+    return env;
 }
 
 export function pop(){

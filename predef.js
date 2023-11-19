@@ -90,64 +90,56 @@ function preLen(args, ln){
       msg:"Mauvais type "+a.t+" pour la fonction len", ln:ln};
 }
 
+// Random
+// Can be used with no argument-> return a number between 0 and 1
+// With 1 number -> an integer between 0 and that number
+// With 2 numbers -> an integer between the 2 numbers
+// With an array -> a choice
 function preRandom(args){
-   if(args.length==0){
-      return Math.random();
-   }
-   var a=evaluate(args[0]);
-   if(a.t=="number"){
-      if(args.length==2){
-         let b=evaluate(args[1]);
-         if(b.t!="number") throw {error:"type", name:"Mauvais argument pour random",
-            msg:"Un entier et un "+a.t+" ne sont pas des arguments valides", 
-            ln:args[1].ln};
-         return a.val+Math.floor(Math.random()*(b.val-a.val));
-      }
-      return Math.floor(Math.random()*a.val);
-   }
-   if(a.t!="array"){
-      throw {error:"type", name:"Mauvais argument pour random", 
-	 msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
-   }
-   if(a.val.length<=0){
-      return Cst.NULL;
-   }
-   let r=Math.floor(Math.random()*a.val.length);
-   if(args.length==1){
-      return a.val[r];
-   }
-   else{
-      // On parcours tous les éléments de la liste à partir du r
-      // et on retourne le premier qui vérifie la condition
-      for(let ii=0; ii<a.val.length; ii++){
-	 let i=(r+ii)%a.val.length;
-	 let cur=a.val[i];
-         // Environnement pour self
-         let envSelf={self:cur};
-         _localEnv=envSelf;
-         _stackEnv.push(envSelf);
-	 let env=false; // Environnement d'évaluation de la condition (champs des éléments)
-	 if(cur && cur.t=="struct") env=cur.f;
-	 if(cur && (cur.t=="Arc" || cur.t=="Arete" || cur.t=="Sommet")) env=cur.marques;
-	 if(env){ // S'il y a un environnement, on le push avant d'évaluer la condition
-	    _localEnv=env;
-	    _stackEnv.push(env);
-	 }
-	 let v=evaluate(args[1]);
-	 if(env){
-	    _stackEnv.pop();
-	    _localEnv = _stackEnv[_stackEnv.length-1];
-	 }
-         // Retrait de envSelf
-         _stackEnv.pop();
-         _localEnv = _stackEnv[_stackEnv.length-1];
-
-	 if(!v || v.t!="boolean") throw {error:"type", name:"Condition non booléenne",
-	    msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
-	 if(v.val) return cur;
-      }
-      return Cst.NULL; // Rien ne correspond à la condition
-   }
+    // No arg => U([0,1])
+    if(args.length==0){
+        return Math.random();
+    }
+    let a=evaluate(args[0]);
+    // 1 or 2 numbers
+    if(isNumeric(a)){
+        if(args.length==2){
+            let b=evaluate(args[1]);
+            if(!isNumeric(b)) throw {error:"type", name:"Mauvais argument pour random",
+                msg:"Un nombre et un "+a.t+" ne sont pas des arguments valides", 
+                ln:args[1].ln};
+            return numericValue(a)+Math.floor(Math.random()*(numericValue(b)-numericValue(a)));
+        }
+        return Math.floor(Math.random()*numericValue(a));
+    }
+    // Array -> an element of that array
+    if(a.t=="array"){
+        // Empty array -> null
+        if(a.val.length<=0){
+            return Cst.NULL;
+        }
+        // If no other argument, just choose the rth value of the array
+        let r=Math.floor(Math.random()*a.val.length); // Index
+        if(args.length==1){
+            return a.val[r];
+        }
+        // If there is a second argument, treat it as a selection condition. So we return the
+        // first element that math that condition.
+        for(let ii=0; ii<a.val.length; ii++){
+            let i=(r+ii)%a.val.length;
+            let cur=a.val[i];
+            // Environnement pour this
+            let env=Env.push({"this":cur});
+            let v=evaluate(args[1]);
+            Env.pop();
+            if(!v || v.t!="boolean") throw {error:"type", name:"Condition non booléenne",
+                msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
+            if(v.val) return cur;
+        }
+        return Cst.NULL; // Rien ne correspond à la condition
+    }
+    throw {error:"type", name:"Mauvais argument pour random", 
+        msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
 }
 
 function prePrint(args){
