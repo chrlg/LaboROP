@@ -286,7 +286,7 @@ break;
 case 44:
 
         this.$ = $$[$0];
-        this.$.o.unshift({name:$$[$0-4], a:$$[$0-2]});
+        this.$.unshift({name:$$[$0-4], a:$$[$0-2]});
       
 break;
 case 45:
