@@ -2,7 +2,7 @@ import * as Cst from "./constants.js";
 import * as Env from "./environment.js";
 import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
-import {evaluate, isNumeric} from "./expression.js";
+import {evaluate, evaluateLVal, isNumeric} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
 
 export default function populate(){
@@ -274,7 +274,7 @@ function preImport(args, named, ln, fname){
 
 function prePop(args, named, ln, fname){
    if(args.length!=1 && args.length!=2) throw {error:"args", name:"Mauvais nombre d'arguments", 
-      msg:"pop(tableau [,indice]) s'utilise avec deux arguments", ln:ln};
+      msg:"pop(tableau [,indice]) s'utilise avec un ou deux arguments", ln:ln};
    let ref=evaluateLVal(args[0]);
    let lvv=ref[0][ref[1]];
    if(lvv.t!="array") throw {error:"type", name:"Mauvais type pour pop", 
