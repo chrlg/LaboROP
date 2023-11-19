@@ -278,7 +278,7 @@ namedArgs
       }
       | ID "=" expr "," namedArgs {
         $$ = $5;
-        $$.o.unshift({name:$1, a:$3});
+        $$.unshift({name:$1, a:$3});
       }
       ;
 
