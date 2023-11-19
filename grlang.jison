@@ -175,7 +175,7 @@ instructionNoColon
       | ID '(' ')' {
 	 $$ = { t:"call", f:$1, args:[], ln:@1.first_line};
       }
-      | ID '(' listeExpr ')' {
+      | ID '(' listArg ')' {
 	 $$ = { t:"call", f:$1, args:$3, ln:@1.first_line};
       }
       | break {
@@ -272,6 +272,24 @@ rangeStep
       }
       ;
 
+argument
+      : expr {
+        $$ = $1;
+      }
+      | ID "=" expr {
+        $$ = {t:"namedArg", a:$1};
+      }
+      ;
+
+listArg
+      : argument {
+        $$ = [$1];
+      }
+      | listArg "," argument {
+	 $$ = $1; $$.push($3);
+      }
+      ;
+
 listeExpr
       : expr {
 	 $$ = [$1];
@@ -293,7 +311,7 @@ atomicExpr
       | ID '(' ')' {
 	 $$={t: "call", f:$1, args:[], ln:@1.first_line};
       }
-      | ID '(' listeExpr ')' {
+      | ID '(' listArg ')' {
 	 $$={t: "call", f:$1, args:$3, ln:@1.first_line};
       }
       | "[]" {
