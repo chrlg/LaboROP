@@ -554,13 +554,13 @@ listInst
 
 definition
       : "def" ID listParamsParenthesis ":" bloc ";" {
-	 $$ = {t:"DEF", nom: $2, args:$3, insts: $5, ln:@1.first_line};
+	 $$ = {t:"DEF", nom: $2, args:$3.p, opt:$3.o, insts: $5, ln:@1.first_line};
       }
       ;
 
 listParamsParenthesis
       : "(" ")" {
-	 $$=[];
+	 $$={p:[], o:[]};
       }
       | "(" listParams ")" {
 	 $$=$2;
@@ -569,20 +569,20 @@ listParamsParenthesis
 
 listParams
       : ID {
-        $$=[$1];
+        $$={p:[$1],o:[]};
       }
       | ID "," listParams {
 	 $$=$3;
-	 $$.unshift($1);
+	 $$.p.unshift($1);
       }
       | optParams {
-        $$=$1;
+        $$={p:[], o:$1};
       }
       ;
 
 optParam 
       : ID "=" expr {
-        $$={t:"optParam", name:$1, v:$3};
+        $$={name:$1, v:$3};
       }
       ;
 

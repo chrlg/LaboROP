@@ -600,12 +600,12 @@ case 117: case 130: case 131:
 break;
 case 118:
 
-	 this.$ = {t:"DEF", nom: $$[$0-4], args:$$[$0-3], insts: $$[$0-1], ln:_$[$0-5].first_line};
+	 this.$ = {t:"DEF", nom: $$[$0-4], args:$$[$0-3].p, opt:$$[$0-3].o, insts: $$[$0-1], ln:_$[$0-5].first_line};
       
 break;
 case 119:
 
-	 this.$=[];
+	 this.$={p:[], o:[]};
       
 break;
 case 120:
@@ -613,25 +613,36 @@ case 120:
 	 this.$=$$[$0-1];
       
 break;
-case 121: case 125:
+case 121:
 
-        this.$=[$$[$0]];
+        this.$={p:[$$[$0]],o:[]};
       
 break;
-case 122: case 126: case 128:
+case 122:
 
 	 this.$=$$[$0];
-	 this.$.unshift($$[$0-2]);
+	 this.$.p.unshift($$[$0-2]);
       
 break;
 case 123:
 
-        this.$=$$[$0];
+        this.$={p:[], o:$$[$0]};
       
 break;
 case 124:
 
-        this.$={t:"optParam", name:$$[$0-2], v:$$[$0]};
+        this.$={name:$$[$0-2], v:$$[$0]};
+      
+break;
+case 125:
+
+        this.$=[$$[$0]];
+      
+break;
+case 126: case 128:
+
+	 this.$=$$[$0];
+	 this.$.unshift($$[$0-2]);
       
 break;
 case 133:
