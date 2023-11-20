@@ -1,4 +1,5 @@
 import * as Env from "./environment.js";
+import {TRUE} from "./constants.js";
 
 let modules = {};
 
@@ -59,7 +60,7 @@ export function load(name, ln){
     // Create nodes. Keep an indexed list of those, to be able to create edges
     let soms=[];
     let firstNum=1;
-    if(j.firstNodeNum) firstNum=j.firstNodeNum; // To start numbering at S0 or S1 (or anything)
+    if(j.firstNodeNum!==undefined) firstNum=j.firstNodeNum; // To start numbering at S0 or S1 (or anything)
     for(let i=0; i<ns; i++){
         let s=g.addNode(j.names?j.names[i]:"S"+(i+firstNum), ln);
         soms.push(s);
@@ -110,7 +111,7 @@ export function load(name, ln){
                 else if(sv[1]===true) v=TRUE;
                 else if(sv[1] instanceof String) v={t:"string", val:sv[1]};
                 else v={t:"number", val:sv[1]};
-                som[sv[0]+firstNum].marques[a.attr]=v;
+                soms[sv[0]+firstNum].marques[a.attr]=v;
             }
         }
     }
