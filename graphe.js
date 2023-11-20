@@ -111,114 +111,11 @@ export class Graphe {
             postMessage({graph:this.serialize()});
             
             /*
-            if(this.mode=='dot') this.generateDot();
-            else if(this.mode=='map') this.generateMap();
             else if(this.mode=='reseau') this.generateReseau(false);
             else if(this.mode=='arrows' || this.mode=='arrow') this.generateReseau(true);
             */
         }
         this.change=false;
-    }
-
-    // Fonction générant du "dot" et l'envoyant au thread HTML pour dessin
-    generateDot(){
-        let gr=""; // Chaine contenant le .dot de graphviz
-        let orient = this.isOrient();
-        if(orient) gr+="digraph{";
-        else gr+="graph{";
-        // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
-        // été générés de toutes façons avec leurs arcs)
-        // (Note: servira plus tard pour les attributs)
-        for(let e in this.sommets){
-            // En mode "discover", le sommet n'est affiché que s'il apparait avec l'attribut "visible"
-            if(this.discover && !this.sommets[e].marques.visible) continue;
-            let attr="";
-            let col=this.sommets[e].marques.color;
-            if (col && col.t=="string") attr=`[color=${col.val}][penwidth=4][fontcolor=${col.val}]`;
-            gr+=(""+e+attr+";");
-        }
-        // Arcs ou aretes
-        for(let a of this.arcs){
-            if(this.discover){ // en mode discover, un arc n'est affiché que si son sommet initial est visible (n'importe quel sommet pour arete)
-                if(orient && !a.i.marques.visible) continue;
-                else if(!orient && !a.i.marques.visible && !a.a.marques.visible) continue;
-            }
-            // Construction des attributs (couleur, label)
-            let attr="";
-            let col=a.marques.color;
-            let val=a.marques.val;
-            let label=a.marques.label;
-            let tooltip="("+a.i.name+","+a.a.name+")\n";
-            for(let m in a.marques){
-                let v=a.marques[m].val;
-                tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
-            }
-            attr=attr+`[tooltip="${tooltip}"]`;
-            // S'il y a une couleur, on dessine aussi en gras
-            if(col && col.t=="string") attr=attr+`[penwidth=4][color=${col.val}][fontcolor=${col.val}]`;
-            if(label && label.t=="string") attr=attr+`[label="${label.val}"]`;
-            else if(val && isNumeric(val)) attr=attr+`[label="${""+val.val}"]`;
-            if(orient) gr+=""+a.i.name +"->"+a.a.name+attr+";";
-            else gr+=""+a.i.name+"--"+a.a.name+attr+";";
-        }
-        gr+="}\n";
-        // Envoie le graphe au thread principal, qui appelera dot avec
-        postMessage({dot:gr, name:this.name});
-    }
-
-
-    // Autre version de l'envoi de graphe, réservé aux cas tellement denses qu'on
-    // ne dessine plus les sommets et qu'on ne le fait qu'en fin d'exécution
-    // Réservé aux graphes dont tous les nœuds ont un x,y (même si par défaut on remplace par 0)
-    generateMap(){
-        let gr=[];
-        // Calcul des bornes du dessin
-        let xmin=Infinity, xmax=-Infinity, ymin=Infinity, ymax=-Infinity;
-        for(let i in this.sommets){
-            let s=this.sommets[i];
-            // Remplacement par 0 s'il n'y a pas de x ou y
-            if(s.marques.x===undefined) s.marques.x={t:"number", val:0};
-            if(s.marques.y===undefined) s.marques.y={t:"number", val:0};
-            let x=s.marques.x.val;
-            let y=s.marques.y.val;
-            if(x<xmin) xmin=x;
-            if(x>xmax) xmax=x;
-            if(y<ymin) ymin=y;
-            if(y>ymax) ymax=y;
-        }
-        // Une marge autour du dessin
-        let dx=(xmax-xmin);
-        xmin-=0.005*dx;
-        xmax+=0.005*dx;
-        let dy=(ymax-ymin);
-        ymin-=0.005*dy;
-        ymax+=0.005*dy;
-
-        // Ce qu'on dessine en réalité ce sont uniquement les arcs
-        for(let a of this.arcs){
-            let s1=a.i;
-            let s2=a.a;
-            // En mode discover, on ne dessine un arc que si son sommet initial (ou un des sommets pour une arête) est visible
-            // Notons que cela n'impacte pas l'échelle du dessin (contrairement au mode dot, dans lequel on "zoome" sur
-            // les seuls sommets connus
-            if(this.discover){
-                let orient=this.isOrient();
-                if(orient && !s1.marques.visible) continue;
-                else if(!orient && !s1.marques.visible && !s2.marques.visible) continue;
-            }
-            // Mapping sur une zone [0,4000]×[0,4000]
-            let x1=s1.marques.x.val;
-            let x2=s2.marques.x.val;
-            let y1=s1.marques.y.val;
-            let y2=s2.marques.y.val;
-            x1=(x1-xmin)*4000.0/(xmax-xmin);
-            x2=(x2-xmin)*4000.0/(xmax-xmin);
-            y1=(y1-ymin)*4000.0/(ymax-ymin);
-            y2=(y2-ymin)*4000.0/(ymax-ymin);
-            if(a.marques.color) gr.push([x1,y1,x2,y2,a.marques.color.val]);
-            else gr.push([x1,y1,x2,y2]);
-        }
-        postMessage({mapgr:gr, name:this.name});
     }
 
     // Affichage en mode "reseau"
