@@ -61,7 +61,7 @@ function preSommets(args, named, ln, fname){
       msg:"La fonction sommets s'utilise avec au plus 2 arguments (graphe et/ou index)", ln:ln};
    for(let a of args){
       let ev=evaluate(a);
-      if(ev.t=="Graphe") g=ev.sommets;
+      if(ev.t=="graphe") g=ev;
       else if(ev.t=="number"){
          if(idx!==false) throw {error:"args", name:"Mauvais arguments", 
             msg:"La fonction sommets s'utilise avec au plus un argument index", ln:ln};
@@ -223,7 +223,7 @@ function preArcs(args, named, ln, fname){
     let g=false;
     for(let a of args){
         let ev=evaluate(a);
-        if(ev.t=="Graphe") g.ev;
+        if(ev.t=="graphe") g=ev;
         else if(ev.t=="Sommet") s=ev;
         else throw {error:"args", name:"Mauvais argument", msg:"Argument de type "+ev.t+" invalide pour arcs", ln:ln};
     }

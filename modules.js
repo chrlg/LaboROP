@@ -74,12 +74,13 @@ export function load(name, ln){
     // if j.dist is true, then, in absence of a value, the euclidean distance is used, when possible (when nodes have a position)
     let valName="val";
     if(j.valName!==undefined) valName=j.valName;
+    if(j.valNames) valName=j.valNames[0]; // We can also specify more than one name, in case we have more than one value
 
     for(let p of j.edges){
         let d=undefined;
         let s1=soms[p[0]];
         let s2=soms[p[1]];
-        if(p.length==3) d=p[2];
+        if(p.length>=3) d=p[2];
         else if (j.pos && j.dist){
             let x1=s1.marques.x;
             let x2=s2.marques.x;
@@ -89,10 +90,15 @@ export function load(name, ln){
         }
         let m={};
         if(d!==undefined && valName) m[valName] = {t:'number', val:d};
+        // For other attributes, if more than one is specified via j.valNames, it is simpler: just take them from the array (there must be one)
+        if(j.valNames){
+            for(let k=1; k<j.valNames.length; k++){
+                m[j.valNames[k]] = {t:'number', val:p[k+2]};
+            }
+        }
         if(j.oriented) g.addArc(s1, s2, m);
         else g.addArete(s1, s2, m);
     }
-
 }
 
 function loadCb(json){

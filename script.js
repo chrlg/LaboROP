@@ -11,42 +11,33 @@ var _grlg = {
    zoomlv:0,
 };
 
-var _graphes={};
-var _grapheMode="dot";
+var _graphes={"Gr":true};
 
 var timeout=false;
 function messageFromWorker(event){
-   if(event.data.error){
-      let e=event.data;
-      let ln=e.ln;
-      let $e=$("#errors");
-      $e.append("<span>Line "+ln+" </span> : ");
-      $e.append("<b>"+e.name+"</b><br>");
-      if(e.msg) $e.append("<pre>"+e.msg+"</pre>");
-      errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
-      lastError = e;
-      worker=false;
-      if(timeout) clearTimeout(timeout); timeout=false;
-      let $m=$("#misc")[0];
-      $m.scrollTop=$m.scrollHeight;
-      return;
-   }
-   if(event.data.print){
-      $("#console").text(event.data.print);
-      let $m=$("#misc")[0];
-      $m.scrollTop=$m.scrollHeight;
-      return;
-   }
-   if(event.data.graph){
-      $("#svgcont").show();
-      $("#canvascont").hide();
-      updateGraph(event.data);
-      return;
-   }
-    if(event.data.mapgr){
-        $("#svgcont").hide();
-        $("#canvascont").show();
-        showMap(event.data.mapgr);
+    if(event.data.error){
+        let e=event.data;
+        let ln=e.ln;
+        let $e=$("#errors");
+        $e.append("<span>Line "+ln+" </span> : ");
+        $e.append("<b>"+e.name+"</b><br>");
+        if(e.msg) $e.append("<pre>"+e.msg+"</pre>");
+        errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
+        lastError = e;
+        worker=false;
+        if(timeout) clearTimeout(timeout); timeout=false;
+        let $m=$("#misc")[0];
+        $m.scrollTop=$m.scrollHeight;
+        return;
+    }
+    if(event.data.print){
+        $("#console").text(event.data.print);
+        let $m=$("#misc")[0];
+        $m.scrollTop=$m.scrollHeight;
+        return;
+    }
+    if(event.data.graph){
+        updateGraph(event.data.graph);
         return;
     }
     if(event.data.mapres){
@@ -55,16 +46,16 @@ function messageFromWorker(event){
         showReseau(event.data.mapres, event.data.arcs, event.data.name, event.data.bound, event.data.arrow);
         return;
     }
-   if(event.data.termine!==undefined){
-      $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
-      worker=false;
-      if(timeout) clearTimeout(timeout); timeout=false;
-      let $m=$("#misc")[0];
-      $m.scrollTop=$m.scrollHeight;
-   }
-   if(event.data.store){
-      window[event.data.name]=event.data.store;
-   }
+    if(event.data.termine!==undefined){
+        $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
+        worker=false;
+        if(timeout) clearTimeout(timeout); timeout=false;
+        let $m=$("#misc")[0];
+        $m.scrollTop=$m.scrollHeight;
+    }
+    if(event.data.store){
+        window[event.data.name]=event.data.store;
+    }
 }
 
 function oneditorChange(e){
@@ -77,81 +68,104 @@ function oneditorChange(e){
 }
 
 function realEditorChange(){
-   if(worker) worker.terminate();
-   if(timeout) clearTimeout(timeout);
-   worker=false;
-   worker = new Worker("interpret.js", {type:"module"});
-   worker.onmessage = messageFromWorker;
-   worker.onerror = (e) => {console.log(e);};
-   worker.postMessage(editor.getValue());
-   timeout=setTimeout(Terminate, timeoutLen);
-   $("#console").empty();
-   $("#status").empty();
-   $("#errors").empty();
-   $("#svgcont").empty();
-   $("#extragraph").empty();
-   _graphes={};
-   if(errorMarker){
-      editor.session.removeMarker(errorMarker);
-      errorMarker=false;
-   }
+    if(worker) worker.terminate();
+    if(timeout) clearTimeout(timeout);
+    worker=false;
+    worker = new Worker("interpret.js", {type:"module"});
+    worker.onmessage = messageFromWorker;
+    worker.onerror = (e) => {console.log(e);};
+    worker.postMessage(editor.getValue());
+    timeout=setTimeout(Terminate, timeoutLen);
+    $("#console").empty();
+    $("#status").empty();
+    $("#errors").empty();
+    $("#svgcont").empty();
+    $("#extragraph").empty();
+    _graphes={Gr:true};
+    if(errorMarker){
+        editor.session.removeMarker(errorMarker);
+        errorMarker=false;
+    }
 }
 
 function saveCode(e, f, g){
-   currentFile.code = editor.getValue();
-   saveFiles();
-   realEditorChange();
-   return true;
+    currentFile.code = editor.getValue();
+    saveFiles();
+    realEditorChange();
+    return true;
 }
 
 function runCode(){
-   realEditorChange();
-   return true;
+    realEditorChange();
+    return true;
 }
 
 function Terminate(){
-   timeout=false;
-   if(worker) worker.terminate();
-   worker=false;
-   $("#status").html("<i>Programme en boucle, interrompu au bout de "+(timeoutLen/1000)+" secondes</i>");
+    timeout=false;
+    if(worker) worker.terminate();
+    worker=false;
+    $("#status").html("<i>Programme en boucle, interrompu au bout de "+(timeoutLen/1000)+" secondes</i>");
 }
 
 function zoomGraph(){
-   let targetscale = 1.1**_grlg.zoomlv;
-   let targetw = _grlg.svgw*targetscale;
-   let targeth = _grlg.svgh*targetscale;
-   let winw = $("#svgcont").width();
-   let winh = $("#svgcont").height();
-   if (targetw<winw) targetw=winw;
-   if (targeth<winh) targeth=winh;
-   $("#svgcont svg").width(targetw).height(targeth);
-   $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
-   if(_lastMapLines) showMap(_lastMapLines);
-   else if(_lastResData) showReseau(_lastResData[0], _lastResData[1], _lastResData[2], _lastResData[3], _lastResData[4]);
+    let targetscale = 1.1**_grlg.zoomlv;
+    let targetw = _grlg.svgw*targetscale;
+    let targeth = _grlg.svgh*targetscale;
+    let winw = $("#svgcont").width();
+    let winh = $("#svgcont").height();
+    if (targetw<winw) targetw=winw;
+    if (targeth<winh) targeth=winh;
+    $("#svgcont svg").width(targetw).height(targeth);
+    $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
+    let grname=$(`#tabs button.selected`).attr("data-graph");
+    if(grname && _graphes[grname] && _graphes[grname].mode=="map") showMap(_graphes[grname]);
+    //else if(_lastResData) showReseau(_lastResData[0], _lastResData[1], _lastResData[2], _lastResData[3], _lastResData[4]);
 }
 
 function updateGraph(gr){
-   _grapheMode="dot";
-   let str=gr.graph;
-   let name=gr.name;
-   _graphes[name]=Viz(str);
-   if(name=="Gr") showGraph("Gr");
-   else createExtraGraph(name);
+    if(!_graphes[gr.name]){
+        createExtraGraph(gr.name);
+    }
+    _graphes[gr.name]=gr;
+    if($(`#tabs button.selected[data-graph="${gr.name}"]`).length){
+        showGraph(gr);
+    }
 }
 
 function createExtraGraph(name){
-   let $but=$("<button>"+name+"</button>");
-   $("#extragraph").append($but);
-   $but.click(function(){
-      showTab("show", $but);
-      showGraph(name);
-   });
+    let $but=$(`<button data-graph="${name}">${name}</button>`);
+    $("#extragraph").append($but);
+    $but.click(function(){
+        showTab("show", $but);
+        showGraph(_graphes[name]);
+    });
 }
 
-let _lastMapLines=false;
 let _lastResData=false;
-function showGraph(name){
-    _lastMapLines=false;
+function showGraph(g){
+    if(g===true){
+        $('#svgcont').hide();
+        $('#canvascont').hide();
+        return;
+    }
+    if(g.mode=='dot'){
+        let dot=generateDot(g);
+        let viz=Viz(dot);
+        $('#svgcont').show();
+        $('#canvascont').hide();
+        $('#svgcont').html(viz);
+        _grlg.svgw = $("#svgcont svg").width();
+        _grlg.svgh = $("#svgcont svg").height();
+        zoomGraph();
+        return;
+    }
+    if(g.mode=='map'){
+        $('#svgcont').hide();
+        $('#canvascont').show();
+        showMap(g);
+        return;
+    }
+    
     _lastResData=false;
     $("#svgcont").html(_graphes[name]);
     _grlg.svgw = $("#svgcont svg").width();
@@ -161,39 +175,46 @@ function showGraph(name){
     //$("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
 }
 
-function showMap(lines){
-    _lastMapLines=lines;
-    _lastResData=false;
+function showMap(g){
     let targetscale = 1.1**_grlg.zoomlv;
-    _grapheMode="map";
     let cv=$("#canvascont canvas")[0];
     let ctx=cv.getContext("2d");
     ctx.clearRect(0, 0, 4000, 4000);
     ctx.strokeStyle="#000";
     ctx.lineWidth=4.0/targetscale;
-    for(let i=0; i<lines.length; i++){
-        let L=lines[i];
-        if(L.length>4) continue;
-        ctx.beginPath();
-        ctx.strokeStyle="#000";
-        ctx.moveTo(L[0], L[1]);
-        ctx.lineTo(L[2], L[3]);
-        ctx.stroke();
+    let xmin=1e20, xmax=-1e20, ymin=1e20, ymax=-1e20;
+    for(let i in g.sommets){
+        let s=g.sommets[i];
+        if(s.x<xmin) xmin=s.x;
+        if(s.x>xmax) xmax=s.x;
+        if(s.y<ymin) ymin=s.y;
+        if(s.y>ymax) ymax=s.y;
     }
-    ctx.lineWidth=12.0;//targetscale;
-    for(let i=0; i<lines.length; i++){
-        let L=lines[i];
-        if(L.length<5) continue;
+    let AX=4000/(xmax-xmin)*0.99;
+    let BX=(-xmin+(xmax-xmin)*0.005)*AX;
+    let AY=4000/(ymax-ymin)*0.99;
+    let BY=(-ymin+(ymax-ymin)*0.005)*AY;
+    for(let a of g.arcs){
+        let x1=AX*g.sommets[a.i].x+BX;
+        let y1=AY*g.sommets[a.i].y+BY;
+        let x2=AX*g.sommets[a.a].x+BX;
+        let y2=AY*g.sommets[a.a].y+BY;
         ctx.beginPath();
-        ctx.strokeStyle=L[4];
-        ctx.moveTo(L[0], L[1]);
-        ctx.lineTo(L[2], L[3]);
+        if(a.color){
+            ctx.strokeStyle=a.color;
+            ctx.lineWidth=12.0/targetscale;
+        }
+        else {
+            ctx.strokeStyle="#000";
+            ctx.lineWidth=4.0/targetscale;
+        }
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2,y2);
         ctx.stroke();
     }
 }
 
 function showReseau(sommets, arcs, name, bound, arrow){
-    _lastMapLines=false;
     _lastResData=[sommets, arcs, name, bound, arrow];
     let targetscale = 1.1**_grlg.zoomlv;
     let cv=$("#canvascont canvas")[0];
@@ -347,7 +368,7 @@ function init(){
       showTab(t, $(this));
    });
    $("#tabs button[data-target='show']").click(function() {
-      if(_graphes["Gr"]) showGraph("Gr");
+      if(_graphes["Gr"]) showGraph(_graphes["Gr"]);
    });
 
    // Fichiers
@@ -364,7 +385,7 @@ function init(){
    });
 }
 
-$(init);
+window.onload=init;
 
 function initFiles(){
    $("#files").empty();
@@ -587,3 +608,40 @@ function splitMove(){
    });
 }
 $(splitMove);
+
+function generateDot(g){
+    let gr=""; // Chaine contenant le .dot de graphviz
+    let orient = g.oriented;
+    if(orient) gr+="digraph{";
+    else gr+="graph{";
+    // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
+    // été générés de toutes façons avec leurs arcs)
+    // (Note: servira plus tard pour les attributs)
+    for(let e in g.sommets){
+        // En mode "discover", le sommet n'est affiché que s'il apparait avec l'attribut "visible"
+        if(g.discover && !g.sommets[e].visible) continue;
+        let attr="";
+        let col=g.sommets[e].color;
+        if (col) attr=`[color=${col}][penwidth=4][fontcolor=${col}]`;
+        gr+=(""+e+attr+";");
+    }
+    // Arcs ou aretes
+    for(let a of g.arcs){
+        // en mode discover, un arc n'est affiché que si son sommet initial est visible (n'importe quel sommet pour arete)
+        if(g.discover && !a.visible) continue; 
+        // Construction des attributs (couleur, label)
+        let attr="";
+        let col=a.color;
+        let val=a.val;
+        let label=a.label;
+        attr=attr+`[tooltip="${a.tooltip}"]`;
+        // S'il y a une couleur, on dessine aussi en gras
+        if(col!==undefined) attr=attr+`[penwidth=4][color=${col}][fontcolor=${col}]`;
+        if(label!==undefined) attr=attr+`[label="${label}"]`;
+        else if(val!==undefined) attr=attr+`[label="${""+val}"]`;
+        if(orient) gr+=""+a.i +"->"+a.a+attr+";";
+        else gr+=""+a.i+"--"+a.a+attr+";";
+    }
+    gr+="}\n";
+    return gr;
+}

@@ -1,6 +1,6 @@
 import {FALSE, TRUE, UNDEFINED} from "./constants.js";
 import * as Env from "./environment.js";
-import {evaluate, isNumeric} from "./expression.js";
+import {evaluate, isNumeric, numericValue} from "./expression.js";
 
 // Chaque graphe de Graphes a la structure suivante :
 // * name : le nom du graphe. Le graphe par défaut s'appelle Gr
@@ -27,6 +27,45 @@ export class Graphe {
         this.arcs.length=0;
         this.oriented=undefined;
         this.change=true;
+    }
+
+    serialize(){
+        //return {name:this.name, t:"graphe", sommets:null, "arcs":null, mode:this.mode, oriented:this.oriented, discover:this.discover};
+        let arcs=[];
+        let sommets={};
+        for(let sname in this.sommets){
+            let s=this.sommets[sname];
+            let ns={name:sname};
+            if(this.discover && s.marques.visible && s.marques.visible.val) ns.visible=true;
+            if(s.marques.color && s.marques.color.t=='string') ns.color=s.marques.color.val;
+            if(s.marques.x && isNumeric(s.marques.x)) ns.x=numericValue(s.marques.x);
+            if(s.marques.y && isNumeric(s.marques.y)) ns.y=numericValue(s.marques.y);
+            sommets[sname]=ns;
+        }
+        for(let a of this.arcs){
+            let na={i:a.i.name, a:a.a.name};
+            if(this.discover){
+                if(this.oriented) na.visible=a.i.marques.visible && a.i.marques.visible.val;
+                else na.visible=(a.i.marques.visible && a.i.marques.visible.val) || (a.a.marques.visible && a.a.marques.visible.val);
+            }
+            if(a.marques.color && a.marques.color.t=='string') na.color=a.marques.color.val;
+            if(a.marques.val && isNumeric(a.marques.val)) na.val=numericValue(a.marques.val);
+            if(a.marques.label && a.marques.label.t=='string') na.label=a.marques.label.val;
+            let tooltip="("+a.i.name+","+a.a.name+")\n";
+            for(let m in a.marques){
+                let v=a.marques[m].val;
+                tooltip += m + ":"+ ((v!==undefined)?(v.toString()):"{...}") +"\n";
+            }
+            na.tooltip=tooltip;
+            arcs.push(na);
+        }
+        return {"name":this.name, 
+                "t":"graphe", 
+                "mode":this.mode,
+                "oriented":this.oriented,
+                "discover":this.discover,
+                "arcs":arcs,
+                "sommets":sommets};
     }
 
     // Ce graphe est-il orienté ou non?
@@ -69,10 +108,14 @@ export class Graphe {
     // ou si un argument force est passé)
     redraw(force=false){
         if(force || this.change){
+            postMessage({graph:this.serialize()});
+            
+            /*
             if(this.mode=='dot') this.generateDot();
             else if(this.mode=='map') this.generateMap();
             else if(this.mode=='reseau') this.generateReseau(false);
             else if(this.mode=='arrows' || this.mode=='arrow') this.generateReseau(true);
+            */
         }
         this.change=false;
     }
@@ -120,7 +163,7 @@ export class Graphe {
         }
         gr+="}\n";
         // Envoie le graphe au thread principal, qui appelera dot avec
-        postMessage({graph:gr, name:this.name});
+        postMessage({dot:gr, name:this.name});
     }
 
 

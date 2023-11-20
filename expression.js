@@ -4,7 +4,7 @@
 import * as Env from "./environment.js";
 import * as Mat from "./matrix.js";
 import {FALSE, TRUE, NULL} from "./constants.js";
-import {evalSommet, creerArete} from "./graphe.js";
+import {evalSommet, creerArc, creerArete} from "./graphe.js";
 import {interpCall, setRef} from "./instructions.js";
 import Decimal from "./lib/decimal.mjs";
 
@@ -21,7 +21,7 @@ export function isNumeric(v){
 
 // Retourne la valeur numérique (nombre javascript, donc avec potentielle erreur numérique) d'une expression numérique
 // undefined si ce n'est pas une expression numérique
-function numericValue(v){
+export function numericValue(v){
     if(v.t=='number') return v.val;
     if(v.t=='decimal') return v.val.toNumber();
     return undefined;
@@ -535,7 +535,7 @@ function evaluateArc(expr){
     // No chance if s1 and s2 are not nodes
     if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){
         throw {error:"type", name:"Pas un arc ou une arête", 
-            msg:"La paire ne correspond pas à un arc ou une arête", ln:ln};
+            msg:"La paire ne correspond pas à un arc ou une arête", ln:expr.ln};
     }
 
     let graphe = Env.grapheContaining(s1);

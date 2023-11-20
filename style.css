@@ -65,7 +65,6 @@ div.show {
 }
 
 #canvascont {
-   overflow:auto;
    width:100%;
    display:inline-block;
    position:absolute;
@@ -82,7 +81,7 @@ div.show {
 }
 
 #show {
-   overflow:hidden;
+   overflow:auto;
 }
 
 #saveimage {
