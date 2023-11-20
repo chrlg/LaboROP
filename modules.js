@@ -58,8 +58,10 @@ export function load(name, ln){
 
     // Create nodes. Keep an indexed list of those, to be able to create edges
     let soms=[];
+    let firstNum=1;
+    if(j.firstNodeNum) firstNum=j.firstNodeNum; // To start numbering at S0 or S1 (or anything)
     for(let i=0; i<ns; i++){
-        let s=g.addNode(j.names?j.names[i]:"S"+(i+1), ln);
+        let s=g.addNode(j.names?j.names[i]:"S"+(i+firstNum), ln);
         soms.push(s);
         if(j.pos){
             s.marques['x']={t:"number", val:j.pos[i][0]};
@@ -67,7 +69,7 @@ export function load(name, ln){
         }
     }
     // Some json call the edge list "edge", some othe "edges". Let's accept both
-    if(j.edge && j.edegs===undefined) j.edges=j.edge;
+    if(j.edge && j.edges===undefined) j.edges=j.edge;
 
     // If json contain "valName" attribute, then use it to store values
     // Note: il valName is explicitly set to false, then, no value is added to edges, even if a value is specified in json
@@ -99,35 +101,17 @@ export function load(name, ln){
         if(j.oriented) g.addArc(s1, s2, m);
         else g.addArete(s1, s2, m);
     }
+
+    if(j.moreNodeAttributes){
+        for(let a of j.moreNodeAttributes){
+            for(let sv of a.assoc){
+                let v=false;
+                if(sv[1]===false) v=FALSE;
+                else if(sv[1]===true) v=TRUE;
+                else if(sv[1] instanceof String) v={t:"string", val:sv[1]};
+                else v={t:"number", val:sv[1]};
+                som[sv[0]+firstNum].marques[a.attr]=v;
+            }
+        }
+    }
 }
-
-function loadCb(json){
-    console.log(json);
-}
-
-
-function importGraphe(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=_grapheEnv["S"+p[0]];
-      let s2=_grapheEnv["S"+p[1]];
-      let d={t:"number", val:0};
-      if(p.length==3) d.val=p[2];
-      else{
-         let x1=s1.marques.x;
-         let x2=s2.marques.x;
-         let y1=s1.marques.x;
-         let y2=s2.marques.x;
-         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-      }
-      if (v=="noValues") _arcs.push({t:"Arete", i:s1, a:s2, marques:{}});
-      else _arcs.push({t:"Arete", i:s1, a:s2, marques:{val:d}});
-   }
-   _grapheChange=true;
-   _grapheMode="map";
-}
-
