@@ -390,14 +390,14 @@ export function evaluate(expr){
     }
 
     if(expr.t=="index"){
-        var tab=evaluate(expr.tab);
-        var idx=evaluate(expr.index);
-        if(!isNumeric(idx)) throw {error:"type", name:"Erreur de type", msg:"Index non entier",
-            ln:expr.index.ln};
+        let tab=evaluate(expr.tab);
+        let idx=evaluate(expr.index);
+        if(!isNumeric(idx)) throw {error:"type", name:"Erreur de type", msg:"Index non entier", ln:expr.index.ln};
         let i=numericValue(idx);
-        if(tab.t=="array") return tab.val[i];
-        if(tab.t=="string") return {t:"string", val:tab.val[i]};
-        if(tab.t=="Sommet") return {t:"string", val:tab.name[i]};
+        let F=(t,i)=>{let j=i; if(j<0) j+=t.length; return t[j];};
+        if(tab.t=="array") return F(tab.val, i);
+        if(tab.t=="string") return {t:"string", val:F(tab.val,i)};
+        if(tab.t=="Sommet") return {t:"string", val:F(tab.name, i)};
         throw {error:"type", name:"Type non indexable", msg:"Un objet de type "+tab.t+" ne peut être indexé", ln:expr.ln};
     }
     if(expr.t=="mindex"){
@@ -420,22 +420,30 @@ export function evaluate(expr){
     }
     if(expr.t=="subarray"){
         let tab=evaluate(expr.tab);
-        if(tab.t!="array")
-            throw {error:"type", name:"Pas un tableau", msg:"Utilisation de [...] sur un objet non indexable", ln:expr.ln};
+        let rtab=false;
+        if(tab.t=="array") rtab=tab.val;
+        else if(tab.t=="string") rtab=tab.val;
+        else if(tab.t=="Sommet") rtab=tab.name;
+        else throw {error:"type", name:"Erreur de type", msg:`Utilisation de [...:...] sur un objet (type ${tab.t}) non indexable`, ln:expr.tab.ln};
         let b0=0;
         let b1=false;
         if(expr.indexinf){
             let idinf=evaluate(expr.indexinf);
-            if(idinf.t!="number") throw {error:"type", name:"Index de tableau non entier", msg:"", ln:expr.indexinf.ln};
-            b0 = idinf.val;
+            if(!isNumeric(idinf)) throw {error:"type", name:"Index de tableau non entier", msg:"", ln:expr.indexinf.ln};
+            b0 = numericValue(idinf);
+            if(b0<0) b0+=rtab.length;
         }
         if(expr.indexsup){
             let idsup=evaluate(expr.indexsup);
-            if(idsup.t!="number") throw {error:"type", name:"Index de tableau non entier", msg:"", ln:expr.indexinf.ln};
-            b1 = idsup.val;
+            if(!isNumeric(idsup)) throw {error:"type", name:"Index de tableau non entier", msg:"", ln:expr.indexinf.ln};
+            b1 = numericValue(idsup);
+            if(b1<0) b1+=rtab.length;
         }
-        if(b1===false) return {t:"array", val:tab.val.slice(b0)};
-        else return {t:"array", val:tab.val.slice(b0, b1)};
+        let nv=false;
+        if(b1===false) nv=rtab.slice(b0);
+        else nv=rtab.slice(b0,b1);
+        if(tab.t=="array") return {t:"array", val:nv};
+        else return {t:"string", val:nv};
     }
     if(expr.t=="Arc"){
         return creerArc(expr);
@@ -607,7 +615,9 @@ export function evaluateLVal(lv, direct){
         if(i===undefined || !isNumeric(i)){
             throw {error:"type", name:"Index invalide", msg:"Un élément de type '"+i.t+"' n'est pas un index valide pour un tableau", ln:lv.index.ln};
         }
-        return [ v.val, numericValue(i) ];
+        let j=numericValue(i);
+        if(j<0) j+=v.val.length;
+        return [ v.val, j ];
     }
 
     // Matrix element

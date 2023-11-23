@@ -2,7 +2,7 @@ import * as Cst from "./constants.js";
 import * as Env from "./environment.js";
 import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
-import {evaluate, evaluateLVal, isNumeric} from "./expression.js";
+import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
 import {regularCheck, print, flush} from "./domcom.js";
 
 export default function populate(){
@@ -20,6 +20,7 @@ export default function populate(){
    Env.addPredfn("aretes", preArcs);
    Env.addPredfn("import", preImport);
    Env.addPredfn("pop", prePop);
+   Env.addPredfn("insert", preInsert);
    Env.addPredfn("_grapheMode", preGraphMode);
    Env.addPredfn("sqrt", preMaths1);
    Env.addPredfn("sqr", preMaths1);
@@ -299,6 +300,18 @@ function prePop(args, named, ln, fname){
          msg:"L'élement d'index "+index+" n'existe pas", ln:ln};
    }
    return r[0];
+}
+
+function preInsert(args, named, ln, fname){
+    if(args.length!=3) throw {error:"args", name:"Mauvais nombre d'arguments", msg:"insert(liste, position, valeur) s'utilise avec 3 arguments", ln:ln};
+    let ref=evaluateLVal(args[0]);
+    let lvv=ref[0][ref[1]];
+    if(lvv.t!="array") throw {error:"type", name:"Mauvais type", msg:"Le premier argument de insert(liste, position, valeur) est obligatoirement un tableau", ln:args[0].ln};
+    let argidx=evaluate(args[1]);
+    if(!isNumeric(argidx)) throw {error:"args", name:"Mauvais type", msg:"Le deuxième argument de insert(liste, position, valeur) doit être un nombre", ln:args[1].ln};
+    let v=evaluate(args[2]);
+    lvv.val.splice(numericValue(argidx), 0, v);
+    return v;
 }
 
 function preGraphMode(args, named, ln, fname){
