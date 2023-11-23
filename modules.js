@@ -115,4 +115,5 @@ export function load(name, ln){
             }
         }
     }
+    g.redraw(true);
 }

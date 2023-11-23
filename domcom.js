@@ -18,9 +18,13 @@ export function regularCheck(force=false){
     for(let i in Env.Graphes) Env.Graphes[i].redraw(force);
     
     if(_strChange || force){
-        _strChange=false;
-        postMessage({print: _str});
+        flush();
     }
+}
+
+export function flush(){
+    _strChange=false;
+    postMessage({print: _str});
 }
 
 export function print(s){

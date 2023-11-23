@@ -3,7 +3,7 @@ import * as Env from "./environment.js";
 import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
 import {evaluate, evaluateLVal, isNumeric} from "./expression.js";
-import {regularCheck, print} from "./domcom.js";
+import {regularCheck, print, flush} from "./domcom.js";
 
 export default function populate(){
    Env.addPredfn("clear", preClear);
@@ -190,6 +190,7 @@ function prePrint(args, named, ln, fname){
 
     let sep=(fname=='print')?' ':'';
     let end=(fname=='printnr')?'':'\n';
+    let fl=false;
     for(let x of named){
         if(x.name=='sep'){
             let v=evaluate(x.a);
@@ -199,6 +200,10 @@ function prePrint(args, named, ln, fname){
             let v=evaluate(x.a);
             if(v.t!='string') throw {error:"type", name:"Erreur de type", msg:"end doit être une chaîne de caractères", ln:x.ln};
             end=v.val;
+        }else if(x.name=='flush'){
+            let v=evaluate(x.a);
+            if(v.t!='boolean') throw {error:"type", name:"Erreur de type", msg:"flush doit être un booléen", ln:x.ln};
+            fl=v.val;
         }
     }
 
@@ -208,6 +213,7 @@ function prePrint(args, named, ln, fname){
         printRec(a);
     }
     print(end);
+    if(fl) flush();
 }
 
 function preRefresh(args, named, ln, fname){
