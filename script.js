@@ -629,6 +629,14 @@ function generateDot(g){
     for(let a of g.arcs){
         // en mode discover, un arc n'est affiché que si son sommet initial est visible (n'importe quel sommet pour arete)
         if(g.discover && !a.visible) continue; 
+        // En mode discover, si un sommet est non visible, mais fait partie de cette arête, on l'affiche en gris
+        // (Note, c'est la première déclaration de ce sommet : dans la passe précédente on ne l'a pas affiché. On s'apprêtait à le 
+        // définir implicitement en définissant l'arc)
+        if(g.discover) {
+            if(!g.sommets[a.i].visible) gr+=`${a.i}[color=gray][fontcolor=gray];`
+            // Note: both are not supposed to happen: we should have visible edges with no visible nodes
+            if(!g.sommets[a.a].visible) gr+=`${a.a}[color=gray][fontcolor=gray];`
+        }
         // Construction des attributs (couleur, label)
         let attr="";
         let col=a.color;
