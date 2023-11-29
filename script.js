@@ -195,6 +195,7 @@ function showMap(g){
     let AY=4000/(ymax-ymin)*0.99;
     let BY=(-ymin+(ymax-ymin)*0.005)*AY;
     for(let a of g.arcs){
+        if(g.discover && !a.visible) continue;
         let x1=AX*g.sommets[a.i].x+BX;
         let y1=AY*g.sommets[a.i].y+BY;
         let x2=AX*g.sommets[a.a].x+BX;
