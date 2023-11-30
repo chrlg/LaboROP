@@ -150,7 +150,7 @@ function showGraph(g){
     }
     if(g.mode=='dot'){
         let dot=generateDot(g);
-        let viz=Viz(dot);
+        let viz=Viz(dot, {"engine":"neato"});//, {engine:"neato"});
         $('#svgcont').show();
         $('#canvascont').hide();
         $('#svgcont').html(viz);
@@ -163,6 +163,12 @@ function showGraph(g){
         $('#svgcont').hide();
         $('#canvascont').show();
         showMap(g);
+        return;
+    }
+    if(g.mode=='mesh'){
+        $('#svgcont').hide();
+        $('#canvascont').show();
+        showMesh(g);
         return;
     }
     
@@ -215,45 +221,58 @@ function showMap(g){
     }
 }
 
-function showReseau(sommets, arcs, name, bound, arrow){
-    _lastResData=[sommets, arcs, name, bound, arrow];
+function showMesh(g){
     let targetscale = 1.1**_grlg.zoomlv;
     let cv=$("#canvascont canvas")[0];
     let ctx=cv.getContext("2d");
     ctx.clearRect(0, 0, 4000, 4000);
     ctx.strokeStyle="#000";
-    let lw1=4.0/targetscale;
-    let lw2=12.0/targetscale;
-    let xmin=bound[0]-1;
-    let xmax=bound[1]+1;
-    let ymin=bound[2]-1;
-    let ymax=bound[3]+1;
-    let cx=4000.0/(xmax-xmin);
-    let cy=4000.0/(ymax-ymin);
+    ctx.lineWidth=4.0/targetscale;
+    let xmin=1e20, xmax=-1e20, ymin=1e20, ymax=-1e20;
+    for(let i in g.sommets){
+        let s=g.sommets[i];
+        if(s.x<xmin) xmin=s.x;
+        if(s.x>xmax) xmax=s.x;
+        if(s.y<ymin) ymin=s.y;
+        if(s.y>ymax) ymax=s.y;
+    }
     let r=80/targetscale;
+    let AX=4000/(xmax-xmin+2*r);
+    let BX=(-xmin+r)*AX;
+    let AY=4000/(ymax-ymin+2*r);
+    let BY=(-ymin+r)*AY;
+
     let font1=''+(r*1.1)+'px sans';
     let font2=''+(r*0.7)+'px sans';
     let arcLblSize=r*0.25;
-    let nodeSize=arrow?(r/10):r;
-    for(let i=0; i<arcs.length; i++){
-        let a=arcs[i];
-        let s1=sommets[a[0]];
-        let s2=sommets[a[1]];
+    let nodeSize=(g.oriented)?(r/10):r;
+
+    for(let a of g.arcs){
+        if(g.discover && !a.visible) continue;
+        let x1=AX*g.sommets[a.i].x+BX;
+        let y1=AY*g.sommets[a.i].y+BY;
+        let x2=AX*g.sommets[a.a].x+BX;
+        let y2=AY*g.sommets[a.a].y+BY;
         ctx.beginPath();
-        ctx.strokeStyle=a[3];
-        if(a[3]=='#000000') ctx.lineWidth=lw1;
-        else ctx.lineWidth=lw2;
-        let x1=cx*(s1[0]-xmin);
-        let x2=cx*(s2[0]-xmin);
-        let y1=cy*(s1[1]-ymin);
-        let y2=cy*(s2[1]-ymin);
+        if(a.color){
+            ctx.strokeStyle=a.color;
+            ctx.lineWidth=12.0/targetscale;
+            ctx.fillStyle=a.color;
+        }
+        else {
+            ctx.strokeStyle="#000";
+            ctx.lineWidth=4.0/targetscale;
+            ctx.fillStyle=a.color;
+        }
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2,y2);
+        ctx.stroke();
         let xm=(x1+x2)/2;
         let ym=(y1+y2)/2;
         ctx.moveTo(x1,y1);
         ctx.lineTo(x2,y2);
         ctx.stroke();
-        ctx.fillStyle=a[3];
-        if(arrow){
+        if(g.oriented){
             // cos(30) -sin(30)  |  x1-x2
             // sin(30) cos(30)   |  y1-y2
             let fc=0.7*r/Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
@@ -262,11 +281,16 @@ function showReseau(sommets, arcs, name, bound, arrow){
             ctx.lineTo(fc*(0.94*(x1-x2)+0.342*(y1-y2))+x2, fc*(0.94*(y1-y2)-0.342*(x1-x2))+y2);
             ctx.fill();
         }
-        ctx.font=font2;
-        ctx.fillText(a[2], xm-a[2].length*arcLblSize, ym);
+        if(a.label){
+            ctx.font=font2;
+            ctx.fillText(a.label, xm-a.label.length*arcLblSize, ym);
+        }
     }
-    for(let i=0; i<sommets.length; i++){
-        let s=sommets[i];
+
+    for(let i=0; i<g.sommets.length; i++){
+        let s=g.sommets[i];
+        let x1=AX*g.sommets[a.i].x+BX;
+        let y1=AY*g.sommets[a.i].y+BY;
         let x=cx*(s[0]-xmin);
         let y=cy*(s[1]-ymin);
         ctx.beginPath();
@@ -621,9 +645,13 @@ function generateDot(g){
     for(let e in g.sommets){
         // En mode "discover", le sommet n'est affiché que s'il apparait avec l'attribut "visible"
         if(g.discover && !g.sommets[e].visible) continue;
+        let s=g.sommets[e];
         let attr="";
-        let col=g.sommets[e].color;
-        if (col) attr=`[color=${col}][penwidth=4][fontcolor=${col}]`;
+        let col=s.color;
+        if (col) attr=`[color=${col} penwidth=4 fontcolor=${col}]`;
+        if (s.x!=undefined && s.y!==undefined){
+            attr += `[pos="${s.x},${s.y}!"]`
+        }
         gr+=(""+e+attr+";");
     }
     // Arcs ou aretes
