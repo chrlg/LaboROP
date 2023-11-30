@@ -22,6 +22,7 @@
 
 ["]			this.begin("string"); yy._clg_stringBuf="";
 <string>["]		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<string>"\\r"		yy._clg_stringBuf += "\r";
 <string>[^"\\\n]	yy._clg_stringBuf += yytext;
 <string>"\\n"		yy._clg_stringBuf += "\n";
 <string>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
@@ -33,6 +34,7 @@
 
 [']			this.begin("stringq"); yy._clg_stringBuf="";
 <stringq>[']		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<stringq>"\\r"		yy._clg_stringBuf += "\r";
 <stringq>[^'\\\n]	yy._clg_stringBuf += yytext;
 <stringq>"\\n"		yy._clg_stringBuf += "\n";
 <stringq>"\\"[^\n]	yy._clg_stringBuf += yytext.slice(1);
