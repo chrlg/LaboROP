@@ -463,7 +463,7 @@ bracketExpr
          $$ = {t:"staticArray", args:[$1], ln:@1.first_line};
       }
       | expr "," expr {
-         $$ = {t:"exprArete", initial:$1, terminal:$3, ln:@1.fist_line};
+         $$ = {t:"arete", initial:$1, terminal:$3, ln:@1.fist_line};
       }
       | expr "," expr "," bracketExpr3 {
          $$ = {t:"staticArray", args:[$1,$3].concat($5), ln:@1.first_line};

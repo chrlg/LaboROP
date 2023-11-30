@@ -548,7 +548,7 @@ case 97:
 break;
 case 98:
 
-         this.$ = {t:"exprArete", initial:$$[$0-2], terminal:$$[$0], ln:_$[$0-2].fist_line};
+         this.$ = {t:"arete", initial:$$[$0-2], terminal:$$[$0], ln:_$[$0-2].fist_line};
       
 break;
 case 99:
