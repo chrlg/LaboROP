@@ -526,19 +526,25 @@ function evaluateEqual(expr){
 // the only case where `(a,b)` or `[a,b]` may appear 
 // in the code are `(a,b)` where a previous `(a,b)` as l-value has been defined
 function evaluateArc(expr){
-    let cn=((expr.t=="arc")?">":"-") + expr.initial + "," + expr.terminal; // A name (that cannot legally be a real name) for the arc/arete variable
-    let w=Env.get(cn); // Edge itself
-    let s1=Env.get(expr.initial);
-    let s2=Env.get(expr.terminal);
-
-    // If arc exist in env (as previous l-val), that is if (a,b)=... has been previously done
-    if(w && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) {
-        // And if nodes hasn't changed since (we could have (a,b)=... then a=...
-        if(s1==w.i && s2==w.a) return w;
+    // If both nodes are ID, then it might be a previously l-val edge, that is a variable of its own
+    if(expr.initial.t=='id' && expr.terminal.t=='id'){
+        // A name (that cannot legally be a real name) for the arc/arete variable
+        let cn=((expr.t=="arc")?">":"-") + expr.initial.name + "," + expr.terminal.name; 
+        let w=Env.get(cn); // Edge itself
+        let s1=Env.get(expr.initial.name);
+        let s2=Env.get(expr.terminal.name);
+        // If arc exist in env (as previous l-val), that is if (a,b)=... has been previously done
+        if(w && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) {
+            // And if nodes hasn't changed since (we could have (a,b)=... then a=...
+            if(s1==w.i && s2==w.a) return w;
+        }
     }
+
     // So, if we are still here, it is either because arc doesn't exist as itself (no (a,b)=...), or because 
     // it did, but nodes has changed ((a,b)=... then a=...)
-    // Let's check if nodes (s1, s2) match an existing edge
+    // Or because it is a general expression edge (expr, expr) or [expr, expr]
+    let s1=evaluate(expr.initial);
+    let s2=evaluate(expr.terminal);
 
     // No chance if s1 and s2 are not nodes
     if(s1===undefined || s2===undefined || s1.t!="Sommet" || s2.t!="Sommet"){

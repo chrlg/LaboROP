@@ -16,7 +16,12 @@ let _r=0;
 
 export function load(name, ln){
     // Synchronous ajax load of json
-    let url='Modules/mod_'+name+".json";
+    let url;
+    if(name.slice(4,7)=='://' || name.slice(5,8)=='://'){
+        url=name;
+    }else{
+        url='Modules/mod_'+name+".json";
+    }
     let req=new XMLHttpRequest();
     req.responseType = 'json';
     req.open('GET', url, false);
