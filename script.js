@@ -639,6 +639,25 @@ function splitMove(){
 }
 $(splitMove);
 
+function nodeDot(name, s){
+    let attr="";
+    let col=s.color;
+    if (col) attr=`[color=${col} penwidth=4 fontcolor=${col}]`;
+    if (s.x!=undefined && s.y!==undefined){
+        attr += `[pos="${s.x},${s.y}!"]`
+    }
+    return ""+name+attr+";";
+}
+
+function grayNode(name, s){
+    if(s.visible) return '';
+    let pos='';
+    if (s.x!=undefined && s.y!==undefined){
+        pos = ` pos="${s.x},${s.y}!"`
+    }
+    return `${name}[color=gray  fontcolor=gray${pos}];`
+}
+
 function generateDot(g){
     let gr=""; // Chaine contenant le .dot de graphviz
     let orient = g.oriented;
@@ -649,15 +668,9 @@ function generateDot(g){
     // (Note: servira plus tard pour les attributs)
     for(let e in g.sommets){
         // En mode "discover", le sommet n'est affiché que s'il apparait avec l'attribut "visible"
-        if(g.discover && !g.sommets[e].visible) continue;
         let s=g.sommets[e];
-        let attr="";
-        let col=s.color;
-        if (col) attr=`[color=${col} penwidth=4 fontcolor=${col}]`;
-        if (s.x!=undefined && s.y!==undefined){
-            attr += `[pos="${s.x},${s.y}!"]`
-        }
-        gr+=(""+e+attr+";");
+        if(g.discover && !s.visible) continue;
+        gr += nodeDot(e, s);
     }
     // Arcs ou aretes
     for(let a of g.arcs){
@@ -667,16 +680,7 @@ function generateDot(g){
         // (Note, c'est la première déclaration de ce sommet : dans la passe précédente on ne l'a pas affiché. On s'apprêtait à le 
         // définir implicitement en définissant l'arc)
         if(g.discover) {
-            if(!g.sommets[a.i].visible) gr+=`${a.i}[color=gray][fontcolor=gray];`
-            // Note: both are not supposed to happen: we should have visible edges with no visible nodes
-            let sterm=g.sommets[a.a];
-            if(!sterm.visible) {
-                let pos='';
-                if (sterm.x!=undefined && sterm.y!==undefined){
-                    pos = ` pos="${sterm.x},${sterm.y}!"`
-                }
-                gr+=`${a.a}[color=gray  fontcolor=gray${pos}];`
-            }
+            gr += grayNode(a.i, g.sommets[a.i]) + grayNode(a.a, g.sommets[a.a]);
         }
         // Construction des attributs (couleur, label)
         let attr="";

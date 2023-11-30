@@ -326,7 +326,7 @@ function preGraphMode(args, named, ln, fname){
     if(m===undefined) return {t:"string", val:g.mode};
     g.mode=m;
     g.change=true;
-    regularCheck();
+    regularCheck(true);
     return {t:'string', val:g.name};
 }
 
