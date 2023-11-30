@@ -328,7 +328,7 @@ atomicExpr
       | "{}" {
          $$={t:"struct", f:[], ln:@1.first_line};
       }
-      | "(" ID "," ID ")" {
+      | "(" expr "," expr ")" {
 	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
       ;
