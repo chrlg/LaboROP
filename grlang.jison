@@ -459,27 +459,14 @@ bracketExpr
       : expr {
          $$ = {t:"staticArray", args:[$1], ln:@1.first_line};
       }
-      | expr "," bracketExpr2 {
-         if($1.t=="id" && $3.t=="id"){
-	    $$={t:"arete", initial: $1.name, terminal: $3.name, ln:@1.first_line};
-         }else if($3.t=="id"){
-            $$ = {t:"staticArray", args:[$1, $3], ln:@1.first_line};
-         }else{
-            $$ = {t:"staticArray", args:[$1].concat($3.l), ln:@1.first_line};
-         }
+      | expr "," {
+         $$ = {t:"staticArray", args:[$1], ln:@1.first_line};
       }
-      ;
-
-bracketExpr2 
-      : {
-         $$={t:"list", l:[]};
+      | expr "," expr {
+         $$ = {t:"exprArete", initial:$1, terminal:$3, ln:@1.fist_line};
       }
-      | expr {
-         if($1.t=="id") $$=$1;
-         else $$={t:"list", l:[$1]};
-      }
-      | expr "," bracketExpr3 {
-         $$={t:"list", l:[$1].concat($3)};
+      | expr "," expr "," bracketExpr3 {
+         $$ = {t:"staticArray", args:[$1,$3].concat($5), ln:@1.first_line};
       }
       ;
 
