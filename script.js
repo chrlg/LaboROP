@@ -150,7 +150,7 @@ function showGraph(g){
     }
     if(g.mode=='dot'){
         let dot=generateDot(g);
-        let viz=Viz(dot, {"engine":"neato"});//, {engine:"neato"});
+        let viz=Viz(dot);
         $('#svgcont').show();
         $('#canvascont').hide();
         $('#svgcont').html(viz);
@@ -166,9 +166,14 @@ function showGraph(g){
         return;
     }
     if(g.mode=='mesh'){
-        $('#svgcont').hide();
-        $('#canvascont').show();
-        showMesh(g);
+        let dot=generateDot(g);
+        let viz=Viz(dot, {"engine":"neato"});
+        $('#svgcont').show();
+        $('#canvascont').hide();
+        $('#svgcont').html(viz);
+        _grlg.svgw = $("#svgcont svg").width();
+        _grlg.svgh = $("#svgcont svg").height();
+        zoomGraph();
         return;
     }
     
@@ -664,7 +669,14 @@ function generateDot(g){
         if(g.discover) {
             if(!g.sommets[a.i].visible) gr+=`${a.i}[color=gray][fontcolor=gray];`
             // Note: both are not supposed to happen: we should have visible edges with no visible nodes
-            if(!g.sommets[a.a].visible) gr+=`${a.a}[color=gray][fontcolor=gray];`
+            let sterm=g.sommets[a.a];
+            if(!sterm.visible) {
+                let pos='';
+                if (sterm.x!=undefined && sterm.y!==undefined){
+                    pos = ` pos="${sterm.x},${sterm.y}!"`
+                }
+                gr+=`${a.a}[color=gray  fontcolor=gray${pos}];`
+            }
         }
         // Construction des attributs (couleur, label)
         let attr="";
