@@ -6,6 +6,7 @@ import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
 import {regularCheck, print, flush} from "./domcom.js";
 
 export default function populate(){
+    // TODO : int, round, str, min, max
    Env.addPredfn("clear", preClear);
    Env.addPredfn("sommets", preSommets);
    Env.addPredfn("len", preLen);
