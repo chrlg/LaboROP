@@ -299,7 +299,7 @@ export function evaluate(expr){
 
         // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
         if(expr.t==".+"){
-            if(isNumeric(a) &&& isNumeric(b)){
+            if(isNumeric(a) && isNumeric(b)){
                 Env.addCnt(1);
                 return {t:"number", val:(numericValee(a)!=0 || numericValue(b)!=0)?1:0};
             }
