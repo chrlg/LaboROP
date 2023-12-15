@@ -38,6 +38,7 @@ export default function populate(){
    Env.addPredfn("acos", preMaths1);
    Env.addPredfn("atan", preMaths1);
    Env.addPredfn("abs", preMaths1);
+   Env.addPredfn("min", preMin);
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Id", preId, true);
    Env.addPredvar("Zero", preZero, true);
@@ -386,13 +387,34 @@ function preMaths1(args, named, ln, fname){
     throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
 }
 
+function preMin(args, named, ln, fname){
+    let r=Cst.NULL;
+    let ft = function(a){
+        if(isNumeric(a)){
+            if(r.t==="null" || numericValue(a)<numericValue(r)) r=a;
+        }
+        else if(a.t=="array"){
+            for(let y of a.val){
+                ft(y);
+            }
+        }
+    }
+    for(let a of args){
+        let v=evaluate(a);
+        if(v.t!='array' && !isNumeric(v))
+            throw {error:"type", name:"Mauvais type", msg:`Les arguments de min doivent être des nombre ou des tableaux, pas des ${a.t}`, ln:a.ln};
+        ft(v);
+    }
+    return r;
+}
+
 function prePremier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
          msg:"Mauvais nombre d'arguments pour premier", ln:ln};
    let l=evaluate(args[0]);
    if(l.t!="array") throw {error:"type", name:"Erreur de type",
          msg:"'premier' attend un argument de type tableau", ln:args[0].ln};
-   if(l.val.length<=0) return NULL;
+   if(l.val.length<=0) return Cst.NULL;
    else return l.val[0];
 }
 
@@ -402,7 +424,7 @@ function preDernier(args, named, ln, fname){
    let l=evaluate(args[0]);
    if(l.t!="array") throw {error:"type", name:"Erreur de type",
          msg:"'dernier' attend un argument de type tableau", ln:args[0].ln};
-   if(l.val.length<=0) return NULL;
+   if(l.val.length<=0) return Cst.NULL;
    else return l.val[l.val.length-1];
 }
 

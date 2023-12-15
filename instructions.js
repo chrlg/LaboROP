@@ -3,6 +3,7 @@ import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
 import {evalSommet, creerArc, creerArete} from "./graphe.js";
 import {FALSE} from "./constants.js";
+import Decimal from "./lib/decimal.mjs";
 
 export let Line = 0; // Default line number for internal error log
 let _instrCnt=0; // Number of executed instruction (for regular display refresh check)
