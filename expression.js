@@ -235,12 +235,12 @@ export function evaluate(expr){
                 }
             }
             if(a.t=="matrix"){
-                if(b.t=="number"){ // M + x = addition de x à tous les coefs de M
+                if(isNumeric(b)){ // M + x = addition de x à tous les coefs de M
                     let R={t:"matrix", val:new Array(a.val.length)};
                     for(let i=0; i<a.val.length; i++){
                         R.val[i]=new Array(a.val.length).fill(0);
                         for(let j=0; j<a.val.length; j++){
-                            R.val[i][j] = a.val[i][j] + b.val;
+                            R.val[i][j] = a.val[i][j] + numericValue(b);
                         }
                     }
                     Env.addCnt(a.val.length*a.val.length);
@@ -288,19 +288,20 @@ export function evaluate(expr){
 
         // Cas particulier pour **
         if(expr.t=="**"){
-            if(a.t=="matrix" && b.t=="number") return Map.pow(a, b.val);
+            if(a.t=="matrix" && isNumeric(b)) return Mat.pow(a, numericValue(b));
         }
 
         if(expr.t==".^"){
-            if(a.t=="matrix" && b.t=="number") return Mat.boolPow(a, b.val);
+            if(a.t=="matrix" && isNumeric(b)) return Mat.boolPow(a, numericValue(b));
             if(a.t=="number" && b.t=="number") return {t:"number", val:(a.val!=0)?1:0};
+            else if(isNumeric(a) && isNumeric(b)) return {t:"decimal", val:numericValue(a)!=0?Decimal(1):Decimal(0)};
         }
 
         // ".+" n'a de sens que sur les matrices (et, cadeau, 2 nombres)
         if(expr.t==".+"){
-            if(a.t=="number" && b.t=="number") {
+            if(isNumeric(a) &&& isNumeric(b)){
                 Env.addCnt(1);
-                return {t:"number", val:(a.val!=0 || b.val!=0)?1:0};
+                return {t:"number", val:(numericValee(a)!=0 || numericValue(b)!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
@@ -310,9 +311,9 @@ export function evaluate(expr){
 
         // ".*" sur matrices et nombres
         if(expr.t==".*"){
-            if(a.t=="number" && b.t=="number") {
+            if(isNumeric(a) && isNumeric(b)){
                 Env.addCnt(1);
-                return {t:"number", val:(a.val!=0 && b.val!=0)?1:0};
+                return {t:"number", val:(numericValue(a)!=0 && numericValue(b)!=0)?1:0};
             }
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
@@ -413,11 +414,11 @@ export function evaluate(expr){
         let M=evaluate(expr.mat);
         if(M.t!="matrix") throw {error:"type", name:"Erreur de type",
             msg:"Utilisation d'un "+M.t+" comme une matrice", ln:expr.ln};
-        if(i.t!="number") throw {error:"type", name:"Erreur de type",
+        if(!isNumeric(i)) throw {error:"type", name:"Erreur de type",
             msg:"Indice de ligne non entier", ln:expr.i.ln};
-        if(j.t!="number") throw {error:"type", name:"Erreur de type",
+        if(!isNumeric(j)) throw {error:"type", name:"Erreur de type",
             msg:"Indice de colonne non entier", ln:expr.j.ln};
-        return {t:"number", val:M.val[i.val][j.val]};
+        return {t:"number", val:M.val[numericValue(i)][numericValue(j)]};
     }
     if(expr.t=="array"){
         return JSON.parse(JSON.stringify(expr));
@@ -654,7 +655,7 @@ export function evaluateLVal(lv, direct){
 
 // For mixed cases, where a l-value is also an expression. So far, only for ++ --
 function getRef(ref){
-   // Cas matriciel
+   // Only for case such as matrix[i,j]++
    if(typeof ref[0][ref[1]] == "number") return {t:"number", val:ref[0][ref[1]]};
    return ref[0][ref[1]];
 }
