@@ -235,28 +235,9 @@ export function evaluate(expr){
                 }
             }
             if(a.t=="matrix"){
-                if(isNumeric(b)){ // M + x = addition de x à tous les coefs de M
-                    let R={t:"matrix", val:new Array(a.val.length)};
-                    for(let i=0; i<a.val.length; i++){
-                        R.val[i]=new Array(a.val.length).fill(0);
-                        for(let j=0; j<a.val.length; j++){
-                            R.val[i][j] = a.val[i][j] + numericValue(b);
-                        }
-                    }
-                    Env.addCnt(a.val.length*a.val.length);
-                    return R;
-                }
-                if(b.t=="matrix"){
-                    let R={t:"matrix", val:new Array(a.val.length)};
-                    for(let i=0; i<a.val.length; i++){
-                        R.val[i]=new Array(a.val.length).fill(0);
-                        for(let j=0; j<a.val.length; j++){
-                            R.val[i][j] = a.val[i][j] + b.val[i][j];
-                        }
-                    }
-                    Env.addCnt(a.val.length*a.val.length);
-                    return R;
-                }
+                // M + x = addition de x à tous les coefs de M
+                if(isNumeric(b)) return Mat.plusScalar(a, numericValue(b));
+                if(b.t=="matrix") return Mat.sum(a,b);
             }
             if(a.t=="string"){
                 if(b.t=="string") return {t:"string", val:a.val+b.val};
@@ -274,9 +255,16 @@ export function evaluate(expr){
             }
         }
 
+        // Specific cases for "-"
+        if(expr.t=="-"){
+            if(a.t=="matrix" && isNumeric(b)) return Mat.plusScalar(a, -numericValue(b));
+            if(a.t=="matrix" && b.t=="matrix") return Mat.minus(a,b);
+            if(isNumeric(a) && b.t=="matrix") return Mat.scalarMinus(numericValue(a), b);
+        }
+
         // Cas particulier pour *
         if(expr.t=="*"){
-            // Et non paresseurx
+            // Non-lazy AND 
             if(a.t=="boolean" && b.t=="boolean") {
                 Env.addCnt(1);
                 return (a.val&&b.val)?TRUE:FALSE;
@@ -284,6 +272,10 @@ export function evaluate(expr){
 
             // Multiplication matricielle
             if(a.t=="matrix" && b.t=="matrix") return Mat.mul(a,b);
+
+            // Matrix times number
+            if(a.t=="matrix" && isNumeric(b)) return Mat.mulScalar(a,numericValue(b));
+            if(b.t=="matrix" && isNumeric(a)) return Mat.mulScalar(b,numericValue(a));
         }
 
         // Cas particulier pour **
@@ -306,7 +298,7 @@ export function evaluate(expr){
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
-            return Mat.sum(a,b);
+            return Mat.dotsum(a,b);
         }
 
         // ".*" sur matrices et nombres

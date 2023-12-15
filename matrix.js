@@ -17,7 +17,7 @@ export function id(n){
     return M;
 }
 
-export function sum(a, b){
+export function dotsum(a, b){
     let n=a.val.length;
     let R=zeroDim(n);
     for(let i=0; i<n; i++){
@@ -29,9 +29,32 @@ export function sum(a, b){
     return R;
 }
 
+export function sum(a, b){
+    let n=a.val.length;
+    let R=zeroDim(n);
+    for(let i=0; i<n; i++){
+        for(let j=0; j<n; j++){
+            R.val[i][j] = a.val[i][j]+b.val[i][j];
+        }
+    }
+    Env.addCnt(n*n);
+    return R;
+}
+export function minus(a, b){
+    let n=a.val.length;
+    let R=zeroDim(n);
+    for(let i=0; i<n; i++){
+        for(let j=0; j<n; j++){
+            R.val[i][j] = a.val[i][j]-b.val[i][j];
+        }
+    }
+    Env.addCnt(n*n);
+    return R;
+}
+
 export function mul(a,b){
-   let R={t:"matrix", val:new Array(a.val.length)};
    let n=a.val.length;
+   let R={t:"matrix", val:new Array(n)};
    for(let i=0; i<n; i++){
       R.val[i]=new Array(n).fill(0);
       for(let j=0; j<n; j++){
@@ -81,3 +104,40 @@ export function boolPow(a,k){
     return HH;
 }
 
+export function mulScalar(M,x){
+    let n=M.val.length;
+    let R={t:"matrix", val:new Array(n)};
+    for(let i=0; i<n; i++){
+        R.val[i]=new Array(n).fill(0);
+        for(let j=0; j<n; j++){
+            R.val[i][j] = M.val[i][j] * x;
+        }
+    }
+    Env.addCnt(n*n);
+    return R;
+}
+export function plusScalar(M,x){
+    let n=M.val.length;
+    let R={t:"matrix", val:new Array(n)};
+    for(let i=0; i<n; i++){
+        R.val[i]=new Array(n).fill(0);
+        for(let j=0; j<n; j++){
+            R.val[i][j] = M.val[i][j] + x;
+        }
+    }
+    Env.addCnt(n*n);
+    return R;
+}
+
+export function scalarMinus(x,M){
+    let n=M.val.length;
+    let R={t:"matrix", val:new Array(n)};
+    for(let i=0; i<n; i++){
+        R.val[i]=new Array(n).fill(0);
+        for(let j=0; j<n; j++){
+            R.val[i][j] = x-M.val[i][j];
+        }
+    }
+    Env.addCnt(n*n);
+    return R;
+}
