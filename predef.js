@@ -22,6 +22,7 @@ export default function populate(){
    Env.addPredfn("import", preImport);
    Env.addPredfn("pop", prePop);
    Env.addPredfn("insert", preInsert);
+   Env.addPredfn("type", preType);
    Env.addPredfn("_grapheMode", preGraphMode);
    Env.addPredfn("sqrt", preMaths1);
    Env.addPredfn("sqr", preMaths1);
@@ -279,6 +280,21 @@ function preImport(args, named, ln, fname){
         msg:"La fonction import attent une chaîne", ln:ln};
     Mod.load(e.val, args[0].ln);
 }
+
+function preType(args, named, ln, fname){
+    if(args.length==0) throw {error:"args", name:"Mauvais nombre d'arguments", msg:"La fonction type s'utilise avec au moins un argument", ln:ln};
+    if(args.length==1){
+        let e=evaluate(args[0]);
+        return {t:"string", val:e.t};
+    }
+    let r={t:"array", val:[]};
+    for(let a of args){
+        let e=evaluate(a);
+        r.val.push({t:"string", val:e.t});
+    }
+    return r;
+}
+
 
 function prePop(args, named, ln, fname){
    if(args.length!=1 && args.length!=2) throw {error:"args", name:"Mauvais nombre d'arguments", 
