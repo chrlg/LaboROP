@@ -7,7 +7,7 @@ import {regularCheck, print, flush} from "./domcom.js";
 import Decimal from "./lib/decimal.mjs";
 
 export default function populate(){
-    // TODO : int, round, str, min, max
+    // TODO : int, round, str
    Env.addPredfn("clear", preClear);
    Env.addPredfn("sommets", preSommets);
    Env.addPredfn("len", preLen);
@@ -39,6 +39,8 @@ export default function populate(){
    Env.addPredfn("atan", preMaths1);
    Env.addPredfn("abs", preMaths1);
    Env.addPredfn("min", preMin);
+   Env.addPredfn("max", preMin);
+   Env.addPredfn("int", preInt);
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Id", preId, true);
    Env.addPredvar("Zero", preZero, true);
@@ -389,23 +391,47 @@ function preMaths1(args, named, ln, fname){
 
 function preMin(args, named, ln, fname){
     let r=Cst.NULL;
+    let fvv = (a,b)=>a<b;
+    let fdd = (a,b)=>Decimal(a.val).lt(b.val);
+    if(fname=='max'){
+        fvv=(a,b)=>a>b;
+        fdd=(a,b)=>Decimal(a.val).gt(b.val);
+    }
     let ft = function(a){
-        if(isNumeric(a)){
-            if(r.t==="null" || numericValue(a)<numericValue(r)) r=a;
-        }
-        else if(a.t=="array"){
+        if(a.t=="array"){
             for(let y of a.val){
                 ft(y);
             }
+        }else if(a.t=='matrix'){
+            let n=a.val.length;
+            if(n>0 && r.t=='null') r={t:'number', val:a.val[0][0]};
+            for(let i=0; i<n; i++){
+                for(let j=0; j<n; j++){
+                    if(fvv(a.val[i][j],r.val)) r={t:'number', val:a.val[i][j]};
+                }
+            }
+        }else{
+            if(r.t=="null"){
+                r=a;
+            }else if(a.t=='number' && r.t=='number'){
+                if(fvv(a.val,r.val)) r=a;
+            }else if(fdd(a,r)) r=a;
         }
     }
     for(let a of args){
         let v=evaluate(a);
-        if(v.t!='array' && !isNumeric(v))
-            throw {error:"type", name:"Mauvais type", msg:`Les arguments de min doivent être des nombre ou des tableaux, pas des ${a.t}`, ln:a.ln};
+        if(v.t!='array' && v.t!='matrix' && !isNumeric(v))
+            throw {error:"type", name:"Mauvais type", msg:`Les arguments de ${fname} doivent être des nombre ou des tableaux, pas des ${a.t}`, ln:a.ln};
         ft(v);
     }
     return r;
+}
+
+function preInt(args, named, ln, fname){
+    if(args.length!=1) throw {error:'args', name:"Mauvais nombre d'arguments", msg:"int s'utilise avec un argument", ln:ln};
+    let v=evaluate(args[0]);
+    if(!isNumeric(v) && v.t!='string') throw {error:'type', name:'Mauvais type', msg:"int(x) s'utilise avec un nombre ou une chaine", ln:ln};
+    return {t:'number', val:Math.floor(v.val)};
 }
 
 function prePremier(args, named, ln, fname){
