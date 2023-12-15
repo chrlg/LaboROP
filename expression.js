@@ -27,29 +27,29 @@ export function numericValue(v){
     return undefined;
 }
 
-// Fonction principale : évalue une expression
-// Note : les expressions sont potentiellement décorée d'un attribut `.l`, qui est une lambda 
-// retournant leur valeur
-// Cela évite, si l'expression est évaluée plusieurs fois, de redécider à chaque fois le bon mode de calcul
-// Note 2 : il est assumé que les symboles locaux sont affectés avant leur première utilisation
-// Aucune vérification statique de cela n'est effectuée
-// Si ce n'est pas le cas, la conséquence sera soit un retour "undefined"
-// soit le fait que le symbole locale restera désigner (du fait de expr.l) un symbole global en tant que r-value
-// même en la présence future d'un symbole local sensé ensuite le masquer.
+// Main function : evaluate an expression
+// Note: expressions may be decorated with an attribute `.l` which is a lambda function returning their values
+// That avoids, if expression is evaluated more than once, to redecide each time the appropriate computation way
+// Note 2: local symbols are assumed to be affected before their first usage. No static checking of that is performed.
+// If that is not so, this is UB: return value could `undefined`. Or it could turn out to be wrongly associated
+// with a global value of the same name, even after that value is affectated as a local value
 // ex x=15; def f(): print(x); x=12; print(x)
-// affiche 15 les 2 fois, car x, la première fois, désigne le x global, et ensuite, du fait du expr.l, continue à le faire
-// même après la création d'un x local valant 12
-// En python, un tel code déclencherait une erreur "symbol local utilisé avant l'affectation", car une vérification statique
-// aurait identifié que x est une variable locale
+// prints 15 twice, because x, first time, is global x, and, second time, because of expr.l associated it with global x, continue to be 15
+// even after creation of a local x whose value is 12 (and which cannot be accesible as r-value)
+// In real python, such a code would raise a "local symbol used before affectation" error.
+// Here, it is just UB. In both languages, this shouldn't be done.
 export function evaluate(expr){
     // JIT
     if(expr.l!==undefined) return expr.l();
 
-    // Les valeurs natives. 
+    // Native values
+    // They are transmitted by jison parser in the form they also have in this interpreter. So just return parsed constant
     if(expr.t=="string" || expr.t=="number" || expr.t=="boolean"){
         expr.l=function(){return expr;};
         return expr;
     }
+    // Decimals are transmitted by jison in the form of a DECIMAL (all caps) type, with a string as value
+    // We need to create the constant Decimal type here
     if(expr.t=="DECIMAL"){
         let d={t:"decimal", val:Decimal(expr.s)};
         expr.l=function(){return d;};
@@ -199,11 +199,18 @@ export function evaluate(expr){
         if(op.length!=2) throw {error:"type", name:"++ ou -- utilisé sur arc ou arête", msg:"", ln:expr.ln};
         let v=getRef(op);
         if(!v) throw {error:"env", name:"Variable non définie", msg:"", ln:expr.ln};
-        if(v.t!="number") throw {error:"type", name:"Erreur de type", 
+        if(!isNumeric(v)) throw {error:"type", name:"Erreur de type", 
             msg:"++ ou -- attend un nombre et a été utilisé sur un "+v.t, ln:expr.ln};
-        let newVal={t:"number", val:v.val};
-        if(expr.t=="++") newVal.val++;
-        else newVal.val--;
+        let newVal;
+        if(v.t=='number'){
+            newVal={t:"number", val:v.val};
+            if(expr.t=="++") newVal.val++;
+            else newVal.val--;
+        }else{
+            newVal={t:"decimal", val:v.val};
+            if(expr.t=="++") newVal.val = newVal.val.plus(1);
+            else newVal.val = newVal.val.minus(1);
+        }
 
         setRef(op, newVal, expr.ln);
         Env.addCnt(1);
