@@ -92,6 +92,7 @@ onmessage = function (e){
       interpret(out);
       postMessage({termine: 0, opcnt:Env.OpCnt});
    }catch(e){
+      regularCheck(true);
       if(e.error) {
 	 if(e.error=="exit") {
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
