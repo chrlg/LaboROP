@@ -4,6 +4,7 @@ import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
 import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
 import {regularCheck, print, flush} from "./domcom.js";
+import Decimal from "./lib/decimal.mjs";
 
 export default function populate(){
     // TODO : int, round, str, min, max
@@ -306,9 +307,9 @@ function prePop(args, named, ln, fname){
    let index=lvv.val.length-1;
    if(args.length==2){
       let argidx=evaluate(args[1]);
-      if(argidx.t!="number") throw {error:"args", name:"Mauvais type pour pop", 
+      if(!isNumeric(argidx)) throw {error:"args", name:"Mauvais type pour pop", 
          msg:"Le deuxième argument de pop, s'il existe, est un entier (indice de retrait)", ln:args[1].ln};
-      index = argidx.val;
+      index = numericValue(argidx);
    }
    let r=lvv.val.splice(index,1);
    if(r.length==0) {
@@ -348,25 +349,41 @@ function preGraphMode(args, named, ln, fname){
 }
 
 function preMaths1(args, named, ln, fname){
-   if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
-      msg:"La fonction "+fname+" s'utilise avec un et un seul argument", ln:ln};
-   let a=evaluate(args[0]);
-   if(a.t!="number") throw {error:"type", name:"Mauvais type", 
-      msg:"La fonction "+fname+" s'utilise avec un argument numérique", ln:ln};
-   if(fname=="sqrt") return {t:"number", val:Math.sqrt(a.val)};
-   if(fname=="sqr") return {t:"number", val:a.val*a.val};
-   if(fname=="exp") return {t:"number", val:Math.exp(a.val)};
-   if(fname=="log") return {t:"number", val:Math.log(a.val)};
-   if(fname=="log10") return {t:"number", val:Math.log10(a.val)};
-   if(fname=="log2") return {t:"number", val:Math.log2(a.val)};
-   if(fname=="sin") return {t:"number", val:Math.sin(a.val)};
-   if(fname=="cos") return {t:"number", val:Math.cos(a.val)};
-   if(fname=="tan") return {t:"number", val:Math.tan(a.val)};
-   if(fname=="asin") return {t:"number", val:Math.asin(a.val)};
-   if(fname=="acos") return {t:"number", val:Math.acos(a.val)};
-   if(fname=="atan") return {t:"number", val:Math.atan(a.val)};
-   if(fname=="abs") return {t:"number", val:Math.abs(a.val)};
-   throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
+    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
+        msg:"La fonction "+fname+" s'utilise avec un et un seul argument", ln:ln};
+    let a=evaluate(args[0]);
+    if(!isNumeric(a)) throw {error:"type", name:"Mauvais type", 
+        msg:"La fonction "+fname+" s'utilise avec un argument numérique", ln:ln};
+    if(a.t=='number'){
+        if(fname=="sqrt") return {t:"number", val:Math.sqrt(a.val)};
+        if(fname=="sqr") return {t:"number", val:a.val*a.val};
+        if(fname=="exp") return {t:"number", val:Math.exp(a.val)};
+        if(fname=="log") return {t:"number", val:Math.log(a.val)};
+        if(fname=="log10") return {t:"number", val:Math.log10(a.val)};
+        if(fname=="log2") return {t:"number", val:Math.log2(a.val)};
+        if(fname=="sin") return {t:"number", val:Math.sin(a.val)};
+        if(fname=="cos") return {t:"number", val:Math.cos(a.val)};
+        if(fname=="tan") return {t:"number", val:Math.tan(a.val)};
+        if(fname=="asin") return {t:"number", val:Math.asin(a.val)};
+        if(fname=="acos") return {t:"number", val:Math.acos(a.val)};
+        if(fname=="atan") return {t:"number", val:Math.atan(a.val)};
+        if(fname=="abs") return {t:"number", val:Math.abs(a.val)};
+    }else{
+        if(fname=="sqrt") return {t:"decimal", val:a.val.sqrt()};
+        if(fname=="sqr") return {t:"decimal", val:a.val.times(a.val)};
+        if(fname=="exp") return {t:"decimal", val:Decimal.exp(a.val)};
+        if(fname=="log") return {t:"decimal", val:Decimal.log(a.val, Decimal.exp(1))};
+        if(fname=="log10") return {t:"decimal", val:Decimal.log10(a.val)};
+        if(fname=="log2") return {t:"decimal", val:Decimal.log2(a.val)};
+        if(fname=="sin") return {t:"decimal", val:Decimal.sin(a.val)};
+        if(fname=="cos") return {t:"decimal", val:Decimal.cos(a.val)};
+        if(fname=="tan") return {t:"decimal", val:Decimal.tan(a.val)};
+        if(fname=="asin") return {t:"decimal", val:Decimal.asin(a.val)};
+        if(fname=="acos") return {t:"decimal", val:Decimal.acos(a.val)};
+        if(fname=="atan") return {t:"decimal", val:Decimal.atan(a.val)};
+        if(fname=="abs") return {t:"decimal", val:Decimal.abs(a.val)};
+    }
+    throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
 }
 
 function prePremier(args, named, ln, fname){
@@ -441,52 +458,3 @@ function preZero(args, named, ln, fname){
     let n=Object.keys(g.sommets).length;
     return Mat.zeroDim(n);
 }
-
-
-function importReseau(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      Env.Gr.sommets["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=env.Gr.sommets["S"+p[0]];
-      let s2=env.Gr.sommets["S"+p[1]];
-      let d={t:"number", val:0};
-      if(p.length==3) d.val=p[2];
-      else{
-         let x1=s1.marques.x;
-         let x2=s2.marques.x;
-         let y1=s1.marques.x;
-         let y2=s2.marques.x;
-         d.val=Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-      }
-      if (v=="noValues") Env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{}});
-      else env.Gr.arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d}});
-   }
-   env.Gr.setOrient(TRUE);
-   env.Gr.mode="dot";   
-   env.Gr.change=true;
-}
-
-
-function importReseauValue(g,v){
-   for(let i=0; i<g[0].length; i++){
-      let x={t:"number", val:g[0][i][0]};
-      let y={t:"number", val:g[0][i][1]};
-      _grapheEnv["S"+i] = {t:"Sommet", name:"S"+i, marques:{x:x, y:y}};
-   }
-   for(let p of g[1]){
-      let s1=_grapheEnv["S"+p[0]];
-      let s2=_grapheEnv["S"+p[1]];
-      let d={t:"number", val:0};
-      d.val=p[2];
-      let c={t:"number", val:0};
-      c.val=p[3];
-      _arcs.push({t:"Arc", i:s1, a:s2, marques:{t:"number",capacite:d,t:"number",cout:c}});
-   }
-   _env.setOrient(TRUE);
-   _grapheMode="arrows";   
-   _grapheChange=true;
-}
-
