@@ -372,7 +372,7 @@ function preMaths1(args, named, ln, fname){
 function prePremier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
          msg:"Mauvais nombre d'arguments pour premier", ln:ln};
-   var l=evaluate(args[0]);
+   let l=evaluate(args[0]);
    if(l.t!="array") throw {error:"type", name:"Erreur de type",
          msg:"'premier' attend un argument de type tableau", ln:args[0].ln};
    if(l.val.length<=0) return NULL;
@@ -382,7 +382,7 @@ function prePremier(args, named, ln, fname){
 function preDernier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
          msg:"Mauvais nombre d'arguments pour dernier", ln:ln};
-   var l=evaluate(args[0]);
+   let l=evaluate(args[0]);
    if(l.t!="array") throw {error:"type", name:"Erreur de type",
          msg:"'dernier' attend un argument de type tableau", ln:args[0].ln};
    if(l.val.length<=0) return NULL;
