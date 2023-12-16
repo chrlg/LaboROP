@@ -457,9 +457,16 @@ function loadCloudFile(j){
 
 
 function refreshCloud(lf){
+    let restore=JSON.parse(localStorage.getItem("laborop_restore"));
+    if(restore){
+       let NOW = new Date();
+       let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
+       currentFilename=restore.fn+' Récupéré '+NOWSTR;
+       editor.setValue(restore.code, -1);
+       localStorage.setItem("laborop_restore", "false");
+       return saveCode();
+    }
     let table=$("<table></table>").appendTo($("#files"));
-    let me=localStorage.getItem("laborop_me");
-    if(!me) return;
     for(let i=0; i<lf.length; i++){
         let fn=lf[i];
      
@@ -485,7 +492,7 @@ function refreshCloud(lf){
                 if(inputName.val()=="") return;
                 let ns=inputName.val().replaceAll('/','╱');
                 if(fn==currentFilename) currentFilename=ns;
-                mypost('ajax.php', {me:me, action:'mv', src:fn, dest:ns}).then(function(j){
+                mypost('ajax.php', {action:'mv', src:fn, dest:ns}).then(function(j){
                     console.log('ret mv', j);
                     initFiles();
                 });
@@ -497,7 +504,7 @@ function refreshCloud(lf){
         });
 
         btOpen.click(function(){
-            mypost('ajax.php', {me:me, action:'load', src:fn}).then(loadCloudFile);
+            mypost('ajax.php', {action:'load', src:fn}).then(loadCloudFile);
         });
 
         btDel.click(function(){
@@ -507,10 +514,10 @@ function refreshCloud(lf){
             }
             let sur=confirm("Supprimer le fichier "+fn+ " ?");
             if(!sur) return;
-            mypost('ajax.php', {me:me, action:'rm', fn:fn}).then((j)=>initFiles());
+            mypost('ajax.php', {action:'rm', fn:fn}).then((j)=>initFiles());
         });
         btCopy.click(function(){
-            mypost('ajax.php', {me:me, action:'copy', fn:fn}).then((j)=>initFiles());
+            mypost('ajax.php', {action:'copy', fn:fn}).then((j)=>initFiles());
         });
     }
     let tr=$("<tr>").appendTo(table);
@@ -541,12 +548,7 @@ function refreshCloud(lf){
 
 function initFiles(){
    $("#files").empty();
-   let me=localStorage.getItem("laborop_me");
-   if(!me){
-        localStorage.setItem("laborop_me", (Math.random()*1e11+1e10).toString(36));
-        me=localStorage.getItem("laborop_me");
-   }
-   mypost("ajax.php", {action:'ls', me:me}).then(refreshCloud);
+   mypost("ajax.php", {action:'ls'}).then(refreshCloud);
    return;
 }
 
