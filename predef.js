@@ -6,6 +6,9 @@ import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
 import {regularCheck, print, flush} from "./domcom.js";
 import Decimal from "./lib/decimal.mjs";
 
+// help available for different kind of objects. To be fill later in the code
+let Help={"predfn":{}, "type":{}, "line":"════════════════════════════════════════════════════════════\n"};
+
 export default function populate(){
     // TODO : int, round, str
    Env.addPredfn("clear", preClear);
@@ -62,6 +65,10 @@ function preClear(args, named, ln, fname){
     Env.Gr.sommets={};
     Env.Gr.arcs.length=0;
 }
+Help.predfn.clear=`clear()
+Remet le graphe Gr (graphe par défaut) à 0. 
+Cad supprime tous les sommets et arcs de ce graphe.
+`;
 
 function preSommets(args, named, ln, fname){
    let g=Env.Gr;
@@ -88,6 +95,29 @@ function preSommets(args, named, ln, fname){
    if(_grapheDisc && !t[idx].marques.visible) throw {error:"exec", name: "Sommet inaccessible", msg:"Le sommet #"+idx+" n'est pas encore visible", ln:ln};
    return t[idx];
 }
+Help.predfn.sommets=`sommets():
+Retourne la liste des sommets du graphe par défaut (Gr)
+Dans le mode «découverte» seuls les sommets visibles sont retournés
+────────────────────────────────────────────────────────────
+sommets(graphe):
+Retourne la liste des sommets du graphe «graphe»
+Dans le mode «découverte» seuls les sommets visibles sont retournés
+────────────────────────────────────────────────────────────
+sommets(index):
+index est un entier
+Retourne le indexᵉ sommet du graphe
+Dans le mode «découverte», si ce sommet n'est pas visible, une erreur
+est déclenchée
+────────────────────────────────────────────────────────────
+sommets(graphe, index)
+cf deux précédents
+────────────────────────────────────────────────────────────
+Notez qu'il n'y a aucune règle de numérotation des sommets.
+Vous ne pouvez donc pas utiliser l'index pour désigner un sommet précis.
+En revanche, la numérotation, arbitraire, est garantie déterministe.
+L'index peut donc être utilisé, par exemple, pour reprendre
+une itération interrompue
+`;
 
 function preLen(args, named, ln, fname){
    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
@@ -242,6 +272,9 @@ function preRefresh(args, named, ln, fname){
       msg:"La fonction refresh s'utilise sans argument", ln:ln};
    regularCheck(true);
 }
+Help.predfn.refresh=`refresh():
+Force l'affichage du text non encore affiché, et le redessin des graphes
+`;
 
 function preArcs(args, named, ln, fname){
     if(args.length>2) throw {error:"args", name:"Mauvais nombre d'arguments",
@@ -462,11 +495,36 @@ function preInt(args, named, ln, fname){
 function preHelp(args, named, ln, fname){
     // Without args, just shows the list of predef symbols
     if(args.length==0){
+        print(Help.line);
+        print("Help : liste des symboles prédéfinis\n");
+        print(Help.line);
         for(let k in Env.Predef){
             print(k+' ');
         }
         print('\n');
+        print(Help.line);
+        return;
     }
+    if(args.length>1) error({error:"args", name:"Mauvais nombre d'arguments", msg:"help s'utilise avec 0 ou 1 argument", ln:ln});
+    // With 1 arg: show Help about that arg
+    let a=evaluate(args[0]);
+    if(a.t=='predfn'){
+        if(Help.predfn[a.name]){
+            print(Help.line);
+            print(Help.predfn[a.name]);
+            print(Help.line);
+            return;
+        }
+        print(`Pas d'aide disponible sur la fonction «${a.name}»\n`);
+    }
+    if(Help.type[a.t]){
+        print(Help.line);
+        print(Help.type[a.t]);
+        print(Help.line);
+        return;
+    }
+    print(`Pas d'aide disponible sur le type «${a.t}»\n`);
+    console.log("help", a);
 }
 
 function prePremier(args, named, ln, fname){
@@ -541,3 +599,13 @@ function preZero(args, named, ln, fname){
     let n=Object.keys(g.sommets).length;
     return Mat.zeroDim(n);
 }
+
+Help.type['number']=`Un nombre est un entier ou un réel. 
+Lorsque ce nombre est un entier inférieur à 9007199254740992, il est exact. 
+Sinon, il souffre de l'erreur numérique classique des réels. Par exemple 
+    print(0.1+0.2==0.3)
+    ⇒
+    False
+Utilisez les nombres décimaux si cela est un problème.
+cf help(1d)
+`;

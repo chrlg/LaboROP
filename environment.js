@@ -86,7 +86,7 @@ export function getPredef(name){
 // Add predefined function name
 export function addPredfn(name, fn){
     if(Predef[name]) throw {error:"internal", name:"Erreur interne", msg:`Double définition de symbole prédéfini ${name}`, ln:0};
-    Predef[name] = {t:"predfn", f:fn};
+    Predef[name] = {t:"predfn", f:fn, name:name};
 }
 
 // Add predefined nonstatic variables (variables from the point of view of pyro, but function here in JS)
