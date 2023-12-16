@@ -42,6 +42,7 @@ export default function populate(){
    Env.addPredfn("min", preMin);
    Env.addPredfn("max", preMin);
    Env.addPredfn("int", preInt);
+   Env.addPredfn("help", preHelp);
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Id", preId, true);
    Env.addPredvar("Zero", preZero, true);
@@ -456,6 +457,16 @@ function preInt(args, named, ln, fname){
     let v=evaluate(args[0]);
     if(!isNumeric(v) && v.t!='string') throw {error:'type', name:'Mauvais type', msg:"int(x) s'utilise avec un nombre ou une chaine", ln:ln};
     return {t:'number', val:Math.floor(v.val)};
+}
+
+function preHelp(args, named, ln, fname){
+    // Without args, just shows the list of predef symbols
+    if(args.length==0){
+        for(let k in Env.Predef){
+            print(k+' ');
+        }
+        print('\n');
+    }
 }
 
 function prePremier(args, named, ln, fname){
