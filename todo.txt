@@ -25,3 +25,5 @@ sauvegarder fichier local
 importer fichier local
 
 wasm
+
+dos2unix (ou support fichier dos)
