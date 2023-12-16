@@ -59,15 +59,9 @@ function messageFromWorker(event){
 }
 
 function oneditorChange(e){
-   if(e.lines.length<2) return;
-   if(e.action!="insert") return;
-   let str=editor.session.getLine(e.start.row);
-   if(str[0]==" ") return;
-   if(str.indexOf(":")>=0) return;
-   realEditorChange();
 }
 
-function realEditorChange(){
+function runCode(){
     if(worker) worker.terminate();
     if(timeout) clearTimeout(timeout);
     worker=false;
@@ -86,17 +80,27 @@ function realEditorChange(){
         editor.session.removeMarker(errorMarker);
         errorMarker=false;
     }
-}
-
-function saveCode(e, f, g){
-    currentFile.code = editor.getValue();
-    saveFiles();
-    realEditorChange();
     return true;
 }
 
-function runCode(){
-    realEditorChange();
+let currentFilename=false;
+function checkSavedCode(j){
+    console.log(j);
+    if(j.saved=='ok'){
+        localStorage.setItem("laborop_restore", JSON.stringify(false));
+    }else{
+        localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+    }
+}
+
+function saveCode(e, f, g){
+    if(!currentFilename){
+       let NOW = new Date();
+       let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
+       currentFilename=='New '+NOWSTR;
+    }
+    mypost('ajax.php', {action:'save', fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
+    runCode();
     return true;
 }
 
@@ -323,6 +327,7 @@ function showTab(t, button=false){
    $("#tabs button").removeClass("selected");
    if(button) button.addClass("selected");
    else $("#tabs button[data-target='"+t+"']").addClass("selected");
+   if(t=='files') initFiles();
 }
 
 function doZoom(delta){
@@ -389,8 +394,9 @@ function init(){
 
    editor.getSession().on('change', oneditorChange);
    editor.setOption("showInvisibles", true);
-   editor.setValue(currentFile.code, -1);
-   realEditorChange();
+
+//   editor.setValue(currentFile.code, -1);
+   runCode();
 
    // Tabs
    $("#tabs button[data-target]").click(function(e){
@@ -417,191 +423,124 @@ function init(){
 
 window.onload=init;
 
-function initFiles(){
-   $("#files").empty();
-   let table=$("<table></table>").appendTo($("#files"));
-   for(let i=0; i<listFiles.length; i++){
-      let tr=$("<tr></tr>").appendTo(table);
-      let spanName=$("<span>"+listFiles[i].name+"</span>");
-      if(listFiles[i].name==currentFilename) spanName.css("color", "red");
-      let inputName=$("<input />").val(listFiles[i].name).hide();
-      $("<td>").appendTo(tr).append(spanName).append(inputName);
-      let btOpen=$("<button>Ouvrir</button>");
-      let btCopy=$("<button>Copier</button>");
-      let btRename=$("<button>Renommer</button>");
-      let btDel=$("<button>Supprimer</button>");
-      $("<td>").appendTo(tr).append(btOpen);
-      $("<td>").appendTo(tr).append(btCopy);
-      $("<td>").appendTo(tr).append(btRename);
-      $("<td>").appendTo(tr).append(btDel);
+function mypost(url,payload){
+    return fetch(url, {
+        method: 'post',
+        headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    }).then(function(res){
+        return res.json();
+    });
+}
 
-      btRename.click(function(){
-         spanName.hide();
-         inputName.show();
-      });
+function loadCloudFile(j){
+    currentFilename=j.src;
+    editor.setValue(j.code, -1);
+    initFiles();
+    runCode();
+}
 
-      inputName.keyup(function(e){
-         if(e.keyCode===13){
-            if(inputName.val()=="") return;
-            for(let i=0; i<listFiles.length; i++){
-               if(listFiles[i].name==inputName.val()){
-                  alert("Ce fichier existe déjà");
-                  return;
-               }
+
+function refreshCloud(lf){
+    let table=$("<table></table>").appendTo($("#files"));
+    let me=localStorage.getItem("laborop_me");
+    if(!me) return;
+    for(let i=0; i<lf.length; i++){
+        let fn=lf[i];
+     
+        let tr=$("<tr></tr>").appendTo(table);
+        let spanName=$("<span>"+fn+"</span>");
+        if(fn==currentFilename) spanName.css("color", "red");
+        let inputName=$("<input />").val(fn).hide();
+        $("<td>").appendTo(tr).append(spanName).append(inputName);
+        let btOpen=$("<button>Ouvrir</button>");
+        let btCopy=$("<button>Copier</button>");
+        let btRename=$("<button>Renommer</button>");
+        let btDel=$("<button>Supprimer</button>");
+        $("<td>").appendTo(tr).append(btOpen);
+        $("<td>").appendTo(tr).append(btCopy);
+        $("<td>").appendTo(tr).append(btRename);
+        $("<td>").appendTo(tr).append(btDel);
+        btRename.click(function(){
+            spanName.hide();
+            inputName.show();
+        });
+        inputName.keyup(function(e){
+            if(e.keyCode===13){
+                if(inputName.val()=="") return;
+                let ns=inputName.val().replaceAll('/','╱');
+                if(fn==currentFilename) currentFilename=ns;
+                mypost('ajax.php', {me:me, action:'mv', src:fn, dest:ns}).then(function(j){
+                    initFiles();
+                });
             }
-            currentFile.name=inputName.val();
-            currentFilename=currentFile.name;
-            saveFiles();
-            initFiles();
-         }
-      });
-
-      btOpen.click(function(){
-         currentFilename=listFiles[i].name;
-         currentFile=listFiles[i];
-         editor.setValue(currentFile.code, -1);
-         saveFiles();
-         initFiles();
-      });
-
-      btDel.click(function(){
-         if(listFiles[i]===currentFile){
-            alert("Fichier en cours d'édition");
-            return;
-         }
-         var sur=confirm("Supprimer le fichier "+listFiles[i].name+ " ?");
-         if(!sur) return;
-         listFiles.splice(i, 1);
-         saveFiles();
-         initFiles();
-      });
-
-      btCopy.click(function(){
-         let orgname=listFiles[i].name;
-         let newname="";
-         for(let cnt=1; ; cnt++){
-            let exist=false;
-            newname=orgname+" ("+cnt+")";
-            for(let j=0; j<listFiles.length; j++){
-               if(listFiles[j].name==newname) exist=true;
+            if(e.keyCode===27){
+                inputName.hide();
+                spanName.show();
             }
-            if(exist) continue;
-            break;
-         }
-         newfile={name:newname, code: listFiles[i].code};
-         listFiles.push(newfile);
-         saveFiles();
-         initFiles();
-      });
-   }
+        });
 
-   let tr=$("<tr>").appendTo(table);
-   let inputNew=$("<input />");
-   $("<td>").appendTo(tr).append(inputNew);
-   let btNew=$("<button>Créer nouveau</button>")
-   $("<td colspan=2>").appendTo(tr).append(btNew);
-   let btImport=$("<input type='file' onchange='this.files[0].text().then(t => importPyroFile(t))'>");
-   $("<td colspan=2>").appendTo(tr).append(btImport);
+        btOpen.click(function(){
+            mypost('ajax.php', {me:me, action:'load', src:fn}).then(loadCloudFile);
+        });
+
+        btDel.click(function(){
+            if(fn==currentFilename){
+                alert("Fichier en cours d'édition");
+                return;
+            }
+            let sur=confirm("Supprimer le fichier "+fn+ " ?");
+            if(!sur) return;
+            mypost('ajax.php', {me:me, action:'rm', fn:fn}).then((j)=>initFiles());
+        });
+        btCopy.click(function(){
+            mypost('ajax.php', {me:me, action:'copy', fn:fn}).then((j)=>initFiles());
+        });
+    }
+    let tr=$("<tr>").appendTo(table);
+    let inputNew=$("<input />");
+    $("<td>").appendTo(tr).append(inputNew);
+    let btNew=$("<button>Créer nouveau</button>");
+    $("<td colspan=4>").appendTo(tr).append(btNew);
+
    
-   btNew.click(function(){
-      if(inputNew.val()==""){
-         alert("Saisissez un nom d'abord");
-         return;
-      }
-      for(let i=0; i<listFiles.length; i++){
-         if(listFiles[i].name==inputNew.val()){
-            alert("Fichier déjà existant");
+    btNew.click(function(){
+        if(inputNew.val()==""){
+            alert("Saisissez un nom d'abord");
             return;
-         }
-      }
-      currentFile={name:inputNew.val(), code:""};
-      editor.setValue("", -1);
-      listFiles.push(currentFile);
-      currentFilename=inputNew.val();
-      saveFiles();
-      initFiles();
+        }
+        let ns=inputNew.val().replaceAll('/','╱');
+        for(let i=0; i<lf.length; i++){
+            if(lf[i].name==ns){
+                alert("Fichier déjà existant");
+                return;
+            }
+        }
+        editor.setValue("", -1);
+        currentFilename=ns;
+        mypost('ajax.php', {action:'save', fn:currentFilename, code:editor.getValue()}).then(initFiles);
    });
 }
+
+
+function initFiles(){
+   $("#files").empty();
+   let me=localStorage.getItem("laborop_me");
+   if(!me){
+        localStorage.setItem("laborop_me", (Math.random()*1e11+1e10).toString(36));
+        me=localStorage.getItem("laborop_me");
+   }
+   mypost("ajax.php", {action:'ls', me:me}).then(refreshCloud);
+   return;
+}
+
 
 function importPyroFile(txt){
     editor.setValue(txt, -1);
 }
-
-
-var listFiles, currentFilename, currentFile;
-function saveFiles(){
-   localStorage.setItem("laborop_files", JSON.stringify(listFiles));
-   localStorage.setItem("laborop_currentFilename", currentFilename);
-}
-function initStorage(){
-   listFiles = localStorage.getItem("laborop_files");
-
-   // Liste de mes fichiers
-   if(!listFiles){ // Si je n'en ai pas encore, je crée une liste vide
-      listFiles=[];
-      saveFiles();
-   }
-   else{
-      listFiles=JSON.parse(listFiles);
-   }
-
-   // Si un code "unique" laborop_code existe, je le converti en un fichier "premierLabo"
-   let fromls=localStorage.getItem("laborop_code");
-   if(fromls){
-      listFiles.push({name:"Premier Labo", code:fromls});
-      saveFiles();
-      localStorage.removeItem("laborop_code");
-   }
-
-   // Fichier en cour d'édition
-   var NOW = new Date();
-   var NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"/"+(NOW.getHours())+":"+(NOW.getMinutes());
-   currentFilename = localStorage.getItem("laborop_currentFilename");
-   if(!currentFilename){
-      if(listFiles.length>0){ // S'il n'y a pas de fichier en cours, mais qu'il y a des fichiers, on prend le 1er
-         currentFilename = listFiles[0].name;
-      }else{ // Sinon, on l'appelle "nouveau"
-         currentFilename="Nouveau "+NOWSTR;
-         listFiles.push({name:currentFilename, code:""});
-      }
-      saveFiles();
-   }
-
-   currentFile=false;
-   for(let i=0; i<listFiles.length; i++){
-      if(listFiles[i].name==currentFilename){
-         currentFile=listFiles[i];
-         break;
-      }
-   }
-
-   if(currentFile===false){ // Peut arriver s'il y avait un currentFilename, mais dont le fichier a été effacé
-      currentFilename="Nouveau "+NOWSTR;
-      currentFile={name:currentFilename, code:""};
-      listFiles.push(currentFile);
-      saveFiles();
-   }
-
-   // Solution Labo2
-   for(let sol of _sols){
-      let thissol=false;
-      for(let i=0; i<listFiles.length; i++){
-         if(listFiles[i].name==sol.name) thissol=listFiles[i];
-      }
-      if(!thissol) {
-         thissol={name:sol.name, version:0};
-         listFiles.push(thissol);
-      }
-
-      if(thissol.version < sol.version){
-         thissol.version=sol.version;
-         thissol.code = sol.code;
-      }
-   }
-   saveFiles();
-}
-
-initStorage();
 
 
 function splitMove(){
