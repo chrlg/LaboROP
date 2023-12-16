@@ -2,6 +2,46 @@ body{
    overflow: hidden;
 }
 
+#relogin {
+    display: none;
+    position: fixed;
+    z-index:1000;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+}
+
+#relogin.show{
+    display: block;
+}
+
+#relogingray{
+    background-color: grey;
+    opacity: 0.5;
+    position:absolute;
+    z-index:1100;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    opacity:0.5;
+}
+
+#reloginbox  {
+    position:absolute;
+    border:solid 1vw white;
+    background-color: red;
+    color: white;
+    top:30vh;
+    bottom:30vh;
+    left:20vw;
+    right:20vw;
+    display:inline-block;
+    z-index: 1200;
+    padding: 1vw;
+}
+
 div.mainbox {
    position: absolute;
    display: inline-block;

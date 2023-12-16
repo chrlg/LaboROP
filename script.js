@@ -87,6 +87,11 @@ function runCode(){
 let currentFilename=false;
 function checkSavedCode(j){
     console.log(j);
+    if(j.error=='login'){
+        document.getElementById('relogin').classList.add('show');
+        localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        return;
+    }
     if(j.saved=='ok'){
         localStorage.setItem("laborop_restore", JSON.stringify(false));
     }else{
@@ -457,6 +462,10 @@ function loadCloudFile(j){
 
 
 function refreshCloud(lf){
+    if(lf.error=='login'){
+        document.getElementById('relogin').classList.add("show");
+        return;
+    }
     let restore=JSON.parse(localStorage.getItem("laborop_restore"));
     if(restore){
        let NOW = new Date();
