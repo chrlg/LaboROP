@@ -12,6 +12,7 @@ var _grlg = {
 };
 
 var _graphes={"Gr":true};
+let _graphRendererRunning=false;
 
 var timeout=false;
 function messageFromWorker(event){
@@ -122,8 +123,10 @@ function zoomGraph(){
     $("#svgcont svg").width(targetw).height(targeth);
     $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
     let grname=$(`#tabs button.selected`).attr("data-graph");
-    if(grname && _graphes[grname] && _graphes[grname].mode=="map") showMap(_graphes[grname]);
-    //else if(_lastResData) showReseau(_lastResData[0], _lastResData[1], _lastResData[2], _lastResData[3], _lastResData[4]);
+    if(grname && _graphes[grname] && _graphes[grname].mode=="map") {
+        _graphes[grname].shown=false;
+        refreshGraphs();
+    }
 }
 
 function updateGraph(gr){
@@ -131,8 +134,18 @@ function updateGraph(gr){
         createExtraGraph(gr.name);
     }
     _graphes[gr.name]=gr;
-    if($(`#tabs button.selected[data-graph="${gr.name}"]`).length){
-        showGraph(gr);
+    gr.shown=false;
+    refreshGraphs();
+}
+
+function refreshGraphs(){
+    if(_graphRendererRunning) return;
+    for(let k in _graphes){
+        let gr=_graphes[k];
+        if($(`#tabs button.selected[data-graph="${gr.name}"]`).length){
+            showGraph(gr);
+            gr.shown=true;
+        }
     }
 }
 
@@ -141,11 +154,11 @@ function createExtraGraph(name){
     $("#extragraph").append($but);
     $but.click(function(){
         showTab("show", $but);
-        showGraph(_graphes[name]);
+        refreshGraphs();
+//        showGraph(_graphes[name]);
     });
 }
 
-let _lastResData=false;
 function showGraph(g){
     if(g===true){
         $('#svgcont').hide();
@@ -153,6 +166,7 @@ function showGraph(g){
         return;
     }
     if(g.mode=='dot'){
+        _graphRendererRunning=true;
         let dot=generateDot(g);
         let viz=Viz(dot);
         $('#svgcont').show();
@@ -161,15 +175,19 @@ function showGraph(g){
         _grlg.svgw = $("#svgcont svg").width();
         _grlg.svgh = $("#svgcont svg").height();
         zoomGraph();
+        _graphRendererRunning=false;
         return;
     }
     if(g.mode=='map'){
+        _graphRendererRunning=true;
         $('#svgcont').hide();
         $('#canvascont').show();
         showMap(g);
+        _graphRendererRunning=false;
         return;
     }
     if(g.mode=='mesh'){
+        _graphRendererRunning=true;
         let dot=generateDot(g);
         let viz=Viz(dot, {"engine":"neato"});
         $('#svgcont').show();
@@ -178,16 +196,9 @@ function showGraph(g){
         _grlg.svgw = $("#svgcont svg").width();
         _grlg.svgh = $("#svgcont svg").height();
         zoomGraph();
+        _graphRendererRunning=false;
         return;
     }
-    
-    _lastResData=false;
-    $("#svgcont").html(_graphes[name]);
-    _grlg.svgw = $("#svgcont svg").width();
-    _grlg.svgh = $("#svgcont svg").height();
-    zoomGraph();
-    // Pour permettre aisément la sauvegarde (via bouton dans le coin)
-    //$("#saveimage").attr("href", "data:image/svg;base64,"+btoa(v));
 }
 
 function showMap(g){
@@ -372,8 +383,6 @@ function init(){
 
    editor.commands.addCommand({name:"ShowGraph", bindKey:{win:"alt-g",mac:"Alt-g"},
          exec:()=>{showTab("show");}});
-   editor.commands.addCommand({name:"ShowMatrix", bindKey:{win:"alt-m",mac:"Alt-m"},
-         exec:()=>{showTab("matrix");}});
    editor.commands.addCommand({name:"ShowFiles", bindKey:{win:"alt-f",mac:"Alt-f"},
          exec:()=>{showTab("files");}});
    editor.commands.addCommand({name:"Stop", bindKey:{win:"alt-c",mac:"Alt-c"},
@@ -404,7 +413,8 @@ function init(){
       showTab(t, $(this));
    });
    $("#tabs button[data-target='show']").click(function() {
-      if(_graphes["Gr"]) showGraph(_graphes["Gr"]);
+      refreshGraphs();
+//      if(_graphes["Gr"]) showGraph(_graphes["Gr"]);
    });
 
    // Fichiers
@@ -419,6 +429,8 @@ function init(){
       e.preventDefault();
       return false;
    });
+
+   setInterval(refreshGraphs, 500);
 }
 
 window.onload=init;
