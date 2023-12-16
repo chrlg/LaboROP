@@ -25,6 +25,7 @@ export default function populate(){
    Env.addPredfn("insert", preInsert);
    Env.addPredfn("type", preType);
    Env.addPredfn("_grapheMode", preGraphMode);
+   Env.addPredfn("whoami", preWhoami);
    Env.addPredfn("sqrt", preMaths1);
    Env.addPredfn("sqr", preMaths1);
    Env.addPredfn("exp", preMaths1);
@@ -361,6 +362,22 @@ function preGraphMode(args, named, ln, fname){
     g.change=true;
     regularCheck(true);
     return {t:'string', val:g.name};
+}
+
+function preWhoami(args, named, ln, fname){
+    let req=new XMLHttpRequest();
+    req.responseType = 'json';
+    req.open('POST', 'ajax.php', false);
+    req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    req.send(JSON.stringify({action:'whoami'}));
+    let j=req.response;
+    let old=false;
+    if(args.length==1){
+        let r=evaluate(args[0]);
+        if(r.t=='boolean' && r.val) old=true;
+    }
+    if(old) return {t:'string', val:j.me};
+    return {t:'string', val:j.cas};
 }
 
 function preMaths1(args, named, ln, fname){

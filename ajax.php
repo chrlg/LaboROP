@@ -23,7 +23,11 @@
 
    function whoami(){
       global $me;
-      echo '{"me":"'.$me.'"}';
+      $casme="ø";
+      if(isset($_SESSION["clgme"])){
+          $casme=$_SESSION["clgme"];
+      }
+      echo '{"me":"'.$me.'", "cas":"'.$casme.'"}';
       exit(0);
    }
 
