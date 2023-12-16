@@ -1,0 +1,1 @@
+NaN -> NULL  (ex `int("bla")`)
