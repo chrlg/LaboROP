@@ -5,3 +5,21 @@ help function
     * help(predef) -> show help
     * help(object) -> show help on type
                    -> show full content of object (attributes, value, type, graph containing, edges connected, ...)
+
+onglet doc
+    * pdf du cours, du sujet
+    * code source (solution ancien labo ; skel nouveau)
+
+mode prof
+    * inspection code étudiant
+        * y compris historique
+        * possibilité d'effacer, modifier, renommer, ...
+    * diffusion de fichier à d'autres
+    * fichiers read-only (quand pushé par prof vers étudiants)
+    * notion de groupe (pour pusher à tout un groupe)
+
+sauvegarder image graphe
+
+sauvegarder fichier local
+
+importer fichier local

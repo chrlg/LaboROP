@@ -301,3 +301,5 @@ de toutes façons définir une variable de même nom qu'un sommet)
     * Affiche les `print` déjà fait, même quand on termine sur une erreur (déjà inclus il y a 1 semaine sur le serveur)
     * Sauvegarde des fichiers dans le "cloud" (cad sur le serveur) au lieu du localStorage
 
+16/12/2023
+    * Authentification par CAS enib
