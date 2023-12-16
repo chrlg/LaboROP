@@ -97,7 +97,7 @@ function saveCode(e, f, g){
     if(!currentFilename){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
-       currentFilename=='New '+NOWSTR;
+       currentFilename='New '+NOWSTR;
     }
     mypost('ajax.php', {action:'save', fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
     runCode();
