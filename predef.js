@@ -232,7 +232,7 @@ function prePrint(args, named, ln, fname){
         printRec(a);
     }
     print(end);
-    if(fl) flush();
+    if(fl || end=='\n') flush();
 }
 
 function preRefresh(args, named, ln, fname){
