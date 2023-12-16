@@ -235,3 +235,69 @@ de toutes façons définir une variable de même nom qu'un sommet)
 
 01/2/2023
     * Ajout nombre décimaux
+
+07/4/2023
+    * Affichage graphe en mode "réseau"
+
+03/11/2023
+    * Fonction Time pour récupérer le temps réel
+
+10/11/2023
+    * Refactoring complet. Avec quelques petits changements du langage
+        - Plus de creation implicite de tableaux. Il faut écrire T=[], avant de pouvoir écrire T[1]=12
+        - Plus de création implicite de structure. Il faut écrite S={} avant de pouvoir écrire S.toto=12
+        - Le graphe par défaut s'appelle Gr, et non plus juste G
+        - Le graphe Gr devient un graphe comme les autres. Qui se trouve être celui sur lequel on agit, sauf indication contraire
+        - Il est impossible de donner à des sommets ou variables le nom d'un graphe (d'où Gr, pour éviter les clashes avec un sommet G)
+    * Les graphes et le texte sont mis à jour systématiquement, ce qui permet de mieux voir les choses bouger en cours de code
+
+11/11/2023
+    * Les erreurs internes affichent un numéro de ligne dorénavant (en théorie elles ne devraient pas : c'est une erreur de la plateforme,
+      pas de l'élève dans son code. En pratique, dans 99% des cas, c'est quand même une erreur dans le code de l'élève en plus 
+      d’être une erreur dans le code de la plateforme qui traite incorrectement l'erreur de l'élève. Donc, c'est pas plus mal
+      de dire à l'élève où est son erreur, en attendant que le prof corrige la sienne)
+    * Ajout opérateur .**, synonyme de .^ (puissance, pour nombre ou matrice, booléenne), à la demande d'un élève
+
+17/11/2023
+    * Nouveau format de module (transparent pour les élèves. Mais permet au prof de créer plus facilement de nouveaux modules, sans coder)
+    * Possibilité de déclarer des tableaux non vides. T=[5] ⇔ T=[]+5
+        - Pour le cas ambigu du tableau à 2 valeurs, à l'image de la façon dont python désambiguise le 1-uplet et l'expression entre parenthèse
+          — (1,) vs (1) —, on peut laisser une virgule traîner. [S1,S2] est l'arête [S1,S2]. [S1,S2,] est un tableau de 2 éléments content
+          les valeurs S1 et S2
+    * Nombres décimaux constants. Tels que 1.3d. Testez avec 1d+1d/1e30, et comparez avec 1+1/1e30. Et de façon plus importante 0.1+0.2!=0.3 alors que 0.1d+0.2d==0.3d
+    * Ajout des opérateurs *= /= // (division entière) et //=
+
+19/11/2023
+    * Ajout des paramètres optionnels nommés dans les fonctions
+    * À la demande d'un élève, ajout des chaînes '''bla''' qui peuvent s'étaler sur plusieurs lignes et servir de commentaire
+    * print change de comportement pour adopter celui de python
+        - print(1,2) affiche "1 2" et change de ligne (et non "12" sans changement de ligne comme avant)
+        - print(1,2,end='', sep='') se comporte comme l'ancien print
+        - println(...) se comporte toujours comme avant et devient un alias de print(..., sep='', end='\n')
+        - printnr(...) se comporte comme l'ancien print, et est un alias de print(..., sep='', end='')
+        - le print par défaut, comme en python est donc implicitement print(..., sep=' ', end='\n')
+    * L'affichage des graphes se fait dans le thread de l'interface (et non du langage), ce qui permet d'afficher des graphes
+      sans arrêter le code (aucun changement pour l'élève. Si ce n'est qu'il verra ses graphes bouger plus)
+    * Index -1 pour les tableaux (T[-1]) les chaines, et pour pop
+    * L'import d'un graphe implique l'effacement du graphe précédent (concrètement, plus besoin de "Graphe G" avant d'importer un nouveau graphe)
+
+23/11/2023
+    * À la demande d'un élève, "insert" pour insérer un élément dans un tableau à une position données. Les index négatifs, pour
+      compter à partir de la fin de la liste sont possibles
+    * Port dans la nouvealle version du mode "discovery" (qui permet d'afficher les graphes au fur et à mesure des marquage "visible")
+      déjà présent en bricolage sur le serveur de l'enib
+
+7/12/2023
+    * Coloration syntaxique plus adaptée (jusque là c'était celle de python, avec un bricolage pour ajouter Sommet et Arc
+      Dorénavant, elle ne devrait plus colorer les mots clés et fonctions standards de python qui n'existent pas dans le langage ROP
+
+15/12/2023
+    * Function 'type' pour savoir le type d'une valeur (type(1)="number", type(1d)="decimal", type(Gr)="graphe", type([1,2,3])="array", etc.)
+    * À la demande d'un élève, possibilité de multiplier une matrice par un nombre
+    * Fonctions `min`, `max`, acceptant des nombres (décimaux ou non), des tableaux, des matrices. Et retournant le minimum/maximum de tout ça
+      min(Id, [2,30,4], 5) = 0 (le 0 qu'on trouve dans la matrice identité)
+      max(Id, [2,30,4], 5) = 30 
+    * fonction `int` -> convertit un nombre (décimal ou non, réel ou non) ou une chaine, en entier
+    * Affiche les `print` déjà fait, même quand on termine sur une erreur (déjà inclus il y a 1 semaine sur le serveur)
+    * Sauvegarde des fichiers dans le "cloud" (cad sur le serveur) au lieu du localStorage
+
