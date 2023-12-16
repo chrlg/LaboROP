@@ -1,5 +1,3 @@
-NaN -> NULL  (ex `int("bla")`)
-
 help function
     * help() -> list predef
     * help(predef) -> show help
