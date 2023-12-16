@@ -17,13 +17,13 @@ done
 
 if [[ "${#topush[@]}" != "0" ]]
 then
-    echo scp ${topush[@]} "$target/"
+    scp ${topush[@]} "$target/"
 fi
 
 for e in "${extra[@]}"
 do
     [[ ".installSentinelle" -nt "$e" ]] && continue
-    echo scp "$e" "$target/$e"
+    scp "$e" "$target/$e"
 done
 
 topush=()
@@ -35,8 +35,7 @@ done
 
 if [[ "${#topush[@]}" != "0" ]]
 then
-    echo scp ${topush[@]} "$target/Modules/"
+    scp ${topush[@]} "$target/Modules/"
 fi
 
 touch .installSentinelle
-#scp index.html interpret.js grlang.js grlang.jison script.js style.css mod_simple.js maths:W3/LaboROP/
