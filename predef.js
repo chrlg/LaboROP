@@ -157,7 +157,7 @@ function prePrint(args, named, ln, fname){
             if(o.t=="Sommet") print(o.name);
             else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
             else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
-            else if(isNumeric(o)) print(''+o.val);
+            else if(isNumeric(o)) print((''+o.val).replace('e','⏨'));
             else if(o.t=="string") print(o.val);
             else if(o.t=="boolean") print(o.val?"True":"False");
             else if(o.t=="array"){
@@ -200,6 +200,9 @@ function prePrint(args, named, ln, fname){
                     printRec(o.f[k]);
                 }
                 print("}");
+            }
+            else if(o.t=="null"){
+                print("∅");
             }
             else print("{"+o.t+"}");
         }
@@ -455,6 +458,8 @@ function preInt(args, named, ln, fname){
     if(args.length!=1) throw {error:'args', name:"Mauvais nombre d'arguments", msg:"int s'utilise avec un argument", ln:ln};
     let v=evaluate(args[0]);
     if(!isNumeric(v) && v.t!='string') throw {error:'type', name:'Mauvais type', msg:"int(x) s'utilise avec un nombre ou une chaine", ln:ln};
+    let num=Math.floor(v.val);
+    if(isNaN(num)) return Cst.NULL;
     return {t:'number', val:Math.floor(v.val)};
 }
 
