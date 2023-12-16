@@ -474,6 +474,7 @@ function refreshCloud(lf){
                 let ns=inputName.val().replaceAll('/','╱');
                 if(fn==currentFilename) currentFilename=ns;
                 mypost('ajax.php', {me:me, action:'mv', src:fn, dest:ns}).then(function(j){
+                    console.log('ret mv', j);
                     initFiles();
                 });
             }
