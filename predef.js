@@ -168,13 +168,25 @@ function prePrint(args, named, ln, fname){
                 print("]");
             }
             else if(o.t=="matrix"){
-                for(let i=0; i<o.val.length; i++){
-                    print("[");
-                    for(let j=0; j<o.val[i].length; j++){
-                        if(j>0) print(" ");
-                        print(o.val[i][j]);
+                let n=o.val.length;
+                let mx=0
+                for(let i=0; i<n; i++){
+                    for(let j=0; j<n; j++){
+                        let s=''+o.val[i][j];
+                        if(s.length>mx) mx=s.length;
                     }
-                    print("]\n");
+                }
+                for(let i=0; i<n; i++){
+                    if(i==0) print("⎡");
+                    else if(i==n-1) print("⎣");
+                    else print("⎢");
+                    for(let j=0; j<n; j++){
+                        if(j>0) print(" ");
+                        print(('                          '+o.val[i][j]).slice(-mx));
+                    }
+                    if(i==0) print("⎤\n");
+                    else if(i==n-1) print("⎦\n");
+                    else print("⎥\n");
                 }
             }
             else if(o.t=="struct"){
