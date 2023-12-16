@@ -371,6 +371,7 @@ function preWhoami(args, named, ln, fname){
     req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     req.send(JSON.stringify({action:'whoami'}));
     let j=req.response;
+    if(j.me===undefined) return Cst.NULL;
     return {t:'string', val:j.me};
 }
 
