@@ -609,3 +609,17 @@ Sinon, il souffre de l'erreur numérique classique des réels. Par exemple
 Utilisez les nombres décimaux si cela est un problème.
 cf help(1d)
 `;
+
+Help.type['decimal']=`Un nombre décimal. Un nombre décimal est exact si sa représentation
+en base 10 (y compris avec des virgules) l'est. Contrairement aux nombres flottants
+habituels, qui ne sont exacts que quand leur représentation en base 2 l'est.
+Une limitation à 50 décimales (ce qui est bien plus précis que les 64 bits habituels) 
+existe toutefois.
+Les constantes décimales s'écrivent en ajoutant un «d» après le nombre.
+    print(0.1d+0.2d==0.3d)
+    ⇒
+    True
+Comparez avec «0.1+0.2==0.3» (cf help(1)).
+Le caractère décimal d'un nombre est en général viral.
+Ainsi 1+2d+3+4 est un nombre décimal
+`;
