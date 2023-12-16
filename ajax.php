@@ -40,10 +40,12 @@
       $src=$pref.$data->src;
       $dest=$pref.$data->dest;
       if(illegal($data->src) || illegal($data->dest)){
+          error_log("mv: Illegal name ".$src);
         echo '{"ok":"ko"}';
         exit(0);
       }
       rename($src, $dest);
+      error_log("mv success «${src}» «${dest}»");
       echo '{"ok":"ok"}';
       exit(0);
    }
