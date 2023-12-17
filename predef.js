@@ -910,6 +910,7 @@ d'adjacence du graphe Gr, ...
 
 Toutefois, il est possible de créer d'autres graphes par l'instruction
     Graphe E
+Si E était déjà existant, il est réinitialisé
 
 Dans ce cas, les instructions Sommet, Arc, Arete, peuvent prendre
 un contexte optionnel <E> pour spécifier le graphe sur lequel elle s'appliquent
@@ -923,4 +924,9 @@ optionnel qui est le graphe
     arcs(E)
 Y compris pour les variables spéciales
     Id(E), Adj(E), Zero(E)
+`
+
+Help.name['pi']=`La constante π.
+Notez qu'il s'agit d'un «nombre», c'est à dire qu'il n'a que la précision des nombres flottants.
+Voyez «acos(-1d)» pour plus de décimales, si cela vous amuse :-)
 `
