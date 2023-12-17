@@ -784,3 +784,29 @@ Voir aussi : True, False
 `
 
 Help.name['boolean'] = Help.type['boolean']
+
+Help.type['Sommet'] =`Un sommet d'un graphe.
+Un sommet est créé par l'instruction ad-hoc
+    Sommet S
+L'argument de «Sommet» peut être également une expression dont la valeur est une chaine
+    Sommet "S"+2 # Crée le sommet S2
+Plusieurs sommets peuvent être créés à la fois
+    Sommet A,B,C
+Un sommet peut être créé dans un autre graphe
+    Sommet<Ecart> A,B,C # Crée des sommets A,B,C dans le graphe Ecart
+Si un seul sommet est créé, alors l'instruction Sommet retourne également le sommet créé
+    x=Sommet<E> A
+
+Enfin, un sommet peut également être crée implicitement quand un arc ou une arête le mentionnant est créé
+    Arc (A,B) # Crée les sommets A et B s'ils n'existaient pas déjà
+
+Les sommets peuvent avoir des attributs arbitraires
+    A.foo="bar"
+
+En général, c'est à vous de choisir le nom et la signification de ces attributs. 
+Certains attributs toutefois ont un rôle spécifique
+    A.x, A.y # Coordonnées du sommet dans le dessin pour les mode "map" et "mesh"
+    A.color # Couleur du sommet dans le dessin pour les mode "node" et "mesh"
+    A.label # Information supplémentaire affichée dans le dessin pour les modes "node" et "mesh"
+    A.visible # En mode découverte, le sommet est visible ssi cet attribut est présent et vrai
+`
