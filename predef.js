@@ -564,6 +564,13 @@ function preHelp(args, named, ln, fname){
             print('\n');
         }
         print(Help.line);
+    }else if(a.t=='graphe'){
+        print(`Graphe ${a.isOrient()?"orienté":"non-orienté"} ${a.name}\n`);
+        print(`graphe s'affichant dans le mode graphique «${a.mode}»\n`);
+        if(a.discover) 
+            print(`graphe en mode découverte : seuls les sommets marqués visibles sont affichés ou apparaissent dans les listes de sommets\n`);
+        print(`Ce graphe contient ${Object.keys(a.sommets).length} sommets et ${a.arcs.length} arcs\n`);
+        print(Help.line);
     }
     if(Help.type[a.t]) return; // We have already printed some help
 
