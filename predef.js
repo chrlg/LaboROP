@@ -625,3 +625,14 @@ Comparez avec «0.1+0.2==0.3» (cf help(1)).
 Le caractère décimal d'un nombre est en général viral.
 Ainsi 1+2d+3+4 est un nombre décimal
 `;
+
+Help.type['string']=`Une chaîne de caractères.
+Les chaînes sont indexables, mais non mutables. Ainsi
+    s="hello"
+    print(s, s[0], s[1:3], s[:-1])
+    ⇒
+    hello h el hell
+Mais
+    s[0]='H'
+déclenche une erreur
+`;
