@@ -810,3 +810,49 @@ Certains attributs toutefois ont un rôle spécifique
     A.label # Information supplémentaire affichée dans le dessin pour les modes "node" et "mesh"
     A.visible # En mode découverte, le sommet est visible ssi cet attribut est présent et vrai
 `
+
+Help.type['Arc']=`Un arc entre deux sommets dans un graphe orienté.
+Un arc est crée par l'instruction ad-hoc
+    Arc (S1, S2)     # Crée un arc entre les sommets S1 et S2
+    Arc<E> (S1, S2)  # Crée un arc dans le graphe E
+    x=Arc<E> (S1,S2) # Crée un arc, et range l'arc créé dans x
+
+Dans le reste du code un arc est désigné sous forme de paire parenthésée de sommets
+    print((S1,S2))
+
+Les arcs peuvent avoir des attributs
+    x.color="blue"
+    print((S1,S2).color)
+
+En général, c'est à vous de choisir le nom et la signification de ces attributs. 
+Certains attributs toutefois ont un rôle spécifique
+    x.color # Couleur de l'arc dans le dessin
+    x.val # valeur de l'arc affichée dans le dessin pour les mode "node" et "mesh", sauf si un label est aussi présent
+    x.label # Information supplémentaire affichée dans le dessin pour les modes "node" et "mesh"
+    x.initial # sommet initial de l'arc
+    x.terminal # sommet terminal de l'arc
+`
+
+Help.type['Arete']=`Une arête entre deux sommets dans un graphe non-orienté.
+Une arête est créée par l'instruction ad-hoc
+    Arete [S1, S2]     # Crée une arête entre les sommets S1 et S2
+    Arete<E> [S1, S2]  # Crée une arête dans le graphe E
+    x=Arete<E> [S1,S2] # Crée une arête, et range l'arête créée dans x
+
+Dans le reste du code une arête est désignée sous forme de paire crochetée de sommets
+    print([S1,S2])
+
+Les arêtes peuvent avoir des attributs
+    x.color="blue"
+    print([S1,S2].color)
+
+En général, c'est à vous de choisir le nom et la signification de ces attributs. 
+Certains attributs toutefois ont un rôle spécifique
+    x.color # Couleur de l'arête dans le dessin
+    x.val # valeur de l'arête affichée dans le dessin pour les mode "node" et "mesh", sauf si un label est aussi présent
+    x.label # Information supplémentaire affichée dans le dessin pour les modes "node" et "mesh"
+    x.initial # un des deux sommets  de l'arête
+    x.terminal # l'autre sommet. Notez que cette notation est héritée des arc. Mais dans une arête
+               # les sommets n'ont aucun rôle particulier, et aucune règle ne dit lequel
+               # sera x.initial et lequel sera x.terminal. Seulement que x.initial≠x.terminal
+`
