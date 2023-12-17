@@ -207,13 +207,19 @@ function preRandom(args, named, ln, fname){
     throw {error:"type", name:"Mauvais argument pour random", 
         msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
 }
-Help.predfn.random=`random(): retourne un nombre aléatoire entre 0 et 1
+Help.predfn.random=`random(): retourne un nombre réel aléatoire entre 0 et 1
 ────────────────────────────────────────────────────────────
 random(nombre): retourne un nombre entier aléatoire 
 entre 0 (inclus) et nombre (exclu)
 ────────────────────────────────────────────────────────────
 random(nb1, nb2): retourne un nombre entier aléatoire entre 
 nb1 (inclus) et nb2 (exclu)
+Notez que pour ces deux derniers usage, les arguments peuvent être
+des nombres décimaux, mais le résultat est un nombre normal
+    random(10d)
+retourne 0,1,2,3,4,5,6,7,8 ou 9. Pas 0d, 1d, ...
+Cela est logique, puisque ces nombres sont de toutes façons entiers, donc exacts
+Rien n'empêche d'écrire random(10)*1d, si on veut un décimal
 ────────────────────────────────────────────────────────────
 random(tableau): retourn un élément au hasard du tableau
 ────────────────────────────────────────────────────────────
