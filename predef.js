@@ -1023,6 +1023,42 @@ Pour l'aide sur les matrices en général, voir help(matrix) ou help(Id*1)
 Voir aussi : Adj, Zero
 `
 
+Help.name['Adj']=`La matrice d'adjacence (cf cours).
+Il s'agit d'une matrice carrée, dont la dimension est le nombre de sommets du graphe.
+
+«Adj» se comporte à la fois comme une variable («print(Adj)» affiche la matrice d'adjacence
+du graphe par défaut Gr)
+et comme une fonction, auquel cas son argument doit être un graphe,
+et elle retourne la matrice d'adjacence de ce graphe 
+    Graphe E
+    Arc<E> (A,B)
+    print(Adj(E))
+    →
+    ⎡0 1⎤
+    ⎣0 0⎦
+
+Pour l'aide sur les matrices en général, voir help(matrix) ou help(Id*1)
+Voir aussi : Id, Zero
+`
+
+Help.name['Zero']=`La matrice nulle.
+Il s'agit d'une matrice carrée, dont la dimension est le nombre de sommets du graphe.
+
+«Zero» se comporte à la fois comme une variable («print(Zero)» affiche la matrice nulle
+dont la dimension est le nombre de sommets du graphe par défaut Gr)
+et comme une fonction, auquel cas son argument doit être un graphe,
+et elle retourne la matrice nulle associée à ce graphe 
+    Graphe E
+    Arc<E> (A,B)
+    print(Adj(E))
+    →
+    ⎡0 0⎤
+    ⎣0 0⎦
+
+Pour l'aide sur les matrices en général, voir help(matrix) ou help(Id*1)
+Voir aussi : Id, Adj
+`
+
 Help.type['matrix']=`Une matrice.
 Dans le langage, toutes les matrices sont carrées, et contiennent des nombres.
 
