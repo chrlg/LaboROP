@@ -60,9 +60,6 @@ import("matrix")
 # Bug
 no tooltip on edges 
 
-# Bug
-len(graphe)
-
 # Feature
 premier(tableau, f(this))
 dernier(tableau, f(this))
