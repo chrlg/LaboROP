@@ -893,3 +893,27 @@ Notez que les structures sont passées par valeur. Ce qui signifie que
     ⇒
     {a:42} {a:55}
 `
+
+Help.type['graphe']=`Un graphe.
+Le graphe par défaut, existant à l'avance, s'appelle «Gr».
+Toutes les instructions et fonctions s'appliquent par défaut à Gr.
+«Sommet A», «sommets()», «Adj» sont ainsi des instructions ajoutant un sommet 
+A au graphe Gr, retournant la liste des sommets du graphe Gr, la matrice
+d'adjacence du graphe Gr, ...
+
+Toutefois, il est possible de créer d'autres graphes par l'instruction
+    Graphe E
+
+Dans ce cas, les instructions Sommet, Arc, Arete, peuvent prendre
+un contexte optionnel <E> pour spécifier le graphe sur lequel elle s'appliquent
+    Sommet<E> A,B,C
+    Arc<E> (A,B)
+    Arete<E> [A,B]
+
+La plupart des fonctions pour lequel cela fait sens, acceptent un argument
+optionnel qui est le graphe 
+    sommets(E)
+    arcs(E)
+Y compris pour les variables spéciales
+    Id(E), Adj(E), Zero(E)
+`
