@@ -1104,6 +1104,10 @@ Help.name.True = `Le booléen vrai.
 Voir help(boolean) ou Help(1==1) pour l'aide générale sur les booléens
 Voir aussi : False
 `
+Help.name.False = `Le booléen faux.
+Voir help(boolean) ou Help(1==1) pour l'aide générale sur les booléens
+Voir aussi : True
+`
 
 Help.type['boolean'] = `Valeur booléenne.
 Peut valoir True ou False.
@@ -1248,3 +1252,32 @@ Notez qu'il s'agit d'un «nombre», c'est à dire qu'il n'a que la précision de
 Voyez «acos(-1d)» pour plus de décimales, si cela vous amuse :-)
 `
 
+Help.name['OpCount']=`Nombre d'opérations arithmétiques jusqu'ici.
+    print(OpCount, 1+1, OpCount)
+    ⇒
+    0 2 1
+car initialement (si c'est le seul contenu du code), aucune opération n'a été faite.
+1+1 vaut 2. Et coûte une opération arithmétique
+D'où OpCount, la 2ᵉ fois ⇒ 1
+
+Notez que ce n'est pas proportionnel au temps passé.
+Par exemple 
+    Sommet A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z
+    (Adj+Id).**1000 coûte 492804 opérations arithmétiques
+mais comme elles sont faites en interne dans le langage, elles prennent bien moins de temps
+que si vous aviez écrit vous même autant d'opérations.
+C'est un indicateur pertinent de la complexité des algorithmes, permettant justement
+de s'abstraire des hasards de ce qui s'implémente vite ou non avec notre language de cours.
+
+Ce nombre est celui affiché à la fin de l'exécution.
+
+Voir aussi : Time pour une mesure du temps réel
+`;
+
+Help.name['Time']=`Temps en seconde depuis le premier janvier 1970.
+
+Vous pouvez l'utiliser pour mesurer le temps d'exécution de vos codes
+    t0=Time
+    maFonction()
+    print("Cela a pris",Time-t0,"secondes")
+`;
