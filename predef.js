@@ -182,62 +182,64 @@ function preRandom(args, named, ln, fname){
         msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
 }
 
-function prePrint(args, named, ln, fname){
-    function printRec(o){
-        if(typeof o=="object"){
-            if(o.t=="Sommet") print(o.name);
-            else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
-            else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
-            else if(isNumeric(o)) print(''+o.val);
-            else if(o.t=="string") print(o.val);
-            else if(o.t=="boolean") print(o.val?"True":"False");
-            else if(o.t=="array"){
-                print("[");
-                for(let i=0; i<o.val.length; i++){
-                    printRec(o.val[i]);
-                    if(i<o.val.length-1) print(",");
-                }
-                print("]");
+// Internal function : prints an object. 
+// Used mainly in prePrint function. But may be used also by other functions that may want to print things (such as help)
+function printRec(o){
+    if(typeof o=="object"){
+        if(o.t=="Sommet") print(o.name);
+        else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
+        else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
+        else if(isNumeric(o)) print(''+o.val);
+        else if(o.t=="string") print(o.val);
+        else if(o.t=="boolean") print(o.val?"True":"False");
+        else if(o.t=="array"){
+            print("[");
+            for(let i=0; i<o.val.length; i++){
+                printRec(o.val[i]);
+                if(i<o.val.length-1) print(",");
             }
-            else if(o.t=="matrix"){
-                let n=o.val.length;
-                let mx=0
-                for(let i=0; i<n; i++){
-                    for(let j=0; j<n; j++){
-                        let s=''+o.val[i][j];
-                        if(s.length>mx) mx=s.length;
-                    }
-                }
-                for(let i=0; i<n; i++){
-                    if(i==0) print("⎡");
-                    else if(i==n-1) print("⎣");
-                    else print("⎢");
-                    for(let j=0; j<n; j++){
-                        if(j>0) print(" ");
-                        print(('                          '+o.val[i][j]).slice(-mx));
-                    }
-                    if(i==0) print("⎤\n");
-                    else if(i==n-1) print("⎦\n");
-                    else print("⎥\n");
-                }
-            }
-            else if(o.t=="struct"){
-                print("{");
-                let first=true;
-                for(let k in o.f){
-                    if(first) first=false;
-                    else print(" ");
-                    print(k+":");
-                    printRec(o.f[k]);
-                }
-                print("}");
-            }
-            else print("{"+o.t+"}");
+            print("]");
         }
-        else{
-            print(o);
+        else if(o.t=="matrix"){
+            let n=o.val.length;
+            let mx=0
+            for(let i=0; i<n; i++){
+                for(let j=0; j<n; j++){
+                    let s=''+o.val[i][j];
+                    if(s.length>mx) mx=s.length;
+                }
+            }
+            for(let i=0; i<n; i++){
+                if(i==0) print("⎡");
+                else if(i==n-1) print("⎣");
+                else print("⎢");
+                for(let j=0; j<n; j++){
+                    if(j>0) print(" ");
+                    print(('                          '+o.val[i][j]).slice(-mx));
+                }
+                if(i==0) print("⎤\n");
+                else if(i==n-1) print("⎦\n");
+                else print("⎥\n");
+            }
         }
+        else if(o.t=="struct"){
+            print("{");
+            let first=true;
+            for(let k in o.f){
+                if(first) first=false;
+                else print(" ");
+                print(k+":");
+                printRec(o.f[k]);
+            }
+            print("}");
+        }
+        else print("{"+o.t+"}");
     }
+    else{
+        print(o);
+    }
+}
+function prePrint(args, named, ln, fname){
 
     let sep=(fname=='print')?' ':'';
     let end=(fname=='printnr')?'':'\n';
@@ -528,8 +530,23 @@ function preHelp(args, named, ln, fname){
         print(Help.line);
         print(Help.type[a.t]);
         print(Help.line);
-        return;
     }
+    if(a.t=='Sommet'){
+        let g=Env.grapheContaining(a);
+        print(`Sommet «${a.name}» du graphe «${g.name}»\nConecté aux ${g.isOrient()?"arcs":"aretes"}:\n`);
+        for(let edge of g.arcs){
+            if(edge.i==a || edge.a==a) print(`   ${edge.i.name}${g.isOrient()?'—→':'——'}${edge.a.name}\n`);
+        }
+        print("Attributs:\n")
+        for(let m in a.marques){
+            print(`    ${m}:`);
+            printRec(a.marques[m]);
+            print('\n');
+        }
+        print(Help.line);
+    }
+    if(Help.type[a.t]) return; // We have already printed some help
+
     print(`Pas d'aide disponible sur le type «${a.t}»\n`);
 }
 
