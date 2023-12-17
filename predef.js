@@ -411,6 +411,27 @@ function preArcs(args, named, ln, fname){
     }
     return {t:"array", val:rep};
 }
+Help.predfn.arcs=`arcs(g): retourne la liste des arcs du graphe «g»
+────────────────────────────────────────────────────────────
+arcs(): même chose, pour le graphe par défaut «Gr»
+────────────────────────────────────────────────────────────
+arcs(g, sommet) or arcs(sommet):
+retourne les arcs sortant du sommet. 
+
+Notez qu'en mode découverte, seuls les arcs sortant des sommets visibles sont retournés
+`
+Help.predfn.aretes=`aretes(g): retourne la liste des arêtes du graphe «g»
+────────────────────────────────────────────────────────────
+aretes(): même chose, pour le graphe par défaut «Gr»
+────────────────────────────────────────────────────────────
+aretes(g, sommet) or aretes(sommet):
+retourne les aretes liées au sommet. 
+Notez que [A,B] et [B,A] sont la même arête. Toutefois, vous avez la garantie que
+aretes(S) ne retourne des arêtes que sous la forme [S,x] (avec S en premier)
+et non [x,S]
+
+Notez aussi qu'en mode découverte, seuls les arêtes liées aux sommets visibles sont retournées
+`
 
 function preImport(args, named, ln, fname){
     if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
