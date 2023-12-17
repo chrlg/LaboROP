@@ -27,11 +27,3 @@ importer fichier local
 wasm
 
 dos2unix (ou support fichier dos)
-
-s="hello" s[12] -> null, pas undefined
-
-T=[1,2,3] T[12] -> null, pas undefined
-
-Graphe "E"+i
-
-sommets('name')
