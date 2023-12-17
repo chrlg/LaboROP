@@ -7,7 +7,7 @@ import {regularCheck, print, flush} from "./domcom.js";
 import Decimal from "./lib/decimal.mjs";
 
 // help available for different kind of objects. To be fill later in the code
-let Help={"predfn":{}, "type":{}, "line":"════════════════════════════════════════════════════════════\n"};
+let Help={"predfn":{}, "type":{}, name:{}, "line":"════════════════════════════════════════════════════════════\n"};
 
 export default function populate(){
     // TODO : int, round, str
@@ -507,10 +507,14 @@ function preHelp(args, named, ln, fname){
     }
     if(args.length>1) error({error:"args", name:"Mauvais nombre d'arguments", msg:"help s'utilise avec 0 ou 1 argument", ln:ln});
     // With 1 arg: show Help about that arg
-    let a;
-    if(args[0].t=='id'){
-        a=Env.get(args[0].name);
-    }else a=evaluate(args[0]);
+    // Help about specific symbol names (for constants)
+    if(args[0].t=='id' && Help.name[args[0].name]){
+        print(Help.line);
+        print(Help.name[args[0].name]);
+        print(Help.line);
+        return;
+    }
+    let a=evaluate(args[0]);
     if(a.t=='predfn'){
         if(Help.predfn[a.name]){
             print(Help.line);
@@ -635,4 +639,44 @@ Les chaînes sont indexables, mais non mutables. Ainsi
 Mais
     s[0]='H'
 déclenche une erreur
+
+À voir aussi: len, int
 `;
+
+Help.type['null']=`Une valeur (dont le type, null, n'existe que pour elle) spéciale.
+Elle est retournée par certaines fonctions pour signifier qu'il n'y a pas de résultat.
+L'accès à un champ inexistant d'un sommet, 
+Une converstion impossible (int("x"))
+Etc., 
+Retournent «null»
+`
+
+Help.type['array']=`Un tableau de valeurs quelconques.
+Attention à l'ambiguïté : deux valeurs entre crochets sont considérés comme une arête
+par le langage. Pour lever cette ambiguïté, on peut laisser une virgule. Ainsi
+    [S1,S2]
+est une arête. Tandis que
+    [S1,S2,]
+est un tableau contenant deux valeurs, qui sont les sommets S1 et S2.
+
+Les tableaux peuvent être indexé. Lorsque les index sont négatifs, ils sont comptés
+à partir de la fin.
+    T=[1,2,3,4]
+    print(T[0], T[1], T[-1], T[-2])
+    ⇒
+    1 2 4 3
+
+Il est également possible d'extraire des sous tableaux
+    print(T[:2], T[2:], T[-2:], T[1:3])
+    ⇒
+    [1,2] [3,4] [3,4] [2,3]
+
+À voir aussi: len, premier, dernier, random, pop, insert
+`
+
+Help.name['Infinity']=`Un nombre presque comme les autres nombres.
+Si ce n'est qu'il est plus grand que tous les nombres.
+    print(Infinity>1e30)
+    ⇒
+    True
+`
