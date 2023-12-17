@@ -164,7 +164,7 @@ la liste de sommets
 function preRandom(args, named, ln, fname){
     // No arg => U([0,1])
     if(args.length==0){
-        return Math.random();
+        return {t:"number", val:Math.random()};
     }
     let a=evaluate(args[0]);
     // 1 or 2 numbers
@@ -174,9 +174,9 @@ function preRandom(args, named, ln, fname){
             if(!isNumeric(b)) throw {error:"type", name:"Mauvais argument pour random",
                 msg:"Un nombre et un "+a.t+" ne sont pas des arguments valides", 
                 ln:args[1].ln};
-            return numericValue(a)+Math.floor(Math.random()*(numericValue(b)-numericValue(a)));
+            return {t:"number", val:numericValue(a)+Math.floor(Math.random()*(numericValue(b)-numericValue(a)))};
         }
-        return Math.floor(Math.random()*numericValue(a));
+        return {t:"number", val:Math.floor(Math.random()*numericValue(a))};
     }
     // Array -> an element of that array
     if(a.t=="array"){
@@ -207,6 +207,24 @@ function preRandom(args, named, ln, fname){
     throw {error:"type", name:"Mauvais argument pour random", 
         msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
 }
+Help.predfn.random=`random(): retourne un nombre aléatoire entre 0 et 1
+────────────────────────────────────────────────────────────
+random(nombre): retourne un nombre entier aléatoire 
+entre 0 (inclus) et nombre (exclu)
+────────────────────────────────────────────────────────────
+random(nb1, nb2): retourne un nombre entier aléatoire entre 
+nb1 (inclus) et nb2 (exclu)
+────────────────────────────────────────────────────────────
+random(tableau): retourn un élément au hasard du tableau
+────────────────────────────────────────────────────────────
+random(tableau, filtre): retourne un élément aléatoire du tableau
+parmi ceux pour lesquels «filtre» est vrai.
+Le mot clé «this» désigne l'élément potentiel dans ce filtre. Ainsi
+    random([1,2,3,4,5,6], this%2==0)
+retourne un nombre pair 
+    random(sommets(), this.color=='blue')
+retourne un des sommets dont la couleur est bleue
+`
 
 // Internal function : prints an object. 
 // Used mainly in prePrint function. But may be used also by other functions that may want to print things (such as help)
