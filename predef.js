@@ -601,6 +601,10 @@ function preWhoami(args, named, ln, fname){
     if(j.me===undefined) return Cst.NULL;
     return {t:'string', val:j.me};
 }
+Help.predfn.whoami=`whoami(): retourne une chaîne de caractère contenant votre login de connexion.
+Si cette fonction retourne «null», alors sauvegardez vite votre code dans un fichier externe tant que
+vous le pouvez, car vus n'êtes plus connecté !!
+`
 
 function preMaths1(args, named, ln, fname){
     if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
@@ -639,6 +643,34 @@ function preMaths1(args, named, ln, fname){
     }
     throw {error:"interne", name:"Erreur interne", msg:"preMaths avec fname="+fname,ln:ln};
 }
+Help.predfn.sqrt=`Function mathématiques sur des réels:
+sqrt(x): √x
+sqr(x): x²
+exp(x): eˣ
+log(x): ln(x), log à base e
+log10(x): ln(x)/ln(10), log à base 10
+log2(x): ln(x)/ln(2), log à base 2
+sin(x) : sinus. x est en radians
+cos(x) : cosinus. x est en radians
+tan(x) : tangeante. x est en radians
+asin(x) : arcsinus en radians. asin(1)=π/2
+acos(x) : arccosinus en radians
+atan(x) : arctangeante en radians
+abs(x) : |x|
+`;
+Help.predfn.sqr=Help.predfn.sqrt;
+Help.predfn.exp=Help.predfn.sqrt;
+Help.predfn.log=Help.predfn.sqrt;
+Help.predfn.log10=Help.predfn.sqrt;
+Help.predfn.log2=Help.predfn.sqrt;
+Help.predfn.sin=Help.predfn.sqrt;
+Help.predfn.cos=Help.predfn.sqrt;
+Help.predfn.tan=Help.predfn.sqrt;
+Help.predfn.asin=Help.predfn.sqrt;
+Help.predfn.acos=Help.predfn.sqrt;
+Help.predfn.atan=Help.predfn.sqrt;
+Help.predfn.abs=Help.predfn.sqrt;
+
 
 function preMin(args, named, ln, fname){
     let r=Cst.NULL;
