@@ -151,6 +151,7 @@ function refreshGraphs(){
         let gr=_graphes[k];
         if(gr.shown) continue;
         if($(`#tabs button.selected[data-graph="${gr.name}"]`).length){
+            console.log("Drawing graphe", gr.name, k);
             showGraph(gr);
             gr.shown=true;
         }
@@ -347,6 +348,7 @@ function showTab(t, button=false){
     if(t=='files') initFiles();
     if(t=='show' && button.attr('data-graph')){
         let gname=button.attr('data-graph');
+        console.log("setting shown to false for", gname);
         _graphes[gname].shown=false;
         refreshGraphs();
     }
