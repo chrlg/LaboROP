@@ -82,3 +82,8 @@ dernier(tableau, f(this))
 # Feature
 for i in range(100):
     print(i, over=True)
+
+# Feature
+for i in trange(100):
+    bla
+=> display progress bar
