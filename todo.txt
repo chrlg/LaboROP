@@ -58,9 +58,6 @@ import("matrix")
 [S3,S6].label="bla"
 
 # Bug
-zoom is broken again on node/mesh mode
-
-# Bug
 no tooltip on edges 
 
 # Bug

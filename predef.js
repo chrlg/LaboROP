@@ -127,6 +127,7 @@ function preLen(args, named, ln, fname){
    if(a.t=="array") return {t:"number", val:a.val.length};
    if(a.t=="matrix") return {t:"number", val:a.val.length};
    if(a.t=="string") return {t:"number", val:a.val.length};
+   if(a.t=="graphe") return {t:"number", val:Object.keys(a.sommets).length};
    throw {error:"type", name:"Erreur de type", 
       msg:"Mauvais type "+a.t+" pour la fonction len", ln:ln};
 }
