@@ -119,6 +119,7 @@ L'index peut donc être utilisé, par exemple, pour reprendre
 une itération interrompue
 `;
 
+
 function preLen(args, named, ln, fname){
    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
       msg:"La fonction len s'utilise avec un et un seul argument", ln:ln};
@@ -129,6 +130,31 @@ function preLen(args, named, ln, fname){
    throw {error:"type", name:"Erreur de type", 
       msg:"Mauvais type "+a.t+" pour la fonction len", ln:ln};
 }
+Help.predfn['len']=`len(tableau): Retourne la longueur d'un tableau
+    print(len([1,2,3]))
+    →
+    3
+────────────────────────────────────────────────────────────
+len(chaine): retourne la longueur d'une chaine
+    print(len("abdegilmopstuv"))
+    →
+    14
+────────────────────────────────────────────────────────────
+len(matrice): retourne la dimension de la matrice carrée.
+C'est à dire le nombre de sommets du graphe d'où est tirés cette matrice
+    Arc (A,B)
+    print(len(Id))
+    ⇒
+    2
+────────────────────────────────────────────────────────────
+len(graphe): retourne le nombre de sommets du graphe
+Notez que c'est la même valeur que len(Id(graphe)) ou len(sommets(graphe))
+(Sauf en mode découverte, ou sommets() ne contient pas tous
+les sommets).
+Mais plus rapide, car len(Id) doit fabriquer la matrice
+identité avant de la mesurer, et len(sommets()) doit fabriquer 
+la liste de sommets 
+`
 
 // Random
 // Can be used with no argument-> return a number between 0 and 1
@@ -930,3 +956,4 @@ Help.name['pi']=`La constante π.
 Notez qu'il s'agit d'un «nombre», c'est à dire qu'il n'a que la précision des nombres flottants.
 Voyez «acos(-1d)» pour plus de décimales, si cela vous amuse :-)
 `
+
