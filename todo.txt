@@ -40,13 +40,6 @@ Graphe "E"+i
 # Feature
 sommets('name')
 
-# Bug dimensions matrice hétérogène
-Sommet A,B
-Graphe E
-Sommet<E> A,B,C,D
-print(Id+Id(E))
-
-
 # Feature
 Arc (A,B), (B,C), (C,A)
 
