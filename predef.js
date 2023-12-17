@@ -876,3 +876,20 @@ Certains attributs toutefois ont un rôle spécifique
                # les sommets n'ont aucun rôle particulier, et aucune règle ne dit lequel
                # sera x.initial et lequel sera x.terminal. Seulement que x.initial≠x.terminal
 `
+
+Help.type['struct']=`Une structure, ou dictionnaire.
+La structure vide est «{}».
+Les champs d'une structure sont ajoutés sans déclaration préalable 
+    st={}
+    st.a=42
+    st.name="blabla"
+    print(st.name)
+Notez que les structures sont passées par valeur. Ce qui signifie que
+    st1={}
+    st1.a=42
+    st2=st1   # st2 est une copie de st1
+    st2.a=55  # N'affecte que le champ a de la copie
+    print(st1, st2)
+    ⇒
+    {a:42} {a:55}
+`
