@@ -636,6 +636,9 @@ function prePremier(args, named, ln, fname){
    if(l.val.length<=0) return Cst.NULL;
    else return l.val[0];
 }
+Help.predfn['premier']=`premier(tableau): retourne le premier élément du tableau.
+Si le tableau est vide, retourne «null»
+`
 
 function preDernier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
