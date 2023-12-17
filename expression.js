@@ -394,10 +394,13 @@ export function evaluate(expr){
         let idx=evaluate(expr.index);
         if(!isNumeric(idx)) throw {error:"type", name:"Erreur de type", msg:"Index non entier", ln:expr.index.ln};
         let i=numericValue(idx);
-        let F=(t,i)=>{let j=i; if(j<0) j+=t.length; return t[j];};
-        if(tab.t=="array") return F(tab.val, i);
-        if(tab.t=="string") return {t:"string", val:F(tab.val,i)};
-        if(tab.t=="Sommet") return {t:"string", val:F(tab.name, i)};
+        // Real array in which to index (array or string=>val. For Sommet, it's its name)
+        let F=function(t,i){let j=i; if(j<0) j+=t.length; return t[j]};
+        let E=function(t,v){if(v===undefined) return NULL; return {t:t, val:v};};
+        let R=function(v){if(v===undefined) return NULL; else return v;};
+        if(tab.t=="Sommet") return E("string", F(tab.name, i));
+        if(tab.t=="string") return E("string", F(tab.val, i));
+        if(tab.t=="array") return R(F(tab.val, i));
         throw {error:"type", name:"Type non indexable", msg:"Un objet de type "+tab.t+" ne peut être indexé", ln:expr.ln};
     }
     if(expr.t=="mindex"){

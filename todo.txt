@@ -1,6 +1,3 @@
-# Bug
-NaN -> NULL  (ex `int("bla")`)
-
 # Revolution
 help function
     * help() -> list predef
@@ -36,12 +33,6 @@ wasm
 
 # Feature
 dos2unix (ou support fichier dos)
-
-# Bug
-s="hello" s[12] -> null, pas undefined
-
-# Bug
-T=[1,2,3] T[12] -> null, pas undefined
 
 # Feature
 Graphe "E"+i
