@@ -649,6 +649,9 @@ function preDernier(args, named, ln, fname){
    if(l.val.length<=0) return Cst.NULL;
    else return l.val[l.val.length-1];
 }
+Help.predfn['dernier']=`dernier(tableau): retourne le dernier élément du tableau.
+Si le tableau est vide, retourne «null»
+`
 
 
 function preM(args, named, ln, fname){
