@@ -491,6 +491,25 @@ function prePop(args, named, ln, fname){
    }
    return r[0];
 }
+Help.predfn.pop=`pop(tableau): retire  le dernier élément du tableau et le retourne
+    T=[1,2,3,4]
+    print(pop(T))
+    print(T)
+    ⇒
+    4
+    [1,2,3]
+────────────────────────────────────────────────────────────
+pop(tableau, index): retire le indexᵉ élément du tableau et le retourne
+    T=[0,1,2,3,4]
+    print(pop(T,2))
+    print(T)
+    ⇒
+    2
+    [0,1,3,4]
+Si l'index est négatif, il s'entend «à partir de la fin». Ainsi 
+«pop(tableau)» est un équivalent de «pop(tableau, -1)»
+`
+
 
 function preInsert(args, named, ln, fname){
     if(args.length!=3) throw {error:"args", name:"Mauvais nombre d'arguments", msg:"insert(liste, position, valeur) s'utilise avec 3 arguments", ln:ln};
