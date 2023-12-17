@@ -709,6 +709,30 @@ function preMin(args, named, ln, fname){
     }
     return r;
 }
+Help.predfn.min=`min(v1,v2,...)
+Retourne la valeur minimum contenue dans les arguments passés.
+Cette fonction est récursive: si un des arguments est un tableau de tableau de tableau, 
+ce qui est retourné est la valeur minimum dans tous les éléments de ces tableaux
+    min(1,2,3) ⇒ 1
+    min([1,2,3]) ⇒ 1
+    min([1,2,3],[4,-1]) →-1
+    min([[3,5],[-12]], [17, [35, -40]]) → -40
+Accepte également les matrices. Dans ce cas retourne l'élément le plus petit de la matrice
+    min((Adj+Id).**(len(Id)-1)) retourne 0 si le graphe est connexe, 1 sinon.
+        cela aurait été pratique pour le labo 1, n'est-ce pas ?
+`;
+Help.predfn.max=`max(v1,v2,...)
+Retourne la valeur maximum contenue dans les arguments passés.
+Cette fonction est récursive: si un des arguments est un tableau de tableau de tableau, 
+ce qui est retourné est la valeur maximum dans tous les éléments de ces tableaux
+    max(1,2,3) ⇒ 3
+    max([1,2,3]) ⇒ 3
+    max([1,2,3],[4,-1]) →4
+    max([[3,5],[-12]], [17, [35, -40]]) → 35
+Accepte également les matrices. Dans ce cas retourne l'élément le plus petit de la matrice
+    max(Id*12, [3,5,8]) → 12 
+        (car Id*12 contient des 0 et des 12. Et 12 est plus grand que 3, 5 ou 8)
+`;
 
 function preInt(args, named, ln, fname){
     if(args.length!=1) throw {error:'args', name:"Mauvais nombre d'arguments", msg:"int s'utilise avec un argument", ln:ln};
@@ -716,6 +740,12 @@ function preInt(args, named, ln, fname){
     if(!isNumeric(v) && v.t!='string') throw {error:'type', name:'Mauvais type', msg:"int(x) s'utilise avec un nombre ou une chaine", ln:ln};
     return {t:'number', val:Math.floor(v.val)};
 }
+Help.predfn['int']=`int(x): retourne la valeur entière correspondant à x.
+x peut être un nombre, un décimal ou une chaîne
+    int(12.5) ⇒ 12
+    int(12.5d) ⇒ 12
+    int("12.5") ⇒ 12
+`;
 
 function preHelp(args, named, ln, fname){
     // Without args, just shows the list of predef symbols
@@ -727,6 +757,7 @@ function preHelp(args, named, ln, fname){
             print(k+' ');
         }
         print('\n');
+        print('Voir aussi: help(help) :-)\n');
         print(Help.line);
         return;
     }
@@ -799,6 +830,27 @@ function preHelp(args, named, ln, fname){
 
     print(`Pas d'aide disponible sur le type «${a.t}»\n`);
 }
+Help.predfn.help=`help(): Affiche la liste des symboles prédéfinis
+────────────────────────────────────────────────────────────
+help(fonctionPredefinie) : affiche l'aide sur une fonction prédéfinie
+Exemple: 
+    help(help) : vous y êtes
+────────────────────────────────────────────────────────────
+help(symboleSpecial) : affiche l'aide sur un symbole spécial
+    help(pi), help(True), help(Id)
+────────────────────────────────────────────────────────────
+help(valeur) : affiche l'aide sur le type de cette valeur
+    help(1) : affiche l'aide sur les nombres
+────────────────────────────────────────────────────────────
+help(unSommet), help(unArc), help(unGraphe):
+en plus de l'aide sur les types associés, affiche des
+information sur l'argument (l'instance) lui-même
+────────────────────────────────────────────────────────────
+help(theme): pour des cas spécifiques, affiche l'aide sur un thème
+    help(matrix) : aide sur les matrices (⇔ help(Id*2))
+    help(boolean) : aide sur les booléens (⇔ help(1==1))
+`;
+
 
 function prePremier(args, named, ln, fname){
    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments",
