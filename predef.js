@@ -507,7 +507,10 @@ function preHelp(args, named, ln, fname){
     }
     if(args.length>1) error({error:"args", name:"Mauvais nombre d'arguments", msg:"help s'utilise avec 0 ou 1 argument", ln:ln});
     // With 1 arg: show Help about that arg
-    let a=evaluate(args[0]);
+    let a;
+    if(args[0].t=='id'){
+        a=Env.get(args[0].name);
+    }else a=evaluate(args[0]);
     if(a.t=='predfn'){
         if(Help.predfn[a.name]){
             print(Help.line);
@@ -524,7 +527,6 @@ function preHelp(args, named, ln, fname){
         return;
     }
     print(`Pas d'aide disponible sur le type «${a.t}»\n`);
-    console.log("help", a);
 }
 
 function prePremier(args, named, ln, fname){
