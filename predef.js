@@ -467,6 +467,17 @@ function preType(args, named, ln, fname){
     }
     return r;
 }
+Help.predfn['type']=`type(val): retourne, sous forme de chaine, le type de la valeur
+    type(1) ⇒ "number"
+    type(1d) ⇒ "decimal"
+    type("bla") ⇒ "string"
+    type([1,2,3]) ⇒ "array"
+    etc.
+────────────────────────────────────────────────────────────
+type(val1, val2, ...): même chose avec plusieurs valeurs
+Si plusieurs valeurs sont passée, un tableau de chaines est retourné
+    type(1,2d,"bla") ⇒ ["number", "decimal", "string"]
+`
 
 
 function prePop(args, named, ln, fname){
