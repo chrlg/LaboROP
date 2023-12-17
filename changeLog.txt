@@ -303,3 +303,6 @@ de toutes façons définir une variable de même nom qu'un sommet)
 
 16/12/2023
     * Authentification par CAS enib
+
+17/12/2023
+    * fonction help. Et textes associés

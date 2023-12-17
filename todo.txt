@@ -1,11 +1,4 @@
 # Revolution
-help function
-    * help() -> list predef
-    * help(predef) -> show help
-    * help(object) -> show help on type
-                   -> show full content of object (attributes, value, type, graph containing, edges connected, ...)
-
-# Revolution
 onglet doc
     * pdf du cours, du sujet
     * code source (solution ancien labo ; skel nouveau)
