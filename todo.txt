@@ -71,3 +71,6 @@ zoom is broken again on node/mesh mode
 
 # Bug
 no tooltip on edges 
+
+# Bug
+len(graphe)
