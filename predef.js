@@ -533,11 +533,31 @@ function preHelp(args, named, ln, fname){
     }
     if(a.t=='Sommet'){
         let g=Env.grapheContaining(a);
-        print(`Sommet «${a.name}» du graphe «${g.name}»\nConecté aux ${g.isOrient()?"arcs":"aretes"}:\n`);
+        print(`Sommet «${a.name}» du graphe «${g.name}»\nConnecté aux ${g.isOrient()?"arcs":"aretes"}:\n`);
         for(let edge of g.arcs){
             if(edge.i==a || edge.a==a) print(`   ${edge.i.name}${g.isOrient()?'—→':'——'}${edge.a.name}\n`);
         }
         print("Attributs:\n")
+        for(let m in a.marques){
+            print(`    ${m}:`);
+            printRec(a.marques[m]);
+            print('\n');
+        }
+        print(Help.line);
+    }else if(a.t=='Arc'){
+        let g=Env.grapheContaining(a.i);
+        print(`Arc ${a.i.name}→${a.a.name} du graphe «${g.name}»\n`);
+        print("Attributs:\n");
+        for(let m in a.marques){
+            print(`    ${m}:`);
+            printRec(a.marques[m]);
+            print('\n');
+        }
+        print(Help.line);
+    }else if(a.t=='Arete'){
+        let g=Env.grapheContaining(a.i);
+        print(`Arete ${a.i.name}——${a.a.name} du graphe «${g.name}»\n`);
+        print("Attributs:\n");
         for(let m in a.marques){
             print(`    ${m}:`);
             printRec(a.marques[m]);
