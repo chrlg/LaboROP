@@ -738,3 +738,32 @@ Voir aussi : Id, Adj, Zero
 `
 
 Help.name.matrix=Help.type.matrix
+
+Help.name.True = `Le booléen vrai.
+Voir help(boolean) ou Help(1==1) pour l'aide générale sur les booléens
+Voir aussi : False
+`
+
+Help.type['boolean'] = `Valeur booléenne.
+Peut valoir True ou False.
+Les opérateurs «and», «or», «xor» permettent des les combiner:
+    print(True and False, True or False, True xor False)
+    ⇒
+    False True True
+L'opposé d'un booléen est obtenu par l'opérateur ! ou not
+    print(!True, not False)
+    →
+    False True
+Enfin, les opérateur && et || existent également, signifiant également «and» et «or»
+Il ne s'agit toutefois pas de synonymes exacts: «and» et «or» sont paresseux
+tandis que «&&» et «||» ne le sont pas
+    x=10
+    y=10
+    print(x++>0 or x++>0, x, y++>0 || y++>0, y)
+    ⇒
+    True 11 True 12
+
+Voir aussi : True, False
+`
+
+Help.name['boolean'] = Help.type['boolean']
