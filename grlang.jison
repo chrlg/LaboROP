@@ -54,9 +54,9 @@
 "<="			return "<="
 ">="			return ">="
 "&&"			return "&&"
-"and"			return "&&"
+"and"			return "and"
 "||"			return "||"
-"or"			return "||"
+"or"			return "or"
 "xor"                   return "xor"
 "^^"                    return "xor"
 ".+"                    return ".+"
@@ -85,6 +85,7 @@
 "/"			return "/"
 "?"			return "?"
 "!"			return "!"
+"not"                   return "!"
 "$".*			return "$"
 
 "Sommet"		return "Sommet"
@@ -115,9 +116,9 @@
 
 %left "Sommet"
 %right ":" "?"
-%left "||"
+%left "||" "or"
 %left "xor"
-%left "&&"
+%left "&&" "and"
 %left "=" "==" "!="
 %left "<" ">" "<=" ">="
 %left '.+' '+' '-'
@@ -428,8 +429,14 @@ expr
       | expr "&&" expr {
 	 $$ = {t:"&&", left:$1, right:$3, ln:@2.first_line};
       }
+      | expr "and" expr {
+	 $$ = {t:"and", left:$1, right:$3, ln:@2.first_line};
+      }
       | expr "||" expr {
 	 $$ = {t:"||", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr "or" expr {
+	 $$ = {t:"or", left:$1, right:$3, ln:@2.first_line};
       }
       | expr "xor" expr {
          $$ = {t:"xor", left:$1, right:$3, ln:@2.first_line};

@@ -84,7 +84,7 @@ export function evaluate(expr){
     if(expr.t=="==" || expr.t=="!=") return evaluateEqual(expr);
 
     // and / or
-    if(expr.t=="&&"){
+    if(expr.t=="and"){
         expr.l=function(){
             let a=evaluate(expr.left);
             if(a.t=='null') a=FALSE;
@@ -100,7 +100,7 @@ export function evaluate(expr){
         }
         return expr.l();
     }
-    if(expr.t=="||"){
+    if(expr.t=="or"){
         expr.l=function(){
             let a=evaluate(expr.left);
             if(a.t=='null') a=FALSE;
@@ -108,6 +108,38 @@ export function evaluate(expr){
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
             if(a.val) return TRUE;
             let b=evaluate(expr.right);
+            if(b.t=='null') b=FALSE;
+            if(b.t!="boolean")
+                throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+            if(b.val) return TRUE;
+            else return FALSE;
+        }
+        return expr.l();
+    }
+    if(expr.t=="&&"){
+        expr.l=function(){
+            let a=evaluate(expr.left);
+            let b=evaluate(expr.right);
+            if(a.t=='null') a=FALSE;
+            if(a.t!="boolean")
+                throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
+            if(!a.val) return FALSE;
+            if(b.t=='null') b=FALSE;
+            if(b.t!="boolean")
+                throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
+            if(b.val) return TRUE;
+            else return FALSE;
+        }
+        return expr.l();
+    }
+    if(expr.t=="||"){
+        expr.l=function(){
+            let a=evaluate(expr.left);
+            let b=evaluate(expr.right);
+            if(a.t=='null') a=FALSE;
+            if(a.t!="boolean")
+                throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
+            if(a.val) return TRUE;
             if(b.t=='null') b=FALSE;
             if(b.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
