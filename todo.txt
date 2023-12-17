@@ -35,3 +35,9 @@ T=[1,2,3] T[12] -> null, pas undefined
 Graphe "E"+i
 
 sommets('name')
+
+# dimensions matrice hétérogène
+Sommet A,B
+Graphe E
+Sommet<E> A,B,C,D
+print(Id+Id(E))
