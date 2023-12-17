@@ -239,7 +239,11 @@ function printRec(o){
         if(o.t=="Sommet") print(o.name);
         else if(o.t=="Arete") print("["+o.i.name+","+o.a.name+"]");
         else if(o.t=="Arc") print("("+o.i.name+","+o.a.name+")");
-        else if(isNumeric(o)) print((''+o.val).replace('e','⏨'));
+        else if(isNumeric(o)) {
+            if(o.val==Infinity) print('∞');
+            else if(o.val==-Infinity) print('-∞');
+            else print((''+o.val).replace('e','⏨'));
+        }
         else if(o.t=="string") print(o.val);
         else if(o.t=="boolean") print(o.val?"True":"False");
         else if(o.t=="array"){
