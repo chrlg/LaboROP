@@ -318,6 +318,43 @@ function prePrint(args, named, ln, fname){
     print(end);
     if(fl || end=='\n') flush();
 }
+Help.predfn['print']=`print(o1, o2, ...): affiche les arguments passés
+Accepte les arguments optionnels nommés
+* sep=chaine: sépare les arguments par «sep». Par défaut sep est l'espace ' '
+    print(1,2,3,sep='|') ⇒ 1|2|3
+* end=chaine: termine l'affichage par «end>. Par défaut, end est le retour charriot '\n'
+    print(1, end='-')
+    print(2)
+    print(3,4)
+    ⇒ 
+    1-2
+    3 4
+* flush=booleen: force l'affichage immédiat (sans attendre que la plateforme décide
+    d'elle même de rafraichir l'affichage)
+    Attention, la plupart du temps cela est inutile et ralentit l'affichage
+    Par défaut, cela est vrai si end est '\n', sinon c'est faux.
+
+Notez que print peut s'utiliser sans argument. Dans ce cas, seul «end» (par défaut 
+un retour charriot) est affiché.
+
+Voir aussi : println, printnr
+`
+
+Help.predfn['println']=`println(o1,o2,...): affiche les arguments passés.
+Ancienne fonction gardée pour compatibilité. 
+C'est l'équivalent de 
+    print(o1, o2, ..., end='\n', sep='')
+C'est à dire que les arguments sont affichés sans espace les séparents, et que
+la ligne se termine par un retour charriot
+Voir aussi : print, printnr
+`
+
+Help.predfn['printnr']=`printnr(o1,o2,...): affiche les arguments passés.
+C'est l'ancienne fonction «print».
+Équivalent à l'actuel 
+    print(o1, o2, ..., end='', sep='')
+Voir aussi : print, println
+`
 
 function preRefresh(args, named, ln, fname){
    if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
@@ -325,7 +362,7 @@ function preRefresh(args, named, ln, fname){
    regularCheck(true);
 }
 Help.predfn.refresh=`refresh():
-Force l'affichage du text non encore affiché, et le redessin des graphes
+Force l'affichage du texte non encore affiché, et le redessin des graphes
 `;
 
 function preArcs(args, named, ln, fname){
