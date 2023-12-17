@@ -129,6 +129,7 @@ function zoomGraph(){
     $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
     let grname=$(`#tabs button.selected`).attr("data-graph");
     if(grname && _graphes[grname] && _graphes[grname].mode=="map") {
+        console.log("In zoom graph, setting shown to false", grname);
         _graphes[grname].shown=false;
         refreshGraphs();
     }
@@ -139,6 +140,7 @@ function updateGraph(gr){
         createExtraGraph(gr.name);
     }
     _graphes[gr.name]=gr;
+    console.log("In updateGraph, setting shown to false", gr.name);
     gr.shown=false;
     refreshGraphs();
 }
@@ -147,7 +149,9 @@ function refreshGraphs(){
     if(_graphRendererRunning) return;
     for(let k in _graphes){
         let gr=_graphes[k];
+        if(gr.shown) continue;
         if($(`#tabs button.selected[data-graph="${gr.name}"]`).length){
+            console.log("Drawing graphe", gr.name, k);
             showGraph(gr);
             gr.shown=true;
         }
@@ -159,8 +163,6 @@ function createExtraGraph(name){
     $("#extragraph").append($but);
     $but.click(function(){
         showTab("show", $but);
-        refreshGraphs();
-//        showGraph(_graphes[name]);
     });
 }
 
@@ -338,12 +340,18 @@ function showMesh(g){
 };
 
 function showTab(t, button=false){
-   $(".show").removeClass("selected");
-   $("#"+t).addClass("selected");
-   $("#tabs button").removeClass("selected");
-   if(button) button.addClass("selected");
-   else $("#tabs button[data-target='"+t+"']").addClass("selected");
-   if(t=='files') initFiles();
+    $(".show").removeClass("selected");
+    $("#"+t).addClass("selected");
+    $("#tabs button").removeClass("selected");
+    if(button) button.addClass("selected");
+    else $("#tabs button[data-target='"+t+"']").addClass("selected");
+    if(t=='files') initFiles();
+    if(t=='show' && button.attr('data-graph')){
+        let gname=button.attr('data-graph');
+        console.log("setting shown to false for", gname);
+        _graphes[gname].shown=false;
+        refreshGraphs();
+    }
 }
 
 function doZoom(delta){

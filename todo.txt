@@ -1,13 +1,19 @@
+# Bug
+NaN -> NULL  (ex `int("bla")`)
+
+# Revolution
 help function
     * help() -> list predef
     * help(predef) -> show help
     * help(object) -> show help on type
                    -> show full content of object (attributes, value, type, graph containing, edges connected, ...)
 
+# Revolution
 onglet doc
     * pdf du cours, du sujet
     * code source (solution ancien labo ; skel nouveau)
 
+# Revolution
 mode prof
     * inspection code étudiant
         * y compris historique
@@ -16,20 +22,68 @@ mode prof
     * fichiers read-only (quand pushé par prof vers étudiants)
     * notion de groupe (pour pusher à tout un groupe)
 
+# Feature
 sauvegarder image graphe
 
+# Feature
 sauvegarder fichier local
 
+# Feature
 importer fichier local
 
+# Revolution
 wasm
 
+# Feature
 dos2unix (ou support fichier dos)
 
+# Bug
 s="hello" s[12] -> null, pas undefined
 
+# Bug
 T=[1,2,3] T[12] -> null, pas undefined
 
+# Feature
 Graphe "E"+i
 
+# Feature
 sommets('name')
+
+# Bug dimensions matrice hétérogène
+Sommet A,B
+Graphe E
+Sommet<E> A,B,C,D
+print(Id+Id(E))
+
+
+# Feature
+Arc (A,B), (B,C), (C,A)
+
+# Feature
+print label of sommets (at least as tooltip)
+
+# Bug
+import("matrix")
+[S3,S6].label="bla"
+
+# Bug
+zoom is broken again on node/mesh mode
+
+# Bug
+no tooltip on edges 
+
+# Bug
+len(graphe)
+
+# Feature
+premier(tableau, f(this))
+dernier(tableau, f(this))
+
+# Feature
+for i in range(100):
+    print(i, over=True)
+
+# Feature
+for i in trange(100):
+    bla
+=> display progress bar
