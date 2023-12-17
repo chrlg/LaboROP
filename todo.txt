@@ -78,3 +78,7 @@ len(graphe)
 # Feature
 premier(tableau, f(this))
 dernier(tableau, f(this))
+
+# Feature
+for i in range(100):
+    print(i, over=True)
