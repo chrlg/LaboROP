@@ -1,4 +1,5 @@
 import * as Env from "./environment.js";
+import {NULL} from "./constants.js";
 
 export function zeroDim(n){
    let M={t:"matrix", val:[]};
@@ -19,6 +20,7 @@ export function id(n){
 
 export function dotsum(a, b){
     let n=a.val.length;
+    if(n!=b.val.length) return false;
     let R=zeroDim(n);
     for(let i=0; i<n; i++){
         for(let j=0; j<n; j++){
@@ -31,6 +33,7 @@ export function dotsum(a, b){
 
 export function sum(a, b){
     let n=a.val.length;
+    if(n!=b.val.length) return false;
     let R=zeroDim(n);
     for(let i=0; i<n; i++){
         for(let j=0; j<n; j++){
@@ -42,6 +45,7 @@ export function sum(a, b){
 }
 export function minus(a, b){
     let n=a.val.length;
+    if(n!=b.val.length) return false;
     let R=zeroDim(n);
     for(let i=0; i<n; i++){
         for(let j=0; j<n; j++){
@@ -53,18 +57,19 @@ export function minus(a, b){
 }
 
 export function mul(a,b){
-   let n=a.val.length;
-   let R={t:"matrix", val:new Array(n)};
-   for(let i=0; i<n; i++){
-      R.val[i]=new Array(n).fill(0);
-      for(let j=0; j<n; j++){
-         for(let k=0; k<n; k++){
-            R.val[i][j] += a.val[i][k]*b.val[k][j];
-         }
-      }
-   }
-   Env.addCnt(2*n*n*n);
-   return R;
+    let n=a.val.length;
+    if(n!=b.val.length) return false;
+    let R={t:"matrix", val:new Array(n)};
+    for(let i=0; i<n; i++){
+        R.val[i]=new Array(n).fill(0);
+        for(let j=0; j<n; j++){
+            for(let k=0; k<n; k++){
+                R.val[i][j] += a.val[i][k]*b.val[k][j];
+            }
+        }
+    }
+    Env.addCnt(2*n*n*n);
+    return R;
 }
 
 export function pow(a, k){
@@ -78,6 +83,7 @@ export function pow(a, k){
 
 export function boolMul(a,b){
     let n=a.val.length;
+    if(n!=b.val.length) return false;
     let R=zeroDim(n);
     for(let i=0; i<n; i++){
         for(let j=0; j<n; j++){

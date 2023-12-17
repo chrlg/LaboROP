@@ -237,7 +237,12 @@ export function evaluate(expr){
             if(a.t=="matrix"){
                 // M + x = addition de x à tous les coefs de M
                 if(isNumeric(b)) return Mat.plusScalar(a, numericValue(b));
-                if(b.t=="matrix") return Mat.sum(a,b);
+                if(b.t=="matrix") {
+                    let r=Mat.sum(a,b);
+                    if(!r) throw {error:"exec", name:"Erreur de dimension", 
+                                  msg:`tentative d'additionner des matrices de dimensions ${a.val.length}≠${b.val.length}`, ln:expr.ln};
+                    return r;
+                }
             }
             if(a.t=="string"){
                 if(b.t=="string") return {t:"string", val:a.val+b.val};
@@ -258,7 +263,12 @@ export function evaluate(expr){
         // Specific cases for "-"
         if(expr.t=="-"){
             if(a.t=="matrix" && isNumeric(b)) return Mat.plusScalar(a, -numericValue(b));
-            if(a.t=="matrix" && b.t=="matrix") return Mat.minus(a,b);
+            if(a.t=="matrix" && b.t=="matrix") {
+                let r=Mat.minus(a,b);
+                if(!r) throw {error:"exec", name:"Erreur de dimension", 
+                              msg:`tentative de soustraire des matrices de dimensions ${a.val.length}≠${b.val.length}`, ln:expr.ln};
+                return r;
+            }
             if(isNumeric(a) && b.t=="matrix") return Mat.scalarMinus(numericValue(a), b);
         }
 
@@ -271,7 +281,12 @@ export function evaluate(expr){
             }
 
             // Multiplication matricielle
-            if(a.t=="matrix" && b.t=="matrix") return Mat.mul(a,b);
+            if(a.t=="matrix" && b.t=="matrix") {
+                let r=Mat.mul(a,b);
+                if(!r) throw {error:"exec", name:"Erreur de dimension", 
+                              msg:`tentative de multiplier des matrices de dimensions ${a.val.length}≠${b.val.length}`, ln:expr.ln};
+                return r;
+            }
 
             // Matrix times number
             if(a.t=="matrix" && isNumeric(b)) return Mat.mulScalar(a,numericValue(b));
@@ -298,7 +313,10 @@ export function evaluate(expr){
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .+", ln:expr.ln};
-            return Mat.dotsum(a,b);
+            let r=Mat.dotsum(a,b);
+            if(!r) throw {error:"exec", name:"Erreur de dimension", 
+                          msg:`tentative d'additionner des matrices de dimensions ${a.val.length}≠${b.val.length}`, ln:expr.ln};
+            return r;
         }
 
         // ".*" sur matrices et nombres
@@ -310,7 +328,10 @@ export function evaluate(expr){
             if(a.t!="matrix" || b.t!="matrix")
                 throw {error:"type", name:"Erreur de type", 
                     msg:"Types "+a.t+","+b.t+" incompatibles pour .*", ln:expr.ln};
-            return Mat.boolMul(a,b);
+            let r=Mat.boolMul(a,b);
+            if(!r) throw {error:"exec", name:"Erreur de dimension", 
+                          msg:`tentative de multiplier des matrices de dimensions ${a.val.length}≠${b.val.length}`, ln:expr.ln};
+            return r;
         }
 
         if(!isNumeric(a) || !isNumeric(b)) throw {error:"type", name:"Erreur de type", msg:"Types "+a.t+expr.t+b.t+" incompatibles", ln:expr.ln};
