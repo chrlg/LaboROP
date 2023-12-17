@@ -588,7 +588,7 @@ function preId(args, named, ln, fname){
     if(args){
         if(args.length!=1) throw {error:"env", ln:ln, name:"Mauvais nombre d'arguments", msg:"La variable Id ne peut prendre qu'un argument optionnel, le graphe"};
         g=evaluate(args[0]);
-        if(g.t!="Graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Id est utilisée avec un argument optionnel, cet argument doit être un graphe"};
+        if(g.t!="graphe") throw {error:"env", ln:ln, name:"Mauvais type d'argument", msg:"Quand la variable Id est utilisée avec un argument optionnel, cet argument doit être un graphe"};
     }
     n=Object.keys(g.sommets).length;
     return Mat.id(n);
@@ -680,3 +680,61 @@ Si ce n'est qu'il est plus grand que tous les nombres.
     ⇒
     True
 `
+
+Help.name['Id']=`La matrice identité.
+Il s'agit d'une matrice carrée, dont la dimension est le nombre de sommets du graphe.
+
+«Id» se comporte à la fois comme une variable («print(Id)» affiche l'Identité)
+et comme une fonction, auquel cas son argument doit être un graphe,
+et elle retourne la matrice identité correspondant à ce graphe 
+    Graphe E
+    Arc<E> (A,B)
+    print(Id(E))
+    →
+    ⎡1 0⎤
+    ⎣0 1⎦
+
+Pour l'aide sur les matrices en général, voir help(matrix) ou help(Id*1)
+Voir aussi : Adj, Zero
+`
+
+Help.type['matrix']=`Une matrice.
+Dans le langage, toutes les matrices sont carrées, et contiennent des nombres.
+
+Les éléments (nombres) d'une matrice peuvent être obtenus en utilisant l'indexation 2d
+M[i,j] est l'élément de la jᵉ colonne de la iᵉ ligne de M
+    Arc (A,B)
+    Arc (B,C)
+    print(Adj)
+    print(Adj[0,0], Adj[0,1])
+    ⇒
+    ⎡0 1 0⎤
+    ⎢0 0 1⎥
+    ⎣0 0 0⎦
+
+    0 1
+Il est possible de faire des opérations arithmétiques élémentaires entre des matrices et
+des nombres
+    print(Adj*3+1)
+    →
+    ⎡1 4 1⎤
+    ⎢1 1 4⎥
+    ⎣1 1 1⎦
+Ainsi qu'entre matrices
+    print(Adj*3+Id)
+    ⇒
+    ⎡1 3 0⎤
+    ⎢0 1 3⎥
+    ⎣0 0 1⎦
+La multiplication entre deux matrices doit être comprise comme l'opération d'algèbre linéaire,
+et non la multiplication élément par élément. Ainsi Adj*Adj est
+    ⎡0 0 1⎤                ⎡0 1 0⎤
+    ⎢0 0 0⎥ et non pas     ⎢0 0 1⎥
+    ⎣0 0 0⎦                ⎣0 0 0⎦
+De même pour Adj**2.
+Enfin, des opérateurs booléens existent (.+, .*, .**)
+    
+Voir aussi : Id, Adj, Zero
+`
+
+Help.name.matrix=Help.type.matrix
