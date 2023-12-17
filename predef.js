@@ -441,6 +441,18 @@ function preImport(args, named, ln, fname){
         msg:"La fonction import attent une chaîne", ln:ln};
     Mod.load(e.val, args[0].ln);
 }
+Help.predfn['import']=`import(chaine): importe le graphe prédéfini «chaine».
+Exemple 
+    import("labyrinthe")
+importe le graphe prédéfini «labyrinthe»
+
+Notez que seuls les enseignants peuvent créer des graphes prédéfinis.
+Enfin, presque. 
+    import("https://une.url/graphe.json")
+Permet en théorie d'importer des graphes autres que ceux de la plateforme.
+À condition que cette URL permette les requêtes CORS
+Et il n'existe aucune documentation sur le format de ce fichier json
+`
 
 function preType(args, named, ln, fname){
     if(args.length==0) throw {error:"args", name:"Mauvais nombre d'arguments", msg:"La fonction type s'utilise avec au moins un argument", ln:ln};
