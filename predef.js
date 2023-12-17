@@ -533,6 +533,28 @@ function preInsert(args, named, ln, fname){
     lvv.val.splice(numericValue(argidx), 0, v);
     return v;
 }
+Help.predfn['insert']=`insert(tableau, index, valeur):
+insère la valeur «valeur» à la position «index» du tableau «tableau»
+    T=[1,2,3]
+    insert(T, 1, 42) ⇒ T=[1,42,2,3]
+Si l'index est négatif, on compte à partir de la fin (c'est donc
+l'équivalent de len(T)+index dans ce cas)
+    T=[1,2,3]
+    insert(T, -1, 42) ⇒ T=[1,2,42,3]
+Notez que ce n'est pas [1,2,3,42] dans cet exemple, comme on pourrait le penser
+(42 est à la position -1). Car l'index se comprend dans le tableau original
+-1 dans [1,2,3] est la position T[2], cad avant 3.
+
+Si l'index est avant l'index 0, l'élément est inséré en premier
+    T=[1,2,3]
+    insert(T, -10, 42) ⇒ T=[42,1,2,3]
+
+S'il est après la fin, l’élément est inséré en dernier
+    T=[1,2,3]
+    insert(T, 10, 42) ⇒ T=[1,2,3,42]
+
+L'index peut être Infinity ou -Infinity, auquel cas l'élément est inséré en premier ou dernier
+`;
 
 function preGraphMode(args, named, ln, fname){
     let g=Env.Gr;
@@ -549,6 +571,25 @@ function preGraphMode(args, named, ln, fname){
     regularCheck(true);
     return {t:'string', val:g.name};
 }
+Help.predfn['_grapheMode']=`_grapheMode(): retourne le mode actuel d'affichage du graphe Gr
+Le mode peut être 
+"dot" : affichage avec des sommets en ellipse, et des traits ou flêche entre eux.
+Le positionnement des sommets est optimal pour le dessin, sans rapport avec 
+un éventuel positionnement (attributs x,y) géographique
+
+"mesh" : affichage similaire, mais le positionnement est tiré des attributs "x" et "y"
+des sommets. Cela peut conduire à un sacré plat de spaghettis si le graphe a
+beaucoup d'arcs avec des sommets autres que ses voisins géographiques
+
+"map" : les sommets ne sont pas affichés. Seuls les arcs le sont, en ligne droite.
+Affichage adapté pour les labyrinthes ou les cartes routières
+────────────────────────────────────────────────────────────
+_grapheMode(G): idem, mais pour le graphe G au lieu de «Gr»
+────────────────────────────────────────────────────────────
+_grapheMode("dot"), _grapheMode(G, "mesh"), ... : 
+choisit ce mode d'affichage pour le graphe G (par défaut Gr)
+`
+
 
 function preWhoami(args, named, ln, fname){
     let req=new XMLHttpRequest();
