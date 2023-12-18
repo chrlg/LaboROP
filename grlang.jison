@@ -503,10 +503,10 @@ lvalue
 	 $$ = {t:"id", name:$1, ln:@1.first_line};
       }
       | "(" ID "," ID ")" {
-	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
+	 $$={t: "lvarc", initial:$2, terminal:$4, ln:@3.first_line};
       }
       | "[" ID "," ID "]" {
-	 $$={t:"arete", initial: $2, terminal: $4, ln:@3.first_line};
+	 $$={t:"lvarete", initial: $2, terminal: $4, ln:@3.first_line};
       }
       | lvalue "." ID {
 	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};

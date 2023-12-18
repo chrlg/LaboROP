@@ -350,7 +350,7 @@ case 56:
          this.$={t:"struct", f:[], ln:_$[$0].first_line};
       
 break;
-case 57: case 108:
+case 57:
 
 	 this.$={t: "arc", initial:$$[$0-3], terminal:$$[$0-1], ln:_$[$0-2].first_line};
       
@@ -576,9 +576,14 @@ case 104: case 105:
          this.$=$$[$0];
       
 break;
+case 108:
+
+	 this.$={t: "lvarc", initial:$$[$0-3], terminal:$$[$0-1], ln:_$[$0-2].first_line};
+      
+break;
 case 109:
 
-	 this.$={t:"arete", initial: $$[$0-3], terminal: $$[$0-1], ln:_$[$0-2].first_line};
+	 this.$={t:"lvarete", initial: $$[$0-3], terminal: $$[$0-1], ln:_$[$0-2].first_line};
       
 break;
 case 113: case 130:

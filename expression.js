@@ -214,7 +214,7 @@ export function evaluate(expr){
     }
 
     // Arete ou arc
-    if(expr.t=="arete" || expr.t=="arc"){
+    if(expr.t=="arete" || expr.t=="arc" || expr.t=="lvarc" || expr.t=="lvarete"){
         let v=evaluateArc(expr);
         if(v===undefined) throw {error:"type", name:"Arc ou arête inexistant", msg:"", ln:expr.ln};
         if(v.t=="null") return v;
@@ -582,6 +582,13 @@ function evaluateEqual(expr){
 // the only case where `(a,b)` or `[a,b]` may appear 
 // in the code are `(a,b)` where a previous `(a,b)` as l-value has been defined
 function evaluateArc(expr){
+    // Has been dealt as a l-value by parser. But is a R-value from interpreter point of view. So translate it as R-value
+    if(expr.t=="lvarc" || expr.t=="lvarete"){
+        if(expr.t=="lvarc") expr.t="arc";
+        else expr.t="arete";
+        expr.initial={t:"id", name:expr.initial, ln:expr.ln};
+        expr.terminal={t:"id", name:expr.terminal, ln:expr.ln};
+    }
     // If both nodes are ID, then it might be a previously l-val edge, that is a variable of its own
     if(expr.initial.t=='id' && expr.terminal.t=='id'){
         // A name (that cannot legally be a real name) for the arc/arete variable
@@ -633,10 +640,10 @@ export function evaluateLVal(lv, direct){
 
 
     // Special case of arc/arete (edges) -> return a 6-uplet
-    else if(lv.t=="arc" || lv.t=="arete") { // (a,b)= ou [a,b]=
+    else if(lv.t=="lvarc" || lv.t=="lvarete") { // (a,b)= ou [a,b]=
         let a=Env.getIdlv(lv.initial, lv.ln);
         let b=Env.getIdlv(lv.terminal, lv.ln);
-        let cn=((lv.t=="arc")?">":"-") + lv.initial + "," + lv.terminal; // A name (that cannot legally be a real name) for the arc/arete variable
+        let cn=((lv.t=="lvarc")?">":"-") + lv.initial + "," + lv.terminal; // A name (that cannot legally be a real name) for the arc/arete variable
         let c=Env.getIdlv(cn, lv.ln); // Env for new local var (so local or global depending on scope). Shouldn't be anything else than Current (can't be declared as global)
         return [a, lv.initial, b, lv.terminal, c, cn]; // 6-uple for arc l-val, made of both node and the arc/arete itself
     }
