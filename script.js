@@ -86,7 +86,6 @@ function runCode(){
 
 let currentFilename=false;
 function checkSavedCode(j){
-    console.log(j);
     if(j.error=='login'){
         document.getElementById('relogin').classList.add('show');
         localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
@@ -140,7 +139,6 @@ function updateGraph(gr){
         createExtraGraph(gr.name);
     }
     _graphes[gr.name]=gr;
-    console.log("In updateGraph, setting shown to false", gr.name);
     gr.shown=false;
     refreshGraphs();
 }
@@ -151,7 +149,6 @@ function refreshGraphs(){
         let gr=_graphes[k];
         if(gr.shown) continue;
         if($(`#tabs button.selected[data-graph="${gr.name}"]`).length){
-            console.log("Drawing graphe", gr.name, k);
             showGraph(gr);
             gr.shown=true;
         }
