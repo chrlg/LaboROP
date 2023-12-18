@@ -58,3 +58,6 @@ for i in range(100):
 for i in trange(100):
     bla
 => display progress bar
+
+# Bug
+(x,y).initial=12 # valid if "initial" was not a special case
