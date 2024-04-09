@@ -399,6 +399,35 @@ export function evaluate(expr){
         throw {error:"interne", name:"Erreur interne", msg:"Hein?", ln:expr.ln};
     }
 
+    if(expr.t=="in"){
+        let e=evaluate(expr.left);
+        let set=evaluate(expr.right);
+        if(set.t=="array"){
+            for(let b of set.val){
+                if(isEq(e,b)) return TRUE;
+            }
+            return FALSE;
+        }
+        if(set.t=="matrix"){
+            if(!isNumeric(e)) return FALSE;
+            let v=numericValue(e);
+            let n=set.val.length;
+            for(let i=0; i<n; i++){
+                for(let j=0; j<n; j++){
+                    if(set.val[i][j]==v) return TRUE;
+                }
+            }
+            return FALSE;
+        }
+        if(set.t=="string"){
+            if(e.t!="string") return FALSE;
+            if(set.val.indexOf(e.val)>=0) return TRUE;
+            return FALSE;
+        }
+        throw {error:"type", name:"Erreur de type", 
+               msg:`Mauvais type ${set.t} pour "in". Doit être de type tableau, matrice ou chaîne`, ln:expr.ln};
+    }
+
     // "!"
     if(expr.t=="!"){
         var a=evaluate(expr.right);
@@ -520,50 +549,50 @@ export function evaluate(expr){
 // Comparaison (égalité ou différence)
 // Pour les valeurs scalaires, compare la valeur. Pour les sommets et arcs, la référence suffit
 // Pour les vecteurs et structures : comparaison récursive
-function evaluateEqual(expr){
-    function isEq(a,b){
-        Env.addCnt(1);
-        // Comparaison avec chaine d'un sommet
-        if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
-        if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
-        // Comparaison entre décimal et nombre (aucune garantie d'absence d'erreur numérique)
-        // Gère aussi le cas decimal/decimal
-        if(a.t=="decimal" && isNumeric(b)) return a.val.equals(b.val);
-        if(b.t=="decimal" && isNumeric(a)) return b.val.equals(a.val);
-        // En dehors de ces deux cas, deux données de types différent sont différentes
-        if(a.t!=b.t) return false;
-        // A ce point, nous savons que a et b sont de mêmes types
-        if(a.t=="null") return true;  // le type lui même suffit
-        if(a.t=="Sommet" || a.t=="Arete" || a.t=="Arc") return a===b;
-        if(a.t=="boolean" || a.t=="number" || a.t=="string") return a.val==b.val;
-        // Pour les tableaux, la comparaison est "profonde"
-        if(a.t=="array"){
-            if(a.val.length!=b.val.length) return false;
-            for(let i=0; i<a.val.length; i++){
-                if(!isEq(a.val[i], b.val[i])) return false;
-            }
-            Env.addCnt(a.val.length-1);
-            return true;
+function isEq(a,b){
+    Env.addCnt(1);
+    // Comparaison avec chaine d'un sommet
+    if(a.t=="string" && b.t=="Sommet") return a.val==b.name;
+    if(a.t=="Sommet" && b.t=="string") return a.name==b.val;
+    // Comparaison entre décimal et nombre (aucune garantie d'absence d'erreur numérique)
+    // Gère aussi le cas decimal/decimal
+    if(a.t=="decimal" && isNumeric(b)) return a.val.equals(b.val);
+    if(b.t=="decimal" && isNumeric(a)) return b.val.equals(a.val);
+    // En dehors de ces deux cas, deux données de types différent sont différentes
+    if(a.t!=b.t) return false;
+    // A ce point, nous savons que a et b sont de mêmes types
+    if(a.t=="null") return true;  // le type lui même suffit
+    if(a.t=="Sommet" || a.t=="Arete" || a.t=="Arc") return a===b;
+    if(a.t=="boolean" || a.t=="number" || a.t=="string") return a.val==b.val;
+    // Pour les tableaux, la comparaison est "profonde"
+    if(a.t=="array"){
+        if(a.val.length!=b.val.length) return false;
+        for(let i=0; i<a.val.length; i++){
+            if(!isEq(a.val[i], b.val[i])) return false;
         }
-        // Idem pour les matrices. Si ce n'est qu'il n'y a pas besoin de rappeler récursivement isEq, 
-        // puisque le contenu est forcément numérique
-        if(a.t=="matrix"){
-            for(let i=0; i<a.val.length; i++){
-                for(let j=0; j<a.val.length; j++){
-                    if(a.val[i][j] != b.val[i][j]) return false;
-                }
-            }
-            Env.addCnt(a.val.length*a.val.length-1);
-            return true;
-        }
-        // Enfin pour les struct, il faut comparer les champs
-        if(a.t=="struct"){
-            for(let f in a.f) if(b.f[f]===undefined) return false; // un champ de a n'existe pas dans b
-            for(let f in b.f) if(a.f[f]===undefined) return false; // un champ de b n'existe pas dans a
-            for(let f in a.f) if(!isEq(a.f[f], b.f[f])) return false; // 1 champ a des valeurs différents dans a et b
-            return true;
-        }
+        Env.addCnt(a.val.length-1);
+        return true;
     }
+    // Idem pour les matrices. Si ce n'est qu'il n'y a pas besoin de rappeler récursivement isEq, 
+    // puisque le contenu est forcément numérique
+    if(a.t=="matrix"){
+        for(let i=0; i<a.val.length; i++){
+            for(let j=0; j<a.val.length; j++){
+                if(a.val[i][j] != b.val[i][j]) return false;
+            }
+        }
+        Env.addCnt(a.val.length*a.val.length-1);
+        return true;
+    }
+    // Enfin pour les struct, il faut comparer les champs
+    if(a.t=="struct"){
+        for(let f in a.f) if(b.f[f]===undefined) return false; // un champ de a n'existe pas dans b
+        for(let f in b.f) if(a.f[f]===undefined) return false; // un champ de b n'existe pas dans a
+        for(let f in a.f) if(!isEq(a.f[f], b.f[f])) return false; // 1 champ a des valeurs différents dans a et b
+        return true;
+    }
+}
+function evaluateEqual(expr){
     // Si c'est un ==, la λ retoure TRUE si c'est égal
     if(expr.t=="==") expr.l=function(){ 
         if(isEq(evaluate(expr.left), evaluate(expr.right))) return TRUE;

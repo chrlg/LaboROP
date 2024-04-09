@@ -99,7 +99,9 @@ onmessage = function (e){
 	       msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
 	    else postMessage({termine: e.val, tree:out});
 	 }
-	 else postMessage(e);
+	 else {
+            postMessage(e);
+        }
       }
       else if(e.msg){
 	 postMessage({error: "syntax", name: "Erreur de syntaxe", msg: e.msg, ln: e.line+1, err:e});

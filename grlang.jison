@@ -59,9 +59,11 @@
 "or"			return "or"
 "xor"                   return "xor"
 "^^"                    return "xor"
+".+="                   return ".+="
 ".+"                    return ".+"
 ".**"                   return ".^"
 "**"			return "**"
+".*="                   return ".*="
 ".*"                    return ".*"
 ".^"                    return ".^"
 
@@ -119,6 +121,7 @@
 %left "||" "or"
 %left "xor"
 %left "&&" "and"
+%left "in"
 %left "=" "==" "!="
 %left "<" ">" "<=" ">="
 %left '.+' '+' '-'
@@ -162,6 +165,12 @@ instructionNoColon
       }
       | lvalue "//=" expr {
          $$ = { t:"=", left:[$1], right:{t:"//", left:$1, right:$3, ln:@2.first_line}, ln:@2.first_line};
+      }
+      | lvalue ".+=" expr {
+	 $$ = { t:"=", left: [$1], right: {t:".+", left:$1, right:$3, ln:@2.first_line}, ln:@2.first_line};
+      }
+      | lvalue ".*=" expr {
+	 $$ = { t:"=", left: [$1], right: {t:".*", left:$1, right:$3, ln:@2.first_line}, ln:@2.first_line};
       }
       | lvalue "++" {
 	 $$ = { t:"++", left: $1, ln:@2.first_line};
@@ -351,10 +360,23 @@ placeExpr
          $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
       }
       ;
+
+basicExpr 
+      : atomicExpr {
+         $$ = $1;
+      }
+      | "(" expr ")" {
+	 $$ = $2;
+      }
+      | "[" bracketExpr "]" {
+         $$ = $2;
+         $$.ln=@1.first_line;
+      }
+      ;
       
 
 expr
-      : atomicExpr {
+      : basicExpr {
          $$ = $1;
       }
       | placeExpr {
@@ -441,11 +463,14 @@ expr
       | expr "xor" expr {
          $$ = {t:"xor", left:$1, right:$3, ln:@2.first_line};
       }
+      | expr "in" expr {
+         $$ = {t:"in", left:$1, right:$3, ln:@2.first_line};
+      }
+      | basicExpr "!" "in" basicExpr {
+         $$ = {t:"!", right:{t:"in", left:$1, right:$4, ln:@2.first_line}, ln:@2.first_line};
+      }
       | "!" expr {
 	 $$ = {t:"!", right:$2, ln:@1.first_line};
-      }
-      | "(" expr ")" {
-	 $$ = $2;
       }
       | "Sommet" grapheSpec expr {
 	 $$={t:"SOMMET", g:$2, arg:$3, ln:@1.first_line};
@@ -455,10 +480,6 @@ expr
       }
       | "Arete" grapheSpec "[" expr "," expr "]" {
 	 $$ = { t:"Arete", g:$2, left:$4, right:$6, ln:@1.first_line};
-      }
-      | "[" bracketExpr "]" {
-         $$ = $2;
-         $$.ln=@1.first_line;
       }
       ;
 
