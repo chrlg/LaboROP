@@ -29,6 +29,7 @@ export default function populate(){
    Env.addPredfn("type", preType);
    Env.addPredfn("_grapheMode", preGraphMode);
    Env.addPredfn("whoami", preWhoami);
+   Env.addPredfn("sum", preSum);
    Env.addPredfn("sqrt", preMaths1);
    Env.addPredfn("sqr", preMaths1);
    Env.addPredfn("exp", preMaths1);
@@ -329,7 +330,7 @@ Help.predfn['print']=`print(o1, o2, ...): affiche les arguments passés
 Accepte les arguments optionnels nommés
 * sep=chaine: sépare les arguments par «sep». Par défaut sep est l'espace ' '
     print(1,2,3,sep='|') ⇒ 1|2|3
-* end=chaine: termine l'affichage par «end>. Par défaut, end est le retour charriot '\n'
+* end=chaine: termine l'affichage par «end». Par défaut, end est le retour charriot '\\n'
     print(1, end='-')
     print(2)
     print(3,4)
@@ -339,7 +340,7 @@ Accepte les arguments optionnels nommés
 * flush=booleen: force l'affichage immédiat (sans attendre que la plateforme décide
     d'elle même de rafraichir l'affichage)
     Attention, la plupart du temps cela est inutile et ralentit l'affichage
-    Par défaut, cela est vrai si end est '\n', sinon c'est faux.
+    Par défaut, cela est vrai si end est '\\n', sinon c'est faux.
 
 Notez que print peut s'utiliser sans argument. Dans ce cas, seul «end» (par défaut 
 un retour charriot) est affiché.
@@ -350,7 +351,7 @@ Voir aussi : println, printnr
 Help.predfn['println']=`println(o1,o2,...): affiche les arguments passés.
 Ancienne fonction gardée pour compatibilité. 
 C'est l'équivalent de 
-    print(o1, o2, ..., end='\n', sep='')
+    print(o1, o2, ..., end='\\n', sep='')
 C'est à dire que les arguments sont affichés sans espace les séparents, et que
 la ligne se termine par un retour charriot
 Voir aussi : print, printnr
@@ -612,6 +613,47 @@ Help.predfn.whoami=`whoami(): retourne une chaîne de caractère contenant votre
 Si cette fonction retourne «null», alors sauvegardez vite votre code dans un fichier externe tant que
 vous le pouvez, car vus n'êtes plus connecté !!
 `
+
+function preSum(args, named, ln, fname){
+    if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments", msg:"sum s'utilise avec un et un seul argument", ln:ln};
+    let a=evaluate(args[0]);
+    let plus=function(a,b){
+        if(b.t=="array"){
+            let r=a;
+            for(let v of b.val){
+                r=plus(r,v);
+            }
+            return r;
+        }else if(b.t=="matrix"){
+            let s=0;
+            for(let i=0; i<b.val.length; i++){
+                for(let v of b.val[i]){
+                    s+=v;
+                }
+            }
+            return plus(a, {t:'number', val:s});
+        }else if(a===false){
+            if(b.t=='number') return {t:'number', val:b.val};
+            if(b.t=='decimal') return {t:'number', val:b.val};
+        }else if(a.t=='number'){
+            if(b.t=='number') return {t:'number', val:a.val+b.val};
+            if(b.t=='decimal') return {t:'decimal', val:b.val.plus(a.val)};
+        }else if(a.t=='decimal'){
+            if(isNumeric(b)) return {t:'decimal', val:a.val.plus(b.val)};
+        }
+        throw {error:"type", name:"Erreur de type", msg:"Mauvais type pour sum", ln:ln};
+    };
+    if(a.t=='matrix' || a.t=='array') return plus(false, a);
+    throw {error:"type", name:"Erreur de type", msg:"Mauvais type pour sum", ln:ln};
+}
+Help.predfn.sum=`sum(matrice): retourne la somme des éléments d'une matrice
+────────────────────────────────────────────────────────────
+sum(tableau): retourne la somme des éléments d'un tableau
+    sum([1,2,3]) → 6
+Si un des éléments est lui-même un tableau ou une matrice, 
+la somme de cet élément est calculée récursivement
+    sum([1,2,[3,4,5],6]) → 21
+`;
 
 function preMaths1(args, named, ln, fname){
     if(args.length!=1) throw {error:"args", name:"Mauvais nombre d'arguments",
