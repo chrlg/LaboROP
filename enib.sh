@@ -1,6 +1,6 @@
 #!/bin/bash
 
-target="maths:W3/LaboROP-ng"
+target="maths:W3/LaboROP"
 extra=("lib/ace-builds-master/src-noconflict/mode-python.js")
 
 make
