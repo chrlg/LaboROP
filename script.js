@@ -23,6 +23,7 @@ function messageFromWorker(event){
         $e.append("<span>Line "+ln+" </span> : ");
         $e.append("<b>"+e.name+"</b><br>");
         if(e.msg) $e.append("<pre>"+e.msg+"</pre>");
+        $e.append("<div>Consultez la documentation fournie par la fonction <b>help()</b></div>");
         errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
         lastError = e;
         worker=false;
@@ -85,6 +86,7 @@ function runCode(){
 }
 
 let currentFilename=false;
+let currentFilenameRoot=false; // Login of other person if authorized
 function checkSavedCode(j){
     if(j.error=='login'){
         document.getElementById('relogin').classList.add('show');
@@ -103,8 +105,9 @@ function saveCode(e, f, g){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename='New '+NOWSTR;
+       currentFilenameRoot=false;
     }
-    mypost('ajax.php', {action:'save', fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
+    mypost('ajax.php', {action:'save', root:currentFilenameRoot, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
     runCode();
     return true;
 }
@@ -476,6 +479,7 @@ function refreshCloud(lf){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename=restore.fn+' Récupéré '+NOWSTR;
+       currentFilenameRoot=false;
        editor.setValue(restore.code, -1);
        localStorage.setItem("laborop_restore", "false");
        return saveCode();
