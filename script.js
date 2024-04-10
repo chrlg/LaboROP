@@ -100,7 +100,7 @@ function checkSavedCode(j){
     }
 }
 
-function saveCode(e, f, g){
+function saveCode(run=false){
     if(!currentFilename){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
@@ -108,7 +108,7 @@ function saveCode(e, f, g){
        currentFilenameRoot=false;
     }
     mypost('ajax.php', {action:'save', root:currentFilenameRoot, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
-    runCode();
+    if(run) runCode();
     return true;
 }
 
@@ -401,7 +401,7 @@ function init(){
    editor.commands.addCommand({name:"Stop", bindKey:{win:"alt-c",mac:"Alt-c"},
          exec:()=>{Terminate();}});
    editor.commands.addCommand({name:"Save&Run", 
-         bindKey:{win:"Ctrl-s", mac:"Command-s"}, exec:saveCode});
+         bindKey:{win:"Ctrl-s", mac:"Command-s"}, exec:()=>saveCode(true)});
    editor.commands.addCommand({name:"Run", 
          bindKey:{win:"Alt-r", mac:"Command-Alt-r"}, exec:runCode});
    editor.commands.addCommand({name: "showKeyboardShortcuts",
@@ -418,7 +418,7 @@ function init(){
    editor.setOption("showInvisibles", true);
 
 //   editor.setValue(currentFile.code, -1);
-   runCode();
+//   runCode();
 
    // Tabs
    $("#tabs button[data-target]").click(function(e){
@@ -465,7 +465,7 @@ function loadCloudFile(j){
     currentFilename=j.src;
     editor.setValue(j.code, -1);
     initFiles();
-    runCode();
+    //runCode();
 }
 
 
@@ -482,7 +482,7 @@ function refreshCloud(lf){
        currentFilenameRoot=false;
        editor.setValue(restore.code, -1);
        localStorage.setItem("laborop_restore", "false");
-       return saveCode();
+       return saveCode(false);
     }
     let table=$("<table></table>").appendTo($("#files"));
     for(let i=0; i<lf.length; i++){
