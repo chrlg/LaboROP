@@ -30,4 +30,5 @@ export function flush(){
 export function print(s){
     _str += s;
     _strChange=true;
+    if(_str.length>11000) _str.substring(1000);
 }
