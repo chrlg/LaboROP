@@ -495,7 +495,13 @@ export function evaluate(expr){
             msg:"Indice de ligne non entier", ln:expr.i.ln};
         if(!isNumeric(j)) throw {error:"type", name:"Erreur de type",
             msg:"Indice de colonne non entier", ln:expr.j.ln};
-        return {t:"number", val:M.val[numericValue(i)][numericValue(j)]};
+        let n=M.val.length;
+        let ii=numericValue(i);
+        let jj=numericValue(j);
+        if(ii>=n || jj>=n) throw {error:"index", name:"Index trop grand",
+                                 msg:`Index [${ii},${jj}] trop grand pour une matrice de taille ${n}`, 
+                                 ln:expr.j.ln};
+        return {t:"number", val:M.val[ii][jj]};
     }
     if(expr.t=="array"){
         return JSON.parse(JSON.stringify(expr));
