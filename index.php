@@ -29,9 +29,14 @@ if(phpCAS::isAuthenticated()){
     $cn = $a['cn'];
     $ip = 'ø'; if(isset($a['clientIpAddress'])) $ip=$a['clientIpAddress'];
     error_log("ME IS " . $_SERVER['REMOTE_ADDR'] . "($ip)  ⇔ $me aka $cn");
-    echo "<!--";
-    print_r($a);
-    echo "-->";
+    $sql = new SQLite3('DB/users.db');
+    $sql->exec("create table if not exists Login (login text, cn text, ip text, ts int)");
+    $prep = $sql->prepare("INSERT into Login values (:x, :y, :z, :a)");
+    $prep->bindValue(':x', $me);
+    $prep->bindValue(':y', $cn);
+    $prep->bindValue(':z', $ip);
+    $prep->bindValue(':a', time());
+    $prep->execute();
 
     readfile("main.html");
     exit(0);
