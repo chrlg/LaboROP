@@ -5,7 +5,7 @@ session_start();
 
 ini_set("display_errors", 1);
 ini_set("display_startup_errors", 1);
-ini_set("error_log", "/tmp/caserror.log");
+ini_set("error_log", "DB/caserror.log");
 error_reporting(E_ALL);
 
 require_once("lib/phpCAS-1.3.6/CAS.php");
@@ -24,7 +24,15 @@ if(isset($_GET["login"]) || !phpCAS::isAuthenticated()){
 if(phpCAS::isAuthenticated()){
     $me = phpCAS::getUser();
     $_SESSION["clgme"] = $me;
-    error_log("ME IS " . $_SERVER['REMOTE_ADDR'] . " ⇔ $me");
+    $a=phpCas::getAttributes();
+    $cn = 'ø'; if(isset($a['cn'])) $cn=$a['cn'];
+    $cn = $a['cn'];
+    $ip = 'ø'; if(isset($a['clientIpAddress'])) $ip=$a['clientIpAddress'];
+    error_log("ME IS " . $_SERVER['REMOTE_ADDR'] . "($ip)  ⇔ $me aka $cn");
+    echo "<!--";
+    print_r($a);
+    echo "-->";
+
     readfile("main.html");
     exit(0);
 }
