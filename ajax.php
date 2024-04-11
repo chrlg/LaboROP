@@ -40,8 +40,8 @@ function ls(){
 }
 
 function whoami(){
-    global $me;
-    echo json_encode(array("me"=>$me));
+    global $me, $prof;
+    echo json_encode(array("me"=>$me, "prof"=>$prof));
 }
 
 function mv($data){
@@ -77,6 +77,7 @@ function save($data){
         copy($fn, $prefix."·Hist/".date("Y-m-d h:i:sa")."_".$data->fn);
     }
     $nb=file_put_contents($fn, $data->code);
+    chmod($fn, 0664);
     if(!$nb) {
         error("Could not save");
     }else{
@@ -121,7 +122,9 @@ if(!isset($_SESSION["clgme"])){
 }
 $me = $_SESSION["clgme"];
 $prefix = './DB/Root/' . $me . "/";
+$prof = false;
 
+if($me=='legal' || $me=='gaubert') $prof=true;
 
 if($action=="ls") ls();
 else if($action=="whoami") whoami();
