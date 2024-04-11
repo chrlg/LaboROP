@@ -7,6 +7,8 @@ ini_set("display_startup_errors", 1);
 ini_set("error_log", "DB/ajaxerror.log");
 error_reporting(E_ALL);
 
+$ROOT = './DB/Root/';
+
 // Return true if $fn is an illegal filename for save. false otherwise
 function illegal($fn){
     if(strpos($fn, ".")!==false) return true;
@@ -23,14 +25,24 @@ function error($a){
 }
 
 
-function ls(){
-    global $prefix;
+function ls($data){
+    global $prefix, $prof, $ROOT;
     if(!is_dir($prefix)) mkdir($prefix);
     if(!is_dir($prefix.'·Hist')) mkdir($prefix.'·Hist');
+    error_log("ls chmod prefix=$prefix");
     chmod($prefix, 0775);
     chmod($prefix."·Hist", 0775);
     $rep=array();
-    foreach(scandir($prefix) as $d){
+    if($prof){
+        $users=array();
+        foreach(scandir($ROOT) as $d){
+            if($d=='.' || $d=='..') continue;
+            array_push($users, $d);
+        }
+        array_push($rep, $users);
+    }
+    $tdir=$prefix;
+    foreach(scandir($tdir) as $d){
         if($d=='.') continue;
         if($d=='..') continue;
         if($d=='·Hist') continue;
@@ -121,13 +133,17 @@ if(!isset($_SESSION["clgme"])){
     exit(0);
 }
 $me = $_SESSION["clgme"];
-$prefix = './DB/Root/' . $me . "/";
+$prefix = $ROOT . $me . "/";
 $prof = false;
 
 if($me=='legal' || $me=='gaubert') $prof=true;
 
-if($action=="ls") ls();
-else if($action=="whoami") whoami();
+if($prof && isset($data->who) && ($data->who)){
+    $prefix = $ROOT . ($data->who) . "/";
+}
+
+if($action=="ls") ls($data);
+else if($action=="whoami") whoami($data);
 else if($action=="mv") mv($data);
 else if($action=="load") load($data);
 else if($action=="save") save($data);

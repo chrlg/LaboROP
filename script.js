@@ -86,17 +86,21 @@ function runCode(){
 }
 
 let currentFilename=false;
-let currentFilenameRoot=false; // Login of other person if authorized
+let pwd=false; // Directory for 'ls' (that is, user of files)
 function checkSavedCode(j){
     if(j.error=='login'){
         document.getElementById('relogin').classList.add('show');
-        localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        if(currentFilename){
+            localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        }
         return;
     }
     if(j.saved=='ok'){
         localStorage.setItem("laborop_restore", JSON.stringify(false));
     }else{
-        localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        if(currentFilename){
+            localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        }
     }
 }
 
@@ -105,9 +109,8 @@ function saveCode(run=false){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename='New '+NOWSTR;
-       currentFilenameRoot=false;
     }
-    mypost('ajax.php', {action:'save', root:currentFilenameRoot, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
+    mypost('ajax.php', {action:'save', who:pwd, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
     if(run) runCode();
     return true;
 }
@@ -479,12 +482,31 @@ function refreshCloud(lf){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename=restore.fn+' Récupéré '+NOWSTR;
-       currentFilenameRoot=false;
        editor.setValue(restore.code, -1);
        localStorage.setItem("laborop_restore", "false");
        return saveCode(false);
     }
     let table=$("<table></table>").appendTo($("#files"));
+    if(lf.length>0 && !(lf[0].substring)){
+        let lf0=lf.shift();
+        let tr=$('<tr></tr>').appendTo(table);
+        let td=$('<td colspan=4></td>').appendTo(tr);
+        let userSelect=$('<select></select>').appendTo(td);
+        $('<option value=0>ME</option>').appendTo(userSelect);
+        for(let k of lf0){
+            let o=$('<option>'+k+'</option>').appendTo(userSelect);
+            if(k==pwd){
+                o.attr('selected', 'selected');
+            }
+        }
+        userSelect.change(function(e){
+            pwd = userSelect.val(); 
+            if(pwd=='0' || pwd==0) pwd=false;
+            currentFilename=false;
+            editor.setValue('', -1);
+            initFiles();
+        });
+    }
     for(let i=0; i<lf.length; i++){
         let fn=lf[i];
      
@@ -510,7 +532,7 @@ function refreshCloud(lf){
                 if(inputName.val()=="") return;
                 let ns=inputName.val().replaceAll('/','╱');
                 if(fn==currentFilename) currentFilename=ns;
-                mypost('ajax.php', {action:'mv', src:fn, dest:ns}).then(function(j){
+                mypost('ajax.php', {action:'mv', who:pwd, src:fn, dest:ns}).then(function(j){
                     console.log('ret mv', j);
                     initFiles();
                 });
@@ -522,20 +544,22 @@ function refreshCloud(lf){
         });
 
         btOpen.click(function(){
-            mypost('ajax.php', {action:'load', src:fn}).then(loadCloudFile);
+            mypost('ajax.php', {action:'load', who:pwd, src:fn}).then(loadCloudFile);
         });
 
         btDel.click(function(){
-            if(fn==currentFilename){
-                alert("Fichier en cours d'édition");
-                return;
-            }
             let sur=confirm("Supprimer le fichier "+fn+ " ?");
             if(!sur) return;
-            mypost('ajax.php', {action:'rm', fn:fn}).then((j)=>initFiles());
+            mypost('ajax.php', {action:'rm', who:pwd, fn:fn}).then(function(j){
+                if(fn==currentFilename){
+                    currentFilename=false;
+                    editor.setValue('', -1);
+                }
+                initFiles()
+            });
         });
         btCopy.click(function(){
-            mypost('ajax.php', {action:'copy', fn:fn}).then((j)=>initFiles());
+            mypost('ajax.php', {action:'copy', who:pwd, fn:fn}).then((j)=>initFiles());
         });
     }
     let tr=$("<tr>").appendTo(table);
@@ -559,14 +583,14 @@ function refreshCloud(lf){
         }
         editor.setValue("", -1);
         currentFilename=ns;
-        mypost('ajax.php', {action:'save', fn:currentFilename, code:editor.getValue()}).then(initFiles);
+        mypost('ajax.php', {action:'save', who:pwd, fn:currentFilename, code:editor.getValue()}).then(initFiles);
    });
 }
 
 
 function initFiles(){
    $("#files").empty();
-   mypost("ajax.php", {action:'ls'}).then(refreshCloud);
+   mypost("ajax.php", {action:'ls', who:pwd}).then(refreshCloud);
    return;
 }
 
