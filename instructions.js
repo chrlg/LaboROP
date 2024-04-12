@@ -113,7 +113,7 @@ export function interpCall(call){
 // may be interupted before the end, in which case it returns "return", "break" or "continue" to tell why
 export function interpretWithEnv(tree, isloop){
     for(let ti of tree){
-        if(_instrCnt++>100000) {
+        if(_instrCnt++>10000) {
             regularCheck();
             _instrCnt=0;
         }

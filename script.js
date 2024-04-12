@@ -63,13 +63,14 @@ function messageFromWorker(event){
 function oneditorChange(e){
 }
 
+let eee=0;
 function runCode(){
     if(worker) worker.terminate();
     if(timeout) clearTimeout(timeout);
     worker=false;
     worker = new Worker("interpret.js", {type:"module"});
     worker.onmessage = messageFromWorker;
-    worker.onerror = (e) => {console.log(e);};
+    worker.onerror = (e) => {eee=e; console.log(e);};
     worker.postMessage(editor.getValue());
     timeout=setTimeout(Terminate, timeoutLen);
     $("#console").empty();
@@ -134,7 +135,6 @@ function zoomGraph(){
     $("#canvascont canvas").width(targetscale*1000).height(targetscale*1000);
     let grname=$(`#tabs button.selected`).attr("data-graph");
     if(grname && _graphes[grname] && _graphes[grname].mode=="map") {
-        console.log("In zoom graph, setting shown to false", grname);
         _graphes[grname].shown=false;
         refreshGraphs();
     }
@@ -351,7 +351,6 @@ function showTab(t, button=false){
     if(t=='files') initFiles();
     if(t=='show' && button.attr('data-graph')){
         let gname=button.attr('data-graph');
-        console.log("setting shown to false for", gname);
         _graphes[gname].shown=false;
         refreshGraphs();
     }
@@ -533,7 +532,6 @@ function refreshCloud(lf){
                 let ns=inputName.val().replaceAll('/','╱');
                 if(fn==currentFilename) currentFilename=ns;
                 mypost('ajax.php', {action:'mv', who:pwd, src:fn, dest:ns}).then(function(j){
-                    console.log('ret mv', j);
                     initFiles();
                 });
             }

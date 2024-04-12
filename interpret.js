@@ -106,6 +106,9 @@ onmessage = function (e){
       else if(e.msg){
 	 postMessage({error: "syntax", name: "Erreur de syntaxe", msg: e.msg, ln: e.line+1, err:e});
       }
+      else if(e.message=='too much recursion'){
+        postMessage({error:"exec", name:"Limite machine atteinte", msg:"Trop d'appels récursifs", ln:-1});
+      }
       else {
          console.trace(e);
          postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e), ln:Line});
