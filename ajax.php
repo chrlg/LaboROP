@@ -9,6 +9,15 @@ error_reporting(E_ALL);
 
 $ROOT = './DB/Root/';
 
+function logActivity($what){
+    global $me, $sql;
+    $q=$sql->prepare('insert into activity (login, ts, what) values (:l, :t, :w)');
+    $q->bindValue(':l', $me);
+    $q->bindValue(':t', time());
+    $q->bindValue(':w', $what);
+    $q->execute();
+}
+
 // Return true if $fn is an illegal filename for save. false otherwise
 function illegal($fn){
     if(strpos($fn, ".")!==false) return true;
@@ -26,21 +35,23 @@ function error($a){
 
 
 function ls($data){
-    global $prefix, $prof, $ROOT;
+    global $prefix, $prof, $ROOT, $sql;
     if(!is_dir($prefix)) mkdir($prefix);
     if(!is_dir($prefix.'·Hist')) mkdir($prefix.'·Hist');
-    error_log("ls chmod prefix=$prefix");
     chmod($prefix, 0775);
     chmod($prefix."·Hist", 0775);
     $rep=array();
     if($prof){
+        $l = $sql->query('SELECT distinct login,cn from Login order by sn');
         $users=array();
-        foreach(scandir($ROOT) as $d){
-            if($d=='.' || $d=='..') continue;
-            array_push($users, $d);
+        while ($r = $l->fetchArray()){
+            $login=$r['login'];
+            $cn=$r['cn'];
+            array_push($users, array($login, $cn));
         }
         array_push($rep, $users);
     }
+    logActivity('ls');
     $tdir=$prefix;
     foreach(scandir($tdir) as $d){
         if($d=='.') continue;
@@ -65,6 +76,7 @@ function mv($data){
     }
     rename($src, $dest);
     error_log("mv success «${src}» «${dest}»");
+    logActivity('mv');
     echo '{"ok":"ok"}';
 }
 
@@ -76,6 +88,7 @@ function load($data){
     }
     $txt = file_get_contents($src);
     $rep = array('src' => $data->src, 'code' => $txt);
+    logActivity('load');
     echo json_encode($rep);
 }
 
@@ -90,6 +103,7 @@ function save($data){
     }
     $nb=file_put_contents($fn, $data->code);
     chmod($fn, 0664);
+    logActivity('save');
     if(!$nb) {
         error("Could not save");
     }else{
@@ -104,6 +118,7 @@ function rmm($data){
         error("Illegal name $fn");
     }
     unlink($fn);
+    logActivity('rm');
     echo '{"rm":"ok"}';
 }
 
@@ -115,7 +130,24 @@ function copym($data){
     }
     copy($fn, $fn."(copie)");
     echo '{"copy":"ok"}';
+    logActivity('copy');
     exit(0);
+}
+
+function listUser($data){
+    global $prof, $prefix;
+    if(!$prof) return;
+    $sql = new SQLite3('DB/users.db');
+    $ts=0;
+    if(isset($data->ts)) $ts=$data->ts;
+    $q = $sql->prepare('SELECT Login.login as l, cn, ip, max(activity.ts) as ta, max(Login.ts) as tl from Login, activity where l=activity.login AND activity.ts>:ts group by l order by ta');
+    $q->bindValue(':ts', $ts);
+    $r = $q->execute();
+    $rep=array();
+    while ($x = $r->fetchArray()){
+        array_push($rep, array($x[0], $x[1], $x[2], time()-$x[3]));
+    }
+    echo json_encode($rep);
 }
 
 
@@ -135,6 +167,7 @@ if(!isset($_SESSION["clgme"])){
 $me = $_SESSION["clgme"];
 $prefix = $ROOT . $me . "/";
 $prof = false;
+$sql = new SQLite3('DB/users.db');
 
 if($me=='legal' || $me=='gaubert') $prof=true;
 
@@ -149,6 +182,7 @@ else if($action=="load") load($data);
 else if($action=="save") save($data);
 else if($action=="rm") rmm($data);
 else if($action=="copy") copym($data);
+else if($action=="listUser") listUser($data);
 else {
     error_log("Unknown action " . $action);
     echo '{"error":"action unknown", "detail":"$action"}';
