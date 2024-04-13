@@ -492,9 +492,9 @@ function refreshCloud(lf){
         let td=$('<td colspan=4></td>').appendTo(tr);
         let userSelect=$('<select></select>').appendTo(td);
         $('<option value=0>ME</option>').appendTo(userSelect);
-        for(let k of lf0){
-            let o=$('<option>'+k+'</option>').appendTo(userSelect);
-            if(k==pwd){
+        for(let p of lf0){
+            let o=$(`<option value=${p[0]}>${p[1]}</option>`).appendTo(userSelect);
+            if(p[0]==pwd){
                 o.attr('selected', 'selected');
             }
         }
