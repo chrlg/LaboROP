@@ -1,0 +1,33 @@
+#list div {
+    display:inline-block;
+    border: solid 1px black;
+    width: 48vw;
+}
+
+#list div b {
+    display: inline-block;
+    width: 47vw;
+    font-size: 16px;
+}
+
+#list div span {
+    display: inline-block;
+    width: 47vw;
+    font-size: 12px;
+    font-style: italic;
+}
+
+#list div.act30 {
+    background-color: #8f8;
+}
+
+#list div.act300 {
+    background-color: #ff8;
+}
+
+#list div.actUC {
+    background-color: #fc8;
+}
+#list div.actOld {
+    background-color: #f88;
+}

@@ -470,6 +470,7 @@ function loadCloudFile(j){
     //runCode();
 }
 
+let profGroupFilter='all';
 
 function refreshCloud(lf){
     if(lf.error=='login'){
@@ -492,11 +493,23 @@ function refreshCloud(lf){
         let td=$('<td colspan=4></td>').appendTo(tr);
         let userSelect=$('<select></select>').appendTo(td);
         $('<option value=0>ME</option>').appendTo(userSelect);
+        let groupes={};
         for(let p of lf0){
-            let o=$(`<option value=${p[0]}>${p[1]}</option>`).appendTo(userSelect);
+            if(!(p[2])) p[2]='Other';
+            let o=$(`<option data-gid="${p[2]}" value=${p[0]}>${p[1]}</option>`).appendTo(userSelect);
             if(p[0]==pwd){
                 o.attr('selected', 'selected');
             }
+            if(groupes[p[2]]===undefined){
+                groupes[p[2]]=true;
+            }
+        }
+        let groupSelect=$('<select></select>').appendTo(td);
+        $('<option value=all>All</option>').appendTo(groupSelect);
+        let listGrp=Object.keys(groupes); listGrp.sort();
+        for(let g of listGrp){
+            let o=$(`<option value=${g}>${g}</option>`).appendTo(groupSelect);
+            if(g==profGroupFilter) o.attr('selected', 'selected');
         }
         userSelect.change(function(e){
             pwd = userSelect.val(); 
@@ -505,6 +518,15 @@ function refreshCloud(lf){
             editor.setValue('', -1);
             initFiles();
         });
+        let filterGroup=function(e){
+            profGroupFilter=groupSelect.val();
+            userSelect.find('option').hide();
+            if(profGroupFilter=='all') userSelect.find('option').show();
+            else userSelect.find(`option[data-gid="${profGroupFilter}"]`).show();
+        };
+        groupSelect.change(filterGroup);
+        filterGroup();
+        $('<a href="prof.php">Activité</a>').appendTo(td);
     }
     for(let i=0; i<lf.length; i++){
         let fn=lf[i];

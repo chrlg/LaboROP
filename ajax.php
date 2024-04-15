@@ -42,12 +42,13 @@ function ls($data){
     chmod($prefix."·Hist", 0775);
     $rep=array();
     if($prof){
-        $l = $sql->query('SELECT distinct login,cn from Login order by sn');
+        $l = $sql->query('SELECT distinct Login.login,cn,gid from Login LEFT JOIN groups on Login.login=groups.login order by sn');
         $users=array();
         while ($r = $l->fetchArray()){
-            $login=$r['login'];
+            $login=$r[0];
             $cn=$r['cn'];
-            array_push($users, array($login, $cn));
+            $gid=$r['gid'];
+            array_push($users, array($login, $cn, $gid));
         }
         array_push($rep, $users);
     }
@@ -139,13 +140,13 @@ function listUser($data){
     if(!$prof) return;
     $sql = new SQLite3('DB/users.db');
     $ts=0;
-    if(isset($data->ts)) $ts=$data->ts;
-    $q = $sql->prepare('SELECT Login.login as l, cn, ip, max(activity.ts) as ta, max(Login.ts) as tl from Login, activity where l=activity.login AND activity.ts>:ts group by l order by ta');
+    if(isset($data->ts)) $ts=time()-$data->ts;
+    $q = $sql->prepare('SELECT Login.login as l, cn, Login.ip, max(activity.ts) as ta, max(Login.ts), dns.name as tl, sn from Login INNER JOIN activity ON l=activity.login LEFT JOIN dns ON Login.ip=dns.ip WHERE activity.ts>:ts group by l order by ta desc');
     $q->bindValue(':ts', $ts);
     $r = $q->execute();
     $rep=array();
     while ($x = $r->fetchArray()){
-        array_push($rep, array($x[0], $x[1], $x[2], time()-$x[3]));
+        array_push($rep, array($x[0], $x[1], $x[2], time()-$x[3], $x[5], $x[6]));
     }
     echo json_encode($rep);
 }

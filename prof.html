@@ -1,10 +1,27 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<script src='prof.js'></script>
+<link href="prof.css" rel="stylesheet" type="text/css">
 </head>
 <body bgcolor=#fff>
 
+Salle: <select id=salle placeholder='salle'>
+<option value='*'>toutes</option>
+<option value='menthe'>menthe - A004</option>
+<option value='raisin'>raisin - A006</option>
+</select>
+
+Tri: <select id=methTri placeholder='trier'>
+<option value='activity'>par activité</option>
+<option value='ip'>par poste</option>
+<option value='name'>par nom</option>
+</select>
+
+Filtrer: <input id=lastAct placeholder='secondes max inactif'>
+
+<button id=refresh>Rafraichir</button>
+
 <div id=list></div>
+<script src='prof.js'></script>
 </body>
 
