@@ -45,6 +45,8 @@ export default function populate(){
    Env.addPredfn("abs", preMaths1);
    Env.addPredfn("min", preMin);
    Env.addPredfn("max", preMin);
+   Env.addPredfn("argmin", preArgmin);
+   Env.addPredfn("argmax", preArgmin);
    Env.addPredfn("int", preInt);
    Env.addPredfn("help", preHelp);
    Env.addPredvar("Adj", preM, true);
@@ -782,6 +784,50 @@ Accepte également les matrices. Dans ce cas retourne l'élément le plus petit 
     max(Id*12, [3,5,8]) → 12 
         (car Id*12 contient des 0 et des 12. Et 12 est plus grand que 3, 5 ou 8)
 `;
+
+function preArgmin(args, named, ln, fname){
+    let fdd = (a,b)=>Decimal(a.val).lt(b.val);
+    if(fname=='max'){
+        fdd=(a,b)=>Decimal(a.val).gt(b.val);
+    }
+    let fv = function(a,b){
+        if(!isNumeric(a) || !isNumeric(b)) throw {error:"args", name:"Mauvais type",
+            msg:`${fname} doit être appelé avec une liste de valeurs numériques, ou
+                une expression numérique`};
+        return fdd(a,b);
+    }
+    if(args.length<1 || args.length>2){
+        throw {error:"args", name:"Mauvais nombre d'arguments", msg:`${fname} s'utilse avec 1 argument (une liste), et, facultativement, une expression`, ln:ln};
+    }
+    let l=evaluate(args[0]);
+    if(l.t!='array') throw {error:"args", name:"Mauvais type d'argument", msg:`L'argument de ${fname} doit être une liste`, ln:args[0].ln};
+    // With only a list, value to be compared are just the elements of the list
+    let fx = (v) => v;
+    // With a list and an expression, values to be compared are the result of that
+    // expression, appliend to elements of the list
+    if(args.length==2){
+        fx=function(v){
+            Env.push({this:v});
+            let r=evaluate(args[1]);
+            Env.pop();
+            return r;
+        }
+    }
+    // If list is empty, no minimum value -> return null
+    if(l.length==0){
+        return Cst.NULL;
+    }
+    let besti=0;
+    let bestv=fx(l[0]);
+    for(let i=1; i<l.length; i++){
+        let v=fx(l[i]);
+        if(fv(v, bestv)){
+            besti=i;
+            bestv=v;
+        }
+    }
+    return {t:'number', val:0};
+}
 
 function preInt(args, named, ln, fname){
     if(args.length!=1) throw {error:'args', name:"Mauvais nombre d'arguments", msg:"int s'utilise avec un argument", ln:ln};
