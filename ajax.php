@@ -141,12 +141,12 @@ function listUser($data){
     $sql = new SQLite3('DB/users.db');
     $ts=0;
     if(isset($data->ts)) $ts=time()-$data->ts;
-    $q = $sql->prepare('SELECT Login.login as l, cn, Login.ip, max(activity.ts) as ta, max(Login.ts), dns.name as tl, sn from Login INNER JOIN activity ON l=activity.login LEFT JOIN dns ON Login.ip=dns.ip WHERE activity.ts>:ts group by l order by ta desc');
+    $q = $sql->prepare('SELECT Login.login as l, cn, Login.ip, max(activity.ts) as ta, max(Login.ts), dns.name as tl, sn, gid, dns.x, dns.y from Login INNER JOIN activity ON l=activity.login LEFT JOIN dns ON Login.ip=dns.ip LEFT JOIN groups on Login.login=groups.login WHERE activity.ts>:ts group by l order by ta desc');
     $q->bindValue(':ts', $ts);
     $r = $q->execute();
     $rep=array();
     while ($x = $r->fetchArray()){
-        array_push($rep, array($x[0], $x[1], $x[2], time()-$x[3], $x[5], $x[6]));
+        array_push($rep, array($x[0], $x[1], $x[2], time()-$x[3], $x[5], $x[6], $x[7], $x[8], $x[9]));
     }
     echo json_encode($rep);
 }

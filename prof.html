@@ -1,7 +1,8 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<link href="prof.css" rel="stylesheet" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="prof.css?x=12" rel="stylesheet" type="text/css">
 </head>
 <body bgcolor=#fff>
 
@@ -9,12 +10,30 @@ Salle: <select id=salle placeholder='salle'>
 <option value='*'>toutes</option>
 <option value='menthe'>menthe - A004</option>
 <option value='raisin'>raisin - A006</option>
+<option value='poivre'>poivre - A008</option>
+<option value='fraise'>fraise</option>
+<option value='laurier'>laurier</option>
+<option value='citron'>citron</option>
+<option value='pomme'>pomme</option>
+<option value='thym'>thym</option>
+<option value='cacao'>cacao</option>
+<option value='anis'>anis</option>
+<option value='baudroie'>baudroie</option>
+<option value='bulle'>bulle</option>
+<option value='bar'>bar</option>
+<option value='poulpe'>poulpe</option>
+<option value='lieu'>lieu</option>
+</select>
+
+Groupe: <select id=groupe>
+<option value="*">tous</option>
 </select>
 
 Tri: <select id=methTri placeholder='trier'>
 <option value='activity'>par activité</option>
 <option value='ip'>par poste</option>
 <option value='name'>par nom</option>
+<option value='plan'>par position</option>
 </select>
 
 Filtrer: <input id=lastAct placeholder='secondes max inactif'>
@@ -22,6 +41,6 @@ Filtrer: <input id=lastAct placeholder='secondes max inactif'>
 <button id=refresh>Rafraichir</button>
 
 <div id=list></div>
-<script src='prof.js'></script>
+<script src='prof.js?x=2'></script>
 </body>
 
