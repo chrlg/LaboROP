@@ -787,7 +787,7 @@ Accepte également les matrices. Dans ce cas retourne l'élément le plus petit 
 
 function preArgmin(args, named, ln, fname){
     let fdd = (a,b)=>Decimal(a.val).lt(b.val);
-    if(fname=='max'){
+    if(fname=='argmax'){
         fdd=(a,b)=>Decimal(a.val).gt(b.val);
     }
     let fv = function(a,b){
@@ -818,16 +818,40 @@ function preArgmin(args, named, ln, fname){
         return Cst.NULL;
     }
     let besti=0;
-    let bestv=fx(l[0]);
-    for(let i=1; i<l.length; i++){
-        let v=fx(l[i]);
+    let bestv=fx(l.val[0]);
+    for(let i=1; i<l.val.length; i++){
+        let v=fx(l.val[i]);
         if(fv(v, bestv)){
             besti=i;
             bestv=v;
         }
     }
-    return {t:'number', val:0};
+    return {t:'number', val:besti};
 }
+Help.predfn.argmin=`argmin(liste)
+Retourne l'indice de la valeur minimum contenue dans la liste passée en argument.
+    argmin([1,2,3]) ⇒ 0
+    argmin([3, 5, -17, 42, 0]) ⇒ 2
+    argmin([]) ⇒ null
+────────────────────────────────────────────────────────────
+argmin(liste, expression)
+Retourne l'indice de l'élément dont la liste pour lequel l'expression est minimum.
+L'élément est représenté par le mot clé this dans cette expression
+    argmin([2,3,4,5,6,7,8], this%5) ⇒ 3
+    argmin(L, this.d) ⇒ élément de L dont l'attribut .d est minimum
+`;
+Help.predfn.argmax=`argmax(liste)
+Retourne l'indice de la valeur maximum contenue dans la liste passée en argument.
+    argmin([1,2,3]) ⇒ 2
+    argmin([3, 5, -17, 42, 0]) ⇒ 3
+    argmin([]) ⇒ null
+────────────────────────────────────────────────────────────
+argmax(liste, expression)
+Retourne l'indice de l'élément dont la liste pour lequel l'expression est maximum
+L'élément est représenté par le mot clé this dans cette expression
+    argmax([2,3,4,5,6,7,8], this%5) ⇒ 2
+    argmin(L, this.d) ⇒ élément de L dont l'attribut .d est maximum
+`;
 
 function preInt(args, named, ln, fname){
     if(args.length!=1) throw {error:'args', name:"Mauvais nombre d'arguments", msg:"int s'utilise avec un argument", ln:ln};
