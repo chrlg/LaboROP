@@ -199,7 +199,7 @@ function preRandom(args, named, ln, fname){
             let i=(r+ii)%a.val.length;
             let cur=a.val[i];
             // Environnement pour this
-            let env=Env.push({"this":cur});
+            let env=Env.push({...Env.Current, this:cur});
             let v=evaluate(args[1]);
             Env.pop();
             if(!v || v.t!="boolean") throw {error:"type", name:"Condition non booléenne",
@@ -807,7 +807,7 @@ function preArgmin(args, named, ln, fname){
     // expression, appliend to elements of the list
     if(args.length==2){
         fx=function(v){
-            Env.push({this:v});
+            Env.push({...Env.Current, this:v});
             let r=evaluate(args[1]);
             Env.pop();
             return r;
