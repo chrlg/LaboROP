@@ -27,6 +27,25 @@ export function numericValue(v){
     return undefined;
 }
 
+// Get field of name fieldName from struct o. Used by both field (o.field) and index (o['field'])
+function getField(o, fieldName, ln){
+    let res=NULL;
+    if(o.t=="struct") res=o.f[fieldName];
+    else if(o.t=="Arc" || o.t=="Arete"){
+        if(fieldName=="initial") res=o.i;
+        else if(fieldName=="terminal") res=o.a;
+        else res=o.marques[fieldName];
+    }
+    else if(o.t=="Sommet") res=o.marques[fieldName];
+    else if(o.t=="graphe") res=o.sommets[fieldName];
+    else if(o.t=='array' && fieldName=='length') res={t:"number", val:o.val.length};
+    else if(o.t=='matrix' && fieldName=='length') res={t:"number", val:o.val.length};
+    else if(o.t=='string' && fieldName=='length') res={t:"number", val:o.val.length};
+    else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:ln};
+    if(res===undefined) return NULL;
+    else return res;
+}
+
 // Main function : evaluate an expression
 // Note: expressions may be decorated with an attribute `.l` which is a lambda function returning their values
 // That avoids, if expression is evaluated more than once, to redecide each time the appropriate computation way
@@ -457,23 +476,14 @@ export function evaluate(expr){
 
     if(expr.t=="field"){
         let o=evaluate(expr.o);
-        let res=NULL;
-        if(o.t=="struct") res=o.f[expr.f];
-        else if(o.t=="Arc" || o.t=="Arete"){
-            if(expr.f=="initial") res=o.i;
-            else if(expr.f=="terminal") res=o.a;
-            else res=o.marques[expr.f];
-        }
-        else if(o.t=="Sommet") res=o.marques[expr.f];
-        else if(o.t=="graphe") res=o.sommets[expr.f];
-        else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:expr.ln};
-        if(res===undefined) return NULL;
-        else return res;
+        return getField(o, expr.f, expr.ln);
     }
 
     if(expr.t=="index"){
         let tab=evaluate(expr.tab);
         let idx=evaluate(expr.index);
+        // If index is a string, it is a field access in disguise
+        if(idx.t=='string') return getField(tab, idx.val, expr.ln);
         if(!isNumeric(idx)) throw {error:"type", name:"Erreur de type", msg:"Index non entier", ln:expr.index.ln};
         let i=numericValue(idx);
         // Real array in which to index (array or string=>val. For Sommet, it's its name)
