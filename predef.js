@@ -1086,6 +1086,9 @@ Mais
     s[0]='H'
 déclenche une erreur
 
+Les chaînes ont un champ immutable .length. Ainsi 
+    print("hello".length) # 5
+
 À voir aussi: len, int
 `;
 
@@ -1116,6 +1119,9 @@ Il est également possible d'extraire des sous tableaux
     print(T[:2], T[2:], T[-2:], T[1:3])
     ⇒
     [1,2] [3,4] [3,4] [2,3]
+
+Les tableaux ont un champ immutable .length. Ainsi avec le tableau T précédent
+    print(T.length) # 4
 
 À voir aussi: len, premier, dernier, random, pop, insert
 `
@@ -1215,7 +1221,10 @@ et non la multiplication élément par élément. Ainsi Adj*Adj est
     ⎣0 0 0⎦                ⎣0 0 0⎦
 De même pour Adj**2.
 Enfin, des opérateurs booléens existent (.+, .*, .**)
-    
+
+Les matrices ont un champ immutable length. Ainsi, pour l'exemple précédent
+    pgrint(Adj.length) # 3
+
 Voir aussi : Id, Adj, Zero
 `
 
@@ -1333,7 +1342,12 @@ Les champs d'une structure sont ajoutés sans déclaration préalable
     st.a=42
     st.name="blabla"
     print(st.name)
-Notez que les structures sont passées par valeur. Ce qui signifie que
+On peut également accéder (mais pas modifier) au champ d'une structure par []
+    print(st['a'])        # Affiche 42
+    print(st['na'+'me'])  # Affiche "blabla". Notez que l'avantage de cette syntaxe
+                          # est illustré ici: le nom du champ peut alors être le
+                          # résultat d'un calcul
+Notez que les structures sont passées et copiées par valeur. Ce qui signifie que
     st1={}
     st1.a=42
     st2=st1   # st2 est une copie de st1
