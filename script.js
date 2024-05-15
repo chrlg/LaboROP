@@ -523,6 +523,7 @@ function refreshCloud(lf){
             userSelect.find('option').hide();
             if(profGroupFilter=='all') userSelect.find('option').show();
             else userSelect.find(`option[data-gid="${profGroupFilter}"]`).show();
+            userSelect.find('option[value=0]').show();
         };
         groupSelect.change(filterGroup);
         filterGroup();

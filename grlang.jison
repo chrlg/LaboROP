@@ -12,6 +12,7 @@
 "#".*			/* Ignore */
 " "+			/* Ignore */
 [\n]			return ";"
+[\r]			return ";"
 
 "§{"			return "BEGIN";
 "§}"			return "END";
