@@ -57,6 +57,7 @@ export default function populate(){
    Env.Predef["True"]=Cst.TRUE;
    Env.Predef["False"]=Cst.FALSE;
    Env.Predef["null"]=Cst.NULL;
+   Env.Predef["None"]=Cst.NULL;
    Env.Predef["pi"]=Cst.PI;
    Env.Predef["Infinity"]=Cst.INFINITY;
 }
