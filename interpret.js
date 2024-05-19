@@ -39,15 +39,10 @@ function parseTabulation(str){
 	 let m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
 	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
 	 if(str[0]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
-            ln++;
-            startLine=true;
-            str=str.slice(1);
 	    continue;
 	 }
 	 let expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
-	 if(m==expected) {
-            continue; // C'est le même, donc rien à faire de spécial. Ni §{ ni §}
-         }
+	 if(m==expected) continue; // C'est le même, donc rien à faire de spécial. Ni §{ ni §}
 	 if(m>expected){ // Il y en a plus. Donc on vient de commencer un bloc indenté. 
 	    out+="§{"; // On génère un §{ pour l'analyseur syntaxique
 	    indents.push(m); // On note que le bloc courant fait maintenant cette taille d'indentation
