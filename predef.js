@@ -56,8 +56,8 @@ export default function populate(){
    Env.addPredvar("Time", () => {return {t:"number", val: (new Date()).valueOf()/1000.0}});
    Env.Predef["True"]=Cst.TRUE;
    Env.Predef["False"]=Cst.FALSE;
-   Env.Predef["null"]=Cst.NULL;
-   Env.Predef["None"]=Cst.NULL;
+   Env.Predef["null"]=Cst.NONE;
+   Env.Predef["None"]=Cst.NONE;
    Env.Predef["pi"]=Cst.PI;
    Env.Predef["Infinity"]=Cst.INFINITY;
 }
@@ -185,9 +185,9 @@ function preRandom(args, named, ln, fname){
     }
     // Array -> an element of that array
     if(a.t=="array"){
-        // Empty array -> null
+        // Empty array -> None
         if(a.val.length<=0){
-            return Cst.NULL;
+            return Cst.NONE;
         }
         // If no other argument, just choose the rth value of the array
         let r=Math.floor(Math.random()*a.val.length); // Index
@@ -207,7 +207,7 @@ function preRandom(args, named, ln, fname){
                 msg:"Mauvaise condition de filtrage pour random", ln:args[1].ln};
             if(v.val) return cur;
         }
-        return Cst.NULL; // Rien ne correspond à la condition
+        return Cst.NONE; // Rien ne correspond à la condition
     }
     throw {error:"type", name:"Mauvais argument pour random", 
         msg:"Un "+a.t+" n'est pas un argument valide pour random", ln:args[0].ln};
@@ -292,8 +292,8 @@ function printRec(o){
             }
             print("}");
         }
-        else if(o.t=="null"){
-            print("∅");
+        else if(o.t=="None"){
+            print("None");
         }
         else print("{"+o.t+"}");
     }
@@ -406,7 +406,7 @@ function preArcs(args, named, ln, fname){
         }
     }
 
-    if(g.discover && !s.marques.visible) return Cst.NULL;
+    if(g.discover && !s.marques.visible) return Cst.NONE;
     let rep=[];
     for(let i=0; i<g.arcs.length; i++){
         if(g.arcs[i].i==s) rep.push(g.arcs[i]);
@@ -609,12 +609,12 @@ function preWhoami(args, named, ln, fname){
     req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     req.send(JSON.stringify({action:'whoami'}));
     let j=req.response;
-    if(j.me===undefined) return Cst.NULL;
+    if(j.me===undefined) return Cst.NONE;
     return {t:'string', val:j.me};
 }
 Help.predfn.whoami=`whoami(): retourne une chaîne de caractère contenant votre login de connexion.
-Si cette fonction retourne «null», alors sauvegardez vite votre code dans un fichier externe tant que
-vous le pouvez, car vus n'êtes plus connecté !!
+Si cette fonction retourne «None», alors sauvegardez vite votre code dans un fichier externe tant que
+vous le pouvez, car vous n'êtes plus connecté !!
 `
 
 function preSum(args, named, ln, fname){
@@ -725,7 +725,7 @@ Help.predfn.abs=Help.predfn.sqrt;
 
 
 function preMin(args, named, ln, fname){
-    let r=Cst.NULL;
+    let r=Cst.NONE;
     let fvv = (a,b)=>a<b;
     let fdd = (a,b)=>Decimal(a.val).lt(b.val);
     if(fname=='max'){
@@ -739,14 +739,14 @@ function preMin(args, named, ln, fname){
             }
         }else if(a.t=='matrix'){
             let n=a.val.length;
-            if(n>0 && r.t=='null') r={t:'number', val:a.val[0][0]};
+            if(n>0 && r.t=='None') r={t:'number', val:a.val[0][0]};
             for(let i=0; i<n; i++){
                 for(let j=0; j<n; j++){
                     if(fvv(a.val[i][j],r.val)) r={t:'number', val:a.val[i][j]};
                 }
             }
         }else{
-            if(r.t=="null"){
+            if(r.t=="None"){
                 r=a;
             }else if(a.t=='number' && r.t=='number'){
                 if(fvv(a.val,r.val)) r=a;
@@ -814,9 +814,9 @@ function preArgmin(args, named, ln, fname){
             return r;
         }
     }
-    // If list is empty, no minimum value -> return null
+    // If list is empty, no minimum value -> return None
     if(l.length==0){
-        return Cst.NULL;
+        return Cst.NONE;
     }
     let besti=0;
     let bestv=fx(l.val[0]);
@@ -833,7 +833,7 @@ Help.predfn.argmin=`argmin(liste)
 Retourne l'indice de la valeur minimum contenue dans la liste passée en argument.
     argmin([1,2,3]) ⇒ 0
     argmin([3, 5, -17, 42, 0]) ⇒ 2
-    argmin([]) ⇒ null
+    argmin([]) ⇒ None
 ────────────────────────────────────────────────────────────
 argmin(liste, expression)
 Retourne l'indice de l'élément dont la liste pour lequel l'expression est minimum.
@@ -845,7 +845,7 @@ Help.predfn.argmax=`argmax(liste)
 Retourne l'indice de la valeur maximum contenue dans la liste passée en argument.
     argmin([1,2,3]) ⇒ 2
     argmin([3, 5, -17, 42, 0]) ⇒ 3
-    argmin([]) ⇒ null
+    argmin([]) ⇒ None
 ────────────────────────────────────────────────────────────
 argmax(liste, expression)
 Retourne l'indice de l'élément dont la liste pour lequel l'expression est maximum
@@ -859,7 +859,7 @@ function preInt(args, named, ln, fname){
     let v=evaluate(args[0]);
     if(!isNumeric(v) && v.t!='string') throw {error:'type', name:'Mauvais type', msg:"int(x) s'utilise avec un nombre ou une chaine", ln:ln};
     let num=Math.floor(v.val);
-    if(isNaN(num)) return Cst.NULL;
+    if(isNaN(num)) return Cst.NONE;
     return {t:'number', val:Math.floor(v.val)};
 }
 Help.predfn['int']=`int(x): retourne la valeur entière correspondant à x.
@@ -980,11 +980,11 @@ function prePremier(args, named, ln, fname){
    let l=evaluate(args[0]);
    if(l.t!="array") throw {error:"type", name:"Erreur de type",
          msg:"'premier' attend un argument de type tableau", ln:args[0].ln};
-   if(l.val.length<=0) return Cst.NULL;
+   if(l.val.length<=0) return Cst.NONE;
    else return l.val[0];
 }
 Help.predfn['premier']=`premier(tableau): retourne le premier élément du tableau.
-Si le tableau est vide, retourne «null»
+Si le tableau est vide, retourne «None»
 `
 
 function preDernier(args, named, ln, fname){
@@ -993,11 +993,11 @@ function preDernier(args, named, ln, fname){
    let l=evaluate(args[0]);
    if(l.t!="array") throw {error:"type", name:"Erreur de type",
          msg:"'dernier' attend un argument de type tableau", ln:args[0].ln};
-   if(l.val.length<=0) return Cst.NULL;
+   if(l.val.length<=0) return Cst.NONE;
    else return l.val[l.val.length-1];
 }
 Help.predfn['dernier']=`dernier(tableau): retourne le dernier élément du tableau.
-Si le tableau est vide, retourne «null»
+Si le tableau est vide, retourne «None»
 `
 
 
@@ -1093,12 +1093,20 @@ Les chaînes ont un champ immutable .length. Ainsi
 À voir aussi: len, int
 `;
 
-Help.type['null']=`Une valeur (dont le type, null, n'existe que pour elle) spéciale.
+Help.type['None']=`Une valeur (dont le type, None, n'existe que pour elle) spéciale.
 Elle est retournée par certaines fonctions pour signifier qu'il n'y a pas de résultat.
 L'accès à un champ inexistant d'un sommet, 
 Une converstion impossible (int("x"))
 Etc., 
-Retournent «null»
+Retournent «None»
+`
+Help.type['null']=`Alias (obsolète) de None.
+Une valeur (dont le type, None, n'existe que pour elle) spéciale.
+Elle est retournée par certaines fonctions pour signifier qu'il n'y a pas de résultat.
+L'accès à un champ inexistant d'un sommet, 
+Une converstion impossible (int("x"))
+Etc., 
+Retournent «None»
 `
 
 Help.type['array']=`Un tableau de valeurs quelconques.

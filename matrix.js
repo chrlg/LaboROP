@@ -1,5 +1,4 @@
 import * as Env from "./environment.js";
-import {NULL} from "./constants.js";
 
 export function zeroDim(n){
    let M={t:"matrix", val:[]};

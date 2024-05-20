@@ -3,7 +3,7 @@
 
 import * as Env from "./environment.js";
 import * as Mat from "./matrix.js";
-import {FALSE, TRUE, NULL} from "./constants.js";
+import {FALSE, TRUE, NONE} from "./constants.js";
 import {evalSommet, creerArc, creerArete} from "./graphe.js";
 import {interpCall, setRef} from "./instructions.js";
 import Decimal from "./lib/decimal.mjs";
@@ -29,7 +29,7 @@ export function numericValue(v){
 
 // Get field of name fieldName from struct o. Used by both field (o.field) and index (o['field'])
 function getField(o, fieldName, ln){
-    let res=NULL;
+    let res=NONE;
     if(o.t=="struct") res=o.f[fieldName];
     else if(o.t=="Arc" || o.t=="Arete"){
         if(fieldName=="initial") res=o.i;
@@ -42,7 +42,7 @@ function getField(o, fieldName, ln){
     else if(o.t=='matrix' && fieldName=='length') res={t:"number", val:o.val.length};
     else if(o.t=='string' && fieldName=='length') res={t:"number", val:o.val.length};
     else throw {error:"type", name:"Pas une structure", msg:"Un objet de type "+o.t+" n'a pas de champs", ln:ln};
-    if(res===undefined) return NULL;
+    if(res===undefined) return NONE;
     else return res;
 }
 
@@ -106,12 +106,12 @@ export function evaluate(expr){
     if(expr.t=="and"){
         expr.l=function(){
             let a=evaluate(expr.left);
-            if(a.t=='null') a=FALSE;
+            if(a.t=='None') a=FALSE;
             if(a.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
             if(!a.val) return FALSE;
             let b=evaluate(expr.right);
-            if(b.t=='null') b=FALSE;
+            if(b.t=='None') b=FALSE;
             if(b.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
             if(b.val) return TRUE;
@@ -122,12 +122,12 @@ export function evaluate(expr){
     if(expr.t=="or"){
         expr.l=function(){
             let a=evaluate(expr.left);
-            if(a.t=='null') a=FALSE;
+            if(a.t=='None') a=FALSE;
             if(a.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
             if(a.val) return TRUE;
             let b=evaluate(expr.right);
-            if(b.t=='null') b=FALSE;
+            if(b.t=='None') b=FALSE;
             if(b.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
             if(b.val) return TRUE;
@@ -139,11 +139,11 @@ export function evaluate(expr){
         expr.l=function(){
             let a=evaluate(expr.left);
             let b=evaluate(expr.right);
-            if(a.t=='null') a=FALSE;
+            if(a.t=='None') a=FALSE;
             if(a.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
             if(!a.val) return FALSE;
-            if(b.t=='null') b=FALSE;
+            if(b.t=='None') b=FALSE;
             if(b.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
             if(b.val) return TRUE;
@@ -155,11 +155,11 @@ export function evaluate(expr){
         expr.l=function(){
             let a=evaluate(expr.left);
             let b=evaluate(expr.right);
-            if(a.t=='null') a=FALSE;
+            if(a.t=='None') a=FALSE;
             if(a.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.left.ln};
             if(a.val) return TRUE;
-            if(b.t=='null') b=FALSE;
+            if(b.t=='None') b=FALSE;
             if(b.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
             if(b.val) return TRUE;
@@ -173,8 +173,8 @@ export function evaluate(expr){
         expr.l=function(){
             let a=evaluate(expr.left);
             let b=evaluate(expr.right);
-            if(a.t=='null') a=FALSE;
-            if(b.t=='null') b=FALSE;
+            if(a.t=='None') a=FALSE;
+            if(b.t=='None') b=FALSE;
             if(a.t!="boolean" || b.t!="boolean")
                 throw {error:"type", name:"Opérande non booléenne pour opérateur booléen", msg:"", ln:expr.ln};
             if(a.val && !b.val) return TRUE;
@@ -236,7 +236,7 @@ export function evaluate(expr){
     if(expr.t=="arete" || expr.t=="arc" || expr.t=="lvarc" || expr.t=="lvarete"){
         let v=evaluateArc(expr);
         if(v===undefined) throw {error:"type", name:"Arc ou arête inexistant", msg:"", ln:expr.ln};
-        if(v.t=="null") return v;
+        if(v.t=="None") return v;
         if(v.t=="Arc" || v.t=="Arete") return v;
         throw {error:"type", name:"Pas un arc ou arête", msg:"", ln:expr.ln};
     }
@@ -302,7 +302,7 @@ export function evaluate(expr){
                 if(b.t=="Sommet") return {t:"string", val:a.val+b.name};
                 if(b.t=="Arc") return {t:"string", val:a.val+"("+b.i.name+","+b.a.name+")"};
                 if(b.t=="Arete") return {t:"string", val:a.val+"["+b.i.name+","+b.a.name+"]"};
-                if(b.t=="null") return {t:"string", val:a.val+"null"};
+                if(b.t=="None") return {t:"string", val:a.val+"None"};
                 throw {error:"type", name:"Erreur de type", msg:"", ln:expr.ln};
             }
             if(a.t=="boolean"){ // Ou non paresseux
@@ -449,8 +449,8 @@ export function evaluate(expr){
 
     // "!"
     if(expr.t=="!"){
-        var a=evaluate(expr.right);
-        if(a.t=='null') a=FALSE;
+        let a=evaluate(expr.right);
+        if(a.t=='None') a=FALSE;
         if(a.t!="boolean")
             throw {error:"type", name:"Valeur non booléenne",
                 msg:"L'opérateur ! s'utilise sur un argument booléen", ln:expr.ln};
@@ -488,8 +488,8 @@ export function evaluate(expr){
         let i=numericValue(idx);
         // Real array in which to index (array or string=>val. For Sommet, it's its name)
         let F=function(t,i){let j=i; if(j<0) j+=t.length; return t[j]};
-        let E=function(t,v){if(v===undefined) return NULL; return {t:t, val:v};};
-        let R=function(v){if(v===undefined) return NULL; else return v;};
+        let E=function(t,v){if(v===undefined) return NONE; return {t:t, val:v};};
+        let R=function(v){if(v===undefined) return NONE; else return v;};
         if(tab.t=="Sommet") return E("string", F(tab.name, i));
         if(tab.t=="string") return E("string", F(tab.val, i));
         if(tab.t=="array") return R(F(tab.val, i));
@@ -577,7 +577,7 @@ function isEq(a,b){
     // En dehors de ces deux cas, deux données de types différent sont différentes
     if(a.t!=b.t) return false;
     // A ce point, nous savons que a et b sont de mêmes types
-    if(a.t=="null") return true;  // le type lui même suffit
+    if(a.t=="None") return true;  // le type lui même suffit
     if(a.t=="Sommet" || a.t=="Arete" || a.t=="Arc") return a===b;
     if(a.t=="boolean" || a.t=="number" || a.t=="string") return a.val==b.val;
     // Pour les tableaux, la comparaison est "profonde"
@@ -642,7 +642,7 @@ function evaluateArc(expr){
         let s1=Env.get(expr.initial.name);
         let s2=Env.get(expr.terminal.name);
         // If arc exist in env (as previous l-val), that is if (a,b)=... has been previously done
-        if(w && (w.t=="Arc"||w.t=="Arete"||w.t=="null")) {
+        if(w && (w.t=="Arc"||w.t=="Arete"||w.t=="None")) {
             // And if nodes hasn't changed since (we could have (a,b)=... then a=...
             if(s1==w.i && s2==w.a) return w;
         }
@@ -661,12 +661,12 @@ function evaluateArc(expr){
     }
 
     let graphe = Env.grapheContaining(s1);
-    if(graphe===null) return NULL;
+    if(graphe===null) return NONE;
     for(let a of graphe.arcs){
         if(a.i===s1 && a.a===s2) return a; // a is (s1,s2) or [s1,s2]
         if(expr.t=="arete" && a.a===s1 && a.i===s2) return a;  // or [s2,s1] 
     }
-    return NULL;
+    return NONE;
 }
 
 

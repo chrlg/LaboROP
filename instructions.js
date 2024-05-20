@@ -12,7 +12,7 @@ let _instrCnt=0; // Number of executed instruction (for regular display refresh 
 export function setRef(ref, val, ln){
     // Cas des arcs et arêtes
     if(ref.length==6){
-        if(val.t=="null"){ // Arc null (récupéré avec un filtrage, par ex) => tout à null
+        if(val.t=="None"){ // Arc None (récupéré avec un filtrage, par ex) => tout à None
             setRef(ref.slice(0,2), val, ln);
             setRef(ref.slice(2,4), val, ln);
             setRef(ref.slice(4), val, ln);
@@ -307,7 +307,7 @@ function interpFor(ins){
 
 function interpIf(si, isloop){
    let c=evaluate(si.cond);
-   if(c.t=='null') c=FALSE;
+   if(c.t=='None') c=FALSE;
    if(c.t != "boolean") throw {error:"type", name: "Condition non booléenne",
            msg:"La condition du if n'est pas un booléen", ln:si.cond.ln};
    if(c.val) return interpretWithEnv(si["do"], isloop);
@@ -330,7 +330,7 @@ function interpReturn(ins){
 function interpWhile(tant){
    for(;;){
       let c=evaluate(tant.cond);
-      if(c.t=='null') c=FALSE;
+      if(c.t=='None') c=FALSE;
       if(c.t!="boolean") throw {error:"type", name: "Condition non booléenne",
 	    msg:"La condition du while n'est pas un booléen", ln:tant.ln};
       if(!c.val) break;
