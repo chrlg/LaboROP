@@ -153,6 +153,9 @@ onmessage = function (evt){
             else if(e.expected[i]=="'NUMBER'") np='un nombre';
             else if(e.expected[i]=="'DECIMAL'") np='un décimal';
             else if(e.expected[i]=="'ID'") np='un identifiant';
+            else if(e.expected[i]=="'BEGIN'") np='un bloc indenté';
+            else if(e.expected[i]=="';'") np='une instruction';
+            else if(e.expected[i]=="'END'") np='la fin du bloc';
             else np= e.expected[i];
             if(possib.length+np.length>80){
                 msg+=(possib+'\n');
