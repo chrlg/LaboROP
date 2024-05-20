@@ -561,8 +561,8 @@ blocOuSingle
       ;
 
 bloc
-      : ";" "BEGIN" listInst "END" {
-	 $$ = $3;
+      : ";" manySemis "BEGIN" listInst "END" {
+	 $$ = $4;
       }
       ;
 

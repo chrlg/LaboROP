@@ -38,9 +38,18 @@ function parseTabulation(str){
 	 startLine=false;  // on génère potentiellement des §{/§}.   
 	 let m=str.match(/[^ ]/).index; // m=nombre d'espaces au début de cette ligne
 	 str=str.slice(m);// Maintenant qu'on sait combien il y en a on peut les virer
-	 if(str[0]=="\n"){ // Si le premier caractère non espace de la ligne est un \n, on ignore juste cette ligne
-	    continue;
-	 }
+         if(str[0]=='#' || str[0]=='\r' || str[0]=='\n'){
+            // Le premier caractère significatif est un # ou \r ou \n-> on ignore jusqu'au retour charriot
+            let numCharBeforeEol = str.indexOf('\n');
+            if(numCharBeforeEol<0) str='';
+            else{
+                str=str.slice(numCharBeforeEol+1);
+                startLine=true;
+                ln++;
+                out += '\n';
+            }
+            continue;
+         }
 	 let expected=indents[indents.length-1]; // expected: le nombre d'espace du bloc en cours
 	 if(m==expected) continue; // C'est le même, donc rien à faire de spécial. Ni §{ ni §}
 	 if(m>expected){ // Il y en a plus. Donc on vient de commencer un bloc indenté. 
@@ -73,6 +82,7 @@ function parseTabulation(str){
 	 continue;
       }
    }
+   console.log(out);
    return out;
 }
 
