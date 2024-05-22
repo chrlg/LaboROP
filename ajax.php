@@ -10,12 +10,17 @@ error_reporting(E_ALL);
 $ROOT = './DB/Root/';
 
 function logActivity($what){
-    global $me, $sql;
-    $q=$sql->prepare('insert into activity (login, ts, what) values (:l, :t, :w)');
-    $q->bindValue(':l', $me);
-    $q->bindValue(':t', time());
-    $q->bindValue(':w', $what);
-    $q->execute();
+    global $me, $sql, $ip;
+    try{
+        $q=$sql->prepare('insert into activity (login, ts, what, ip) values (:l, :t, :w, :x)');
+        $q->bindValue(':l', $me);
+        $q->bindValue(':t', time());
+        $q->bindValue(':w', $what);
+        $q->bindValue(':x', $ip);
+        $q->execute();
+    }catch(Exception $e){
+        error_log("Cannot log activity $what from $me");
+    };
 }
 
 // Return true if $fn is an illegal filename for save. false otherwise
@@ -38,8 +43,12 @@ function ls($data){
     global $prefix, $prof, $ROOT, $sql;
     if(!is_dir($prefix)) mkdir($prefix);
     if(!is_dir($prefix.'·Hist')) mkdir($prefix.'·Hist');
-    chmod($prefix, 0775);
-    chmod($prefix."·Hist", 0775);
+    try{
+        chmod($prefix, 0775);
+        chmod($prefix."·Hist", 0775);
+    }catch(Exception $e){
+        error_log("Cannot chmod '$prefix'");
+    }
     $rep=array();
     if($prof){
         $l = $sql->query('SELECT distinct Login.login,cn,gid from Login LEFT JOIN groups on Login.login=groups.login order by sn');
@@ -76,7 +85,6 @@ function mv($data){
         error("illegal name $src $dest");
     }
     rename($src, $dest);
-    error_log("mv success «${src}» «${dest}»");
     logActivity('mv');
     echo '{"ok":"ok"}';
 }
@@ -169,6 +177,7 @@ $me = $_SESSION["clgme"];
 $prefix = $ROOT . $me . "/";
 $prof = false;
 $sql = new SQLite3('DB/users.db');
+$ip = $_SERVER['REMOTE_ADDR'];
 
 if($me=='legal' || $me=='gaubert') $prof=true;
 
