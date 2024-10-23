@@ -191,6 +191,9 @@ instructionNoColon
       | ID '(' listArg ')' {
 	 $$ = { t:"call", f:$1, args:$3.p, named:$3.o, ln:@1.first_line};
       }
+      | expr4 '.' ID '(' listArg ')' {
+         $$ = { t:"methcall", this: $1, f:$3, args:$3.o, named:$5.o, ln:@1.first_line};
+      }
       | break {
 	 $$ = {t:"break", ln:@1.first_line};
       }
@@ -317,7 +320,7 @@ listeExpr
       }
       ;
 
-atomicExpr
+expr1
       : NUMBER {
 	 $$={t:"number", val:parseFloat($1), ln:@1.first_line};
       }
@@ -327,60 +330,117 @@ atomicExpr
       | STRING {
 	 $$={t:"string", val:$1, ln:@1.first_line};
       }
-      | ID '(' ')' {
-	 $$={t: "call", f:$1, args:[], named:[], ln:@1.first_line};
-      }
-      | ID '(' listArg ')' {
-	 $$={t: "call", f:$1, args:$3.p, named:$3.o, ln:@1.first_line};
-      }
       | "[]" {
 	 $$={t: "array", val:[], ln:@1.first_line};
       }
       | "{}" {
          $$={t:"struct", f:[], ln:@1.first_line};
       }
+      | ID '(' ')' {
+	 $$={t: "call", f:$1, args:[], named:[], ln:@1.first_line};
+      }
+      | ID {
+	 $$ = {t:"id", name:$1, ln:@1.first_line};
+      }
+      ;
+
+expr2
+      : expr1 {
+          $$ = $1;
+      }
+      | ID '(' listArg ')' {
+	 $$={t: "call", f:$1, args:$3.p, named:$3.o, ln:@1.first_line};
+      }
       | "(" expr "," expr ")" {
 	 $$={t: "arc", initial:$2, terminal:$4, ln:@3.first_line};
       }
-      ;
-
-placeExpr 
-      : ID {
-	 $$ = {t:"id", name:$1, ln:@1.first_line};
-      }
-      | expr "." ID {
-	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
-      }
-      | placeExpr "[" expr "]" {
-	 $$={t:"index", tab:$1, index:$3, ln:@2.first_line};
-      }
-      | placeExpr "[" expr "," expr "]" {
-         $$={t:"mindex", mat:$1, i:$3, j:$5, ln:@2.first_line};
-      }
-      | placeExpr "[" borne ":" borne "]" {
-         $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
-      }
-      ;
-
-basicExpr 
-      : atomicExpr {
-         $$ = $1;
-      }
       | "(" expr ")" {
 	 $$ = $2;
+      }
+      ;
+
+expr3 
+      : expr2 {
+         $$ = $1;
       }
       | "[" bracketExpr "]" {
          $$ = $2;
          $$.ln=@1.first_line;
       }
       ;
+
+expr4
+      : expr3 {
+         $$=$1;
+      }
+      | expr4 "." ID {
+	 $$={t: "field", o:$1, f:$3, ln:@2.first_line};
+      }
+      | expr4 "[" expr "]" {
+	 $$={t:"index", tab:$1, index:$3, ln:@2.first_line};
+      }
+      | expr4 "[" expr "," expr "]" {
+         $$={t:"mindex", mat:$1, i:$3, j:$5, ln:@2.first_line};
+      }
+      | expr4 "[" borne ":" borne "]" {
+         $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
+      }
+      | expr4 "." ID '(' listArg ')' {
+         $$ = { t:"methcall", this: $1, f:$3, args:$3.o, named:$5.o, ln:@1.first_line};
+      }
+      ;
+
+expr5
+      : expr4 {
+         $$=$1;
+      }
+      | "Sommet" grapheSpec expr5 {
+	 $$={t:"SOMMET", g:$2, arg:$3, ln:@1.first_line};
+      }
+      | "Arc" grapheSpec "(" expr "," expr ")" {
+	 $$ = { t:"Arc", g:$2, left:$4, right:$6, ln:@1.first_line};
+      }
+      | "Arete" grapheSpec "[" expr "," expr "]" {
+	 $$ = { t:"Arete", g:$2, left:$4, right:$6, ln:@1.first_line};
+      }
+      ;
+
+expr6 
+      : expr5 {
+         $$=$1;
+      }
+      | expr6 "**" expr6 {
+	 $$ = {t:"**", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr6 ".^" expr6 {
+	 $$ = {t:".^", left:$1, right:$3, ln:@2.first_line};
+      }
+      ;
+
+expr7 
+      : expr6 {
+         $$=$1;
+      }
+      | expr7 "*" expr7 {
+	 $$ = {t:"*", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr7 "/" expr7 {
+	 $$ = {t:"/", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr7 "//" expr7 {
+	 $$ = {t:"//", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr7 "%" expr7 {
+	 $$ = {t:"%", left:$1, right:$3, ln:@2.first_line};
+      }
+      | expr7 ".*" expr7 {
+	 $$ = {t:".*", left:$1, right:$3, ln:@2.first_line};
+      }
+      ;
       
 
 expr
-      : basicExpr {
-         $$ = $1;
-      }
-      | placeExpr {
+      : expr7 {
          $$ = $1;
       }
       | expr "<" expr {
@@ -410,41 +470,8 @@ expr
       | "-" expr {
          $$ = {t:"-", left:{t:"number", val:0}, right:$2, ln:@1.first_line};
       }
-      | expr "*" expr {
-	 $$ = {t:"*", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr "/" expr {
-	 $$ = {t:"/", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr "//" expr {
-	 $$ = {t:"//", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr "%" expr {
-	 $$ = {t:"%", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr "**" expr {
-	 $$ = {t:"**", left:$1, right:$3, ln:@2.first_line};
-      }
       | expr ".+" expr {
 	 $$ = {t:".+", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr ".*" expr {
-	 $$ = {t:".*", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr ".^" expr {
-	 $$ = {t:".^", left:$1, right:$3, ln:@2.first_line};
-      }
-      | expr "++" {
-	 $$ = {t:"++", left:$1, right:undefined, ln:@2.first_line};
-      }
-      | "++" expr {
-	 $$ = {t:"++", left:undefined, right:$2, ln:@1.first_line};
-      }
-      | expr "--" {
-	 $$ = {t:"--", left:$1, right:undefined, ln:@2.first_line};
-      }
-      | "--" expr {
-	 $$ = {t:"--", left:undefined, right:$2, ln:@1.first_line};
       }
       | expr "?" expr ":" expr {
 	 $$ = {t:"?:", cond:$1, oui:$3, non:$5, ln:@2.first_line};
@@ -467,20 +494,11 @@ expr
       | expr "in" expr {
          $$ = {t:"in", left:$1, right:$3, ln:@2.first_line};
       }
-      | basicExpr "!" "in" basicExpr {
+      | expr3 "!" "in" expr3 {
          $$ = {t:"!", right:{t:"in", left:$1, right:$4, ln:@2.first_line}, ln:@2.first_line};
       }
       | "!" expr {
 	 $$ = {t:"!", right:$2, ln:@1.first_line};
-      }
-      | "Sommet" grapheSpec expr {
-	 $$={t:"SOMMET", g:$2, arg:$3, ln:@1.first_line};
-      }
-      | "Arc" grapheSpec "(" expr "," expr ")" {
-	 $$ = { t:"Arc", g:$2, left:$4, right:$6, ln:@1.first_line};
-      }
-      | "Arete" grapheSpec "[" expr "," expr "]" {
-	 $$ = { t:"Arete", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
       ;
 
