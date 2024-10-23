@@ -16,16 +16,21 @@ let _r=0;
 
 export function load(name, ln){
     // Synchronous ajax load of json
-    let url;
+    let path = ['Modules', 'Modules/Matrix', 'Modules/Etud'];
     if(name.slice(4,7)=='://' || name.slice(5,8)=='://'){
-        url=name;
-    }else{
-        url='Modules/mod_'+name+".json";
+        path=[false];
     }
-    let req=new XMLHttpRequest();
-    req.responseType = 'json';
-    req.open('GET', url, false);
-    req.send(null);
+
+    let req;
+    for(let p of path){
+        let url=name;
+        if(p) url=p+'/mod_'+name+'.json';
+        req=new XMLHttpRequest();
+        req.responseType = 'json';
+        req.open('GET', url, false);
+        req.send(null);
+        if(req.status==200) break;
+    }
 
     if(req.status!=200) throw {error:"module", name:"Module introuvable", msg:`Module ${name} inexistant`, ln:ln};
     if(!req.response) throw {error:"module", name:"Erreur dans le module", msg:`Impossible de charger module ${name}`, ln:ln};
