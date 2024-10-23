@@ -2,6 +2,7 @@ let $lastAct = document.getElementById('lastAct');
 let $methTri = document.getElementById('methTri');
 let $salle = document.getElementById('salle');
 let $groupe = document.getElementById('groupe');
+let $actionMaintenance = document.getElementById('actionMaintenance');
 
 function mypost(url,payload){
     return fetch(url, {
@@ -52,7 +53,7 @@ function createUserDiv(cn, ip, name, act, x, y){
 function refreshList(){
     let $div=document.getElementById('list');
     let ts=parseInt($lastAct.value);
-    if(isNaN(ts)) ts=1000000000;
+    if(isNaN(ts)) ts=5400;
     let salle=$salle.value;
     let gid=$groupe.value;
     mypost('ajax.php', {action:'listUser', ts:ts}).then(function(j){
@@ -84,6 +85,14 @@ function refreshList(){
     });
 }
 
+function actionMaintenance(e){
+    if($actionMaintenance.value=='chmodg'){
+        // Add write rights on all files under DB to group (no harm, that is only teachers and web server. Just I don't want to do that every second)
+        mypost('ajax.php', {action:'chmodg'});
+    }
+    $actionMaintenance.value='0';
+}
+
 setInterval(refreshList, 20000);
 refreshList();
 document.getElementById('refresh').addEventListener('click', refreshList);
@@ -94,3 +103,5 @@ $lastAct.addEventListener('blur', refreshList);
 $lastAct.addEventListener('keyup', function(e){
     if(e.code=='Enter') refreshList();
 });
+
+$actionMaintenance.addEventListener('change', actionMaintenance);

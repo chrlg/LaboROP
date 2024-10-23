@@ -24,9 +24,8 @@ if(isset($_GET["login"]) || !phpCAS::isAuthenticated()){
 if(phpCAS::isAuthenticated()){
     $me = phpCAS::getUser();
     $_SESSION["clgme"] = $me;
-    if($me!='legal' && $me!='gaubert') exit(0);
+    if($me!='legal' && $me!='gaubert' && $me!='tuo' && $me !='harrouet') exit(0);
     $a=phpCas::getAttributes();
-    chmod('DB/users.db', 0664);
     $sql = new SQLite3('DB/users.db');
     $sql->exec("create table if not exists Login (login text, cn text, ip text, ts int, sn text)");
     $sql->exec("create table if not exists activity (login text, ts int, what text)");

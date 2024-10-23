@@ -40,6 +40,12 @@ Filtrer: <input id=lastAct placeholder='secondes max inactif'>
 
 <button id=refresh>Rafraichir</button>
 
+<select id=actionMaintenance placeholder='maintenance'>
+<option value='0'>Maintenance</option>
+<option id=actionChmodg value='chmodg'>chmod g+rwX DB</option>
+<option id=actionChown value='chown'>chown maths DB/Root</option>
+</select>
+
 <div id=list></div>
 <script src='prof.js?x=2'></script>
 </body>

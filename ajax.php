@@ -40,12 +40,13 @@ function error($a){
 
 
 function ls($data){
-    global $prefix, $prof, $ROOT, $sql;
+    global $prefix, $prof, $sql;
     if(!is_dir($prefix)) mkdir($prefix);
     if(!is_dir($prefix.'·Hist')) mkdir($prefix.'·Hist');
     try{
-        chmod($prefix, 0775);
-        chmod($prefix."·Hist", 0775);
+        //chmod($prefix, 0775);
+        //chmod($prefix."·Hist", 0775);
+        ;
     }catch(Exception $e){
         error_log("Cannot chmod '$prefix'");
     }
@@ -61,7 +62,7 @@ function ls($data){
         }
         array_push($rep, $users);
     }
-    logActivity('ls');
+    //logActivity('ls');
     $tdir=$prefix;
     foreach(scandir($tdir) as $d){
         if($d=='.') continue;
@@ -85,7 +86,7 @@ function mv($data){
         error("illegal name $src $dest");
     }
     rename($src, $dest);
-    logActivity('mv');
+    //logActivity('mv');
     echo '{"ok":"ok"}';
 }
 
@@ -97,7 +98,7 @@ function load($data){
     }
     $txt = file_get_contents($src);
     $rep = array('src' => $data->src, 'code' => $txt);
-    logActivity('load');
+    //logActivity('load');
     echo json_encode($rep);
 }
 
@@ -127,7 +128,7 @@ function rmm($data){
         error("Illegal name $fn");
     }
     unlink($fn);
-    logActivity('rm');
+    //logActivity('rm');
     echo '{"rm":"ok"}';
 }
 
@@ -139,7 +140,7 @@ function copym($data){
     }
     copy($fn, $fn."(copie)");
     echo '{"copy":"ok"}';
-    logActivity('copy');
+    //logActivity('copy');
     exit(0);
 }
 
@@ -159,6 +160,12 @@ function listUser($data){
     echo json_encode($rep);
 }
 
+function chmodg($data){
+    global $prof;
+    if(!$prof) return;
+    exec("chmod -R g+rwX DB");
+}
+
 
 $json = file_get_contents('php://input');
 $data = json_decode($json);
@@ -173,17 +180,18 @@ if(!isset($_SESSION["clgme"])){
     echo '{"error":"login"}';
     exit(0);
 }
-$me = $_SESSION["clgme"];
+$me = strtolower($_SESSION["clgme"]);
 $prefix = $ROOT . $me . "/";
 $prof = false;
 $sql = new SQLite3('DB/users.db');
 $ip = $_SERVER['REMOTE_ADDR'];
 
-if($me=='legal' || $me=='gaubert') $prof=true;
+if($me=='legal' || $me=='gaubert' || $me=='tuo' || $me=='harrouet') $prof=true;
 
 if($prof && isset($data->who) && ($data->who)){
     $prefix = $ROOT . ($data->who) . "/";
 }
+if(file_exists($prefix . "·Eval")) $prefix = $prefix . "·Eval/";
 
 if($action=="ls") ls($data);
 else if($action=="whoami") whoami($data);
@@ -193,6 +201,7 @@ else if($action=="save") save($data);
 else if($action=="rm") rmm($data);
 else if($action=="copy") copym($data);
 else if($action=="listUser") listUser($data);
+else if($action=="chmodg") chmodg($data);
 else {
     error_log("Unknown action " . $action);
     echo '{"error":"action unknown", "detail":"$action"}';
