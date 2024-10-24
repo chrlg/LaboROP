@@ -11,11 +11,15 @@ staticdir = os.path.join(basedir, 'static')
 @app.route("/")
 def root():
     if 'user' in session:
-        return redirect("static/main.html#fromroot")
+        # Already connected. Just load main html file
+        return redirect("static/main.html?fromroot")
+    # Not connected. Redirect to CAS 
     return redirect("https://cas.enib.fr/login?service=https://laborop.enib.fr/retourcas")
 
 @app.route("/retourcas", methods=['GET'])
 def retourcas():
+    # Called from CAS server. Get user info, and store them in session cookie. Then redirect to main that can now
+    # access to session['user'] and the kind
     try:
         ticket=request.args.get('ticket')
         r=requests.get(f"https://cas.enib.fr/serviceValidate?ticket={ticket}&service=https://laborop.enib.fr/retourcas")
@@ -30,7 +34,8 @@ def retourcas():
         session['role']=attrs['cas:eduPersonAffiliation']
         return redirect("static/main.html#fromlogin")
     except:
-        return f"<html><body><h3 style='color:red'>Erreur d'authentification</h3></body></html>"
+        # Unless there was an error with CAS, in which case display a dumb error page
+        return f"<html><body><h3 style='color:red'>Erreur d'authentification</h3><a href="/">Réessayer</a></body></html>"
     return rep
 
 

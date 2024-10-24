@@ -1,7 +1,7 @@
 #! /usr/bin/python3.8
 import logging
 import sys
-sys.path.insert(0, '/var/www/laborop/Appli/')
+sys.path.insert(0, '/var/www/laborop/LaboROP/')
 sys.path.insert(0, '/var/www/laborop/env/lib/python3.8/site-packages')
 from laborop import app as application
 application.secret_key = 'abdegilmopstuv'
