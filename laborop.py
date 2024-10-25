@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, redirect, request, session, g, jsonify
+from flask import Flask, send_from_directory, redirect, request, session, g, jsonify, abort
 import os
 import requests
 import xmltodict
@@ -15,6 +15,7 @@ staticdir = os.path.join(basedir, 'static')
 dbdir = os.path.join(basedir, 'DB')
 userdir = os.path.join(dbdir, 'Root')
 sqpath=os.path.join(dbdir, 'base.sqlite3')
+modulepath=[os.path.join(basedir, x) for x in ('Modules', 'Modules/Eval', 'Modules/Matrix')]
 
 os.umask(0) # Let the members of www-data write anything we write (logs, db and user files)
 logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.DEBUG)
@@ -54,6 +55,14 @@ def root():
     # Not connected. Redirect to CAS 
     logging.debug(f"Root route called by unknown user. Redirecting to CAS")
     return redirect("https://cas.enib.fr/login?service=https://laborop.enib.fr/retourcas")
+
+@app.route("/Module/<path:text>", methods=['GET', 'POST'])
+def getModule(text):
+    logging.debug(f"get module {text=}")
+    fn=f'mod_{text}.json'
+    for p in modulepath:
+        if os.path.isfile(os.path.join(p, fn)): return send_from_directory(p, fn)
+    abort(404)
 
 @app.route("/retourcas", methods=['GET'])
 def retourcas():
