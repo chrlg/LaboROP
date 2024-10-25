@@ -532,7 +532,7 @@ function refreshCloud(lf){
         };
         groupSelect.change(filterGroup);
         filterGroup();
-        $('<a href="prof.php">Activité</a>').appendTo(td);
+        $('<a href="/static/prof.html">Activité</a>').appendTo(td);
     }
     for(let i=0; i<lf.length; i++){
         let fn=lf[i];

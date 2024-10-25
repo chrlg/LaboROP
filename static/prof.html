@@ -7,46 +7,18 @@
 <body bgcolor=#fff>
 
 Salle: <select id=salle placeholder='salle'>
-<option value='*'>toutes</option>
-<option value='menthe'>menthe - A004</option>
-<option value='raisin'>raisin - A006</option>
-<option value='poivre'>poivre - A008</option>
-<option value='fraise'>fraise</option>
-<option value='laurier'>laurier</option>
-<option value='citron'>citron</option>
-<option value='pomme'>pomme</option>
-<option value='thym'>thym</option>
-<option value='cacao'>cacao</option>
-<option value='anis'>anis</option>
-<option value='baudroie'>baudroie</option>
-<option value='bulle'>bulle</option>
-<option value='bar'>bar</option>
-<option value='poulpe'>poulpe</option>
-<option value='lieu'>lieu</option>
+<option value='-'>-</option>
 </select>
 
 Groupe: <select id=groupe>
-<option value="*">tous</option>
-</select>
-
-Tri: <select id=methTri placeholder='trier'>
-<option value='activity'>par activité</option>
-<option value='ip'>par poste</option>
-<option value='name'>par nom</option>
-<option value='plan'>par position</option>
+<option value='-'>-</option>
 </select>
 
 Filtrer: <input id=lastAct placeholder='secondes max inactif'>
 
 <button id=refresh>Rafraichir</button>
 
-<select id=actionMaintenance placeholder='maintenance'>
-<option value='0'>Maintenance</option>
-<option id=actionChmodg value='chmodg'>chmod g+rwX DB</option>
-<option id=actionChown value='chown'>chown maths DB/Root</option>
-</select>
-
 <div id=list></div>
-<script src='prof.js?x=2'></script>
+<script src='prof.js'></script>
 </body>
 

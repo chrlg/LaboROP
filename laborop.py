@@ -36,7 +36,7 @@ def createDbIfNeeded():
     cur=db.cursor()
     # User table. Only last login information. Used to get user from position or from group. Hence indexes
     # Note: role is from CAS. prof is manually inserted. If 'role' is reliable, could be used instead of 'prof'
-    cur.execute('create table if not exists Users (login text primary key, cn text, ip text, ts int, sn text, givenName text, uid text, role text, groupe text, prof int default 0);')
+    cur.execute('create table if not exists Users (login text primary key, cn text, ip text, ts int, sn text, givenName text, uid text, role text, groupe text);')
     cur.execute("CREATE INDEX idx_groupe ON Users(groupe);")
     cur.execute("CREATE INDEX idx_user_ip ON Users(ip);")
     # Static table, to be filled by admin once for all. Associate IP with fancy names (dns or other), room name, and a position x/y on the room map
@@ -97,8 +97,12 @@ def retourcas():
         cur.close()
         sqcon.commit()
         cur=sqcon.cursor()
-        res=cur.execute("SELECT prof from Users where login=?", (user,))
-        prof=session['prof']=list(res)[0][0]
+        res=cur.execute("SELECT groupe from Users where login=?", (user,))
+        gr=list(res)[0][0]
+        if gr=='prof':
+            prof=session['prof']=1
+        else:
+            prof=session['prof']=0
         cur.close()
 
         # Log login
@@ -116,6 +120,7 @@ def retourcas():
 @app.route("/logout")
 def logout():
     del session['user']
+    del session['prof']
     #return redirect("/")
     return redirect("https://cas.enib.fr/logout?service=https://laborop.enib.fr/retourcas")
 
@@ -287,6 +292,48 @@ def routeRm():
     os.remove(os.path.join(thisdir, fn))
     logging.info(f"==Rm== {now} {user=} {who=} {fn=}")
     return jsonify({'ok':'ok'})
+
+@app.route("/listRooms", methods=['POST', 'GET'])
+def routeLsRooms():
+    if 'prof' not in session: return jsonify([])
+    if session['prof']!=1: return jsonify([])
+    cur=getdb().cursor()
+    res=cur.execute('SELECT DISTINCT salle FROM Dns ORDER by salle')
+    return jsonify([r[0] for r in res if r[0] is not None and r[0].strip()!=''])
+
+@app.route("/listGroups", methods=['POST', 'GET'])
+def routeLsGroups():
+    if 'prof' not in session: return jsonify([])
+    if session['prof']!=1: return jsonify([])
+    cur=getdb().cursor()
+    res=cur.execute('SELECT DISTINCT groupe FROM Users ORDER by groupe')
+    return jsonify([r[0] for r in res if r[0] is not None and r[0].strip()!=''])
+
+@app.route("/activityGroup", methods=['POST'])
+def routeActivityGroup():
+    if 'prof' not in session: return jsonify([])
+    if session['prof']!=1: return jsonify([])
+    gr=request.json['group']
+    now=datetime.datetime.now().timestamp()
+    limit=int(now-request.json['limit'])
+    cur=getdb().cursor()
+    if gr is None:
+        res=cur.execute('SELECT cn, ip, ts from Users where groupe is null AND ts>? ORDER by ts DESC', (limit,))
+    else:
+        res=cur.execute('SELECT cn, ip, ts from Users where groupe=? AND ts>? ORDER by ts DESC', (gr, limit))
+    return jsonify([(r[0], r[1], now-r[2], None, None) for r in res])
+
+@app.route("/activityRoom", methods=['POST'])
+def routeActivityRoom():
+    if 'prof' not in session: return jsonify([])
+    if session['prof']!=1: return jsonify([])
+    room=request.json['room']
+    if room is None or room=='-' or room=='': return jsonify([])
+    now=datetime.datetime.now().timestamp()
+    limit=int(now-request.json['limit'])
+    cur=getdb().cursor()
+    res=cur.execute('SELECT Users.cn, Dns.name, Users.ts, Dns.x, Dns.y from Users LEFT JOIN Dns ON Users.ip=Dns.ip where Dns.salle=? AND ts>?', (room, limit))
+    return jsonify([(r[0], r[1], now-r[2], r[3], r[4]) for r in res])
 
 
 if __name__ == '__main__':

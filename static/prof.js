@@ -1,8 +1,8 @@
-let $lastAct = document.getElementById('lastAct');
-let $methTri = document.getElementById('methTri');
 let $salle = document.getElementById('salle');
 let $groupe = document.getElementById('groupe');
+let $lastAct = document.getElementById('lastAct');
 let $actionMaintenance = document.getElementById('actionMaintenance');
+let $list=document.getElementById('list');
 
 function mypost(url,payload){
     return fetch(url, {
@@ -18,18 +18,14 @@ function mypost(url,payload){
 }
 
 // 192.168.218.66 Wifi
-function createUserDiv(cn, ip, name, act, x, y){
+function createUserDiv(cn, ipname, act, x, y){
     let d=document.createElement('div');
     d.classList.add('user');
     let $cn=document.createElement('b');
     $cn.textContent=cn;
     d.appendChild($cn);
     let $ip=document.createElement('span');
-    if(name){
-        $ip.textContent=name;
-    }else{
-        $ip.textContent=ip;
-    }
+    $ip.textContent=ipname;
     d.appendChild($ip);
     if(act<30){
         d.classList.add('act30');
@@ -51,57 +47,54 @@ function createUserDiv(cn, ip, name, act, x, y){
 }
 
 function refreshList(){
-    let $div=document.getElementById('list');
     let ts=parseInt($lastAct.value);
     if(isNaN(ts)) ts=5400;
     let salle=$salle.value;
     let gid=$groupe.value;
-    mypost('ajax.php', {action:'listUser', ts:ts}).then(function(j){
-        $div.innerHTML='';
-        if($methTri.value=='ip') j.sort(function(a,b){ if(a[2]>b[2]) return 1; else return -1;});
-        else if($methTri.value=='name') j.sort(function(a,b){ if(a[5]>b[5]) return 1; else return -1;});
-        for(let k of j){
-            if(salle!='*' && (k[4]==null || k[4].substring(0, salle.length)!=salle)) continue;
-            if(gid!='*' && (k[6]==null || k[6]!=gid)) continue;
-            let x=k[7];
-            let y=k[8];
-            if($methTri.value!='plan') x=false;
-            let d=createUserDiv(k[1], k[2], k[4], k[3], x, y);
-            $div.appendChild(d);
-            // Ajout à la liste des groupes si n'existe pas
-            if(k[6]){
-                let there=false;
-                for(let o of document.querySelectorAll('#groupe option')){
-                    if(o.value==k[6]) there=true;
-                }
-                if(!there){
-                    let oo=document.createElement('option');
-                    oo.value=k[6];
-                    oo.textContent=k[6];
-                    $groupe.appendChild(oo);
-                }
-            }
-        }
-    });
+
+    // Recherche par salle
+    if(salle!='-'){
+        mypost('/activityRoom', {room:salle, limit:ts}).then(receiveActivity);
+    }else if(gid!='-'){
+        mypost('/activityGroup', {group:gid, limit:ts}).then(receiveActivity);
+    }else{
+        mypost('/activityGroup', {group:null, limit:ts}).then(receiveActivity);
+    }
 }
 
-function actionMaintenance(e){
-    if($actionMaintenance.value=='chmodg'){
-        // Add write rights on all files under DB to group (no harm, that is only teachers and web server. Just I don't want to do that every second)
-        mypost('ajax.php', {action:'chmodg'});
+function receiveActivity(j){
+    $list.innerHTML='';
+    for(let k of j){
+        let d=createUserDiv(k[0], k[1], k[2], k[3], k[4]);
+        $list.appendChild(d);
     }
-    $actionMaintenance.value='0';
 }
+
+mypost('/listRooms', {}).then(function(rep){
+    for(let room of rep){
+        let oo=document.createElement('option');
+        oo.value=room;
+        oo.textContent=room;
+        $salle.appendChild(oo);
+    }
+})
+
+mypost('/listGroups', {}).then(function(rep){
+    for(let gr of rep){
+        console.log(gr);
+        let oo=document.createElement('option');
+        oo.value=gr;
+        oo.textContent=gr;
+        $groupe.appendChild(oo);
+    }
+})
 
 setInterval(refreshList, 20000);
 refreshList();
 document.getElementById('refresh').addEventListener('click', refreshList);
-$salle.addEventListener('change', refreshList);
-$methTri.addEventListener('change', refreshList);
-$groupe.addEventListener('change', refreshList);
+$salle.addEventListener('change', function(){ $groupe.value='-'; refreshList();});
+$groupe.addEventListener('change', function(){ $salle.value='-'; refreshList();});
 $lastAct.addEventListener('blur', refreshList);
 $lastAct.addEventListener('keyup', function(e){
     if(e.code=='Enter') refreshList();
 });
-
-$actionMaintenance.addEventListener('change', actionMaintenance);
