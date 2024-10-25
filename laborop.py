@@ -6,6 +6,7 @@ import logging
 import datetime
 import sqlite3
 import datetime
+import shutil
 
 # configure flask app
 app = Flask(__name__)
@@ -15,6 +16,7 @@ dbdir = os.path.join(basedir, 'DB')
 userdir = os.path.join(dbdir, 'Root')
 sqpath=os.path.join(dbdir, 'base.sqlite3')
 
+os.umask(0) # Let the members of www-data write anything we write (logs, db and user files)
 logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.DEBUG)
 
 def getdb():
@@ -27,10 +29,8 @@ def createDbIfNeeded():
     if os.path.isfile(sqpath): return
     if not os.path.isdir(dbdir):
         os.mkdir(dbdir)
-        os.chmod(dbdir, 0o775)
     if not os.path.isdir(userdir):
         os.mkdir(userdir)
-        os.chmod(userdir, 0o775)
     db=sqlite3.connect(sqpath)
     cur=db.cursor()
     # User table. Only last login information. Used to get user from position or from group. Hence indexes
@@ -43,7 +43,7 @@ def createDbIfNeeded():
     cur.execute('CREATE INDEX idx_salle ON Dns(salle);')
     cur.close()
     db.commit()
-    os.chmod(sqpath, 0o664)
+    os.chmod(sqpath, 0o775)
 
 @app.route("/")
 def root():
@@ -111,16 +111,26 @@ def logout():
     #return redirect("/")
     return redirect("https://cas.enib.fr/logout?service=https://laborop.enib.fr/retourcas")
 
-@app.route("/ls", methods=['POST'])
-def routeLs():
-    who=request.json['who']
-    prof=session['prof']
-    user=session['user']
-    logging.debug(f"ls {user=} {who=} {prof=}")
+# Function to check filenames 
+def illegalFn(fn):
+    if "." in fn: return True
+    if "·" in fn: return True
+    if "/" in fn: return True
+    if "\\" in fn: return True
+    if "\n" in fn: return True
+    return False
+
+# Return an error to an ajax call
+def returnError(action, err):
+    return jsonify({'action':action, 'error':err, 'user':session['user']})
+
+# Get the real directory from which pyro files should be taken 
+# (That is, DB/Root/user. Unless we are teacher and specified another user. Unless there is a ·Eval subdir in that dir)
+def wdir(who):
     # Default dir is just DB/Root/user
-    thisdir=os.path.join(userdir, user)
+    thisdir=os.path.join(userdir, session['user'])
     # Unless we are a teacher and have specified another user dir
-    if prof==1 and who:
+    if session['prof']==1 and who:
         thisdir=os.path.join(userdir, who)
     # Unless that dir contains a "·Eval" subdir
     evaldir=os.path.join(thisdir, '·Eval')
@@ -128,15 +138,50 @@ def routeLs():
         logging.debug(f"Found a eval dir in {thisdir}")
         thisdir=evaldir
     # Create thisdir if it doesn't exist
+    histdir=os.path.join(thisdir, '·Hist')
     if not os.path.isdir(thisdir):
         logging.debug(f"creating user dir {thisdir}")
         os.mkdir(thisdir)
-        os.chmod(thisdir, 0o775)
+        os.mkdir(histdir)
+    return thisdir, histdir
+
+@app.route("/ls", methods=['POST'])
+def routeLs():
+    who=request.json['who']
+    prof=session['prof']
+    logging.debug(f"ls user={session['user']} {who=} {prof=}")
+    thisdir,histdir=wdir(who)
     # List of files
-    l=[x for x in os.listdir(thisdir) if x[0]!='.' and x[0]!='·' and os.path.isdir(x)]
+    logging.debug(f"listdir={os.listdir(thisdir)} thistdir={thisdir}")
+    l=[x for x in os.listdir(thisdir) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
     logging.debug(f"result is {l=}")
 
     return jsonify(l)
+
+@app.route("/save", methods=['POST'])
+def routeSave():
+    fn=request.json['fn']
+    code=request.json['code']
+    who=request.json['who']
+    user=session['user']
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    # Check filename for / and . and stuff
+    if illegalFn(fn): 
+        logging.debug(f"{now} Illegal file name in save <{fn}> for {user=}")
+        return returnError('save', f"Illegal filename «{fn}»")
+    # This is the full path of the file we are about to save
+    thisdir,histdir=wdir(who)
+    fullName = os.path.join(thisdir, fn)
+    histName = os.path.join(histdir, f"{now}_{fn}")
+    # If file exists already, save it
+    if os.path.isfile(fullName):
+        shutil.move(fullName, histName)
+    with open(fullName, 'w') as f: f.write(code)
+    logging.info(f"==Save== {now} {user=} {who=} file=<{fullName} size={len(code)}>")
+    
+    # Return a ok
+    return jsonify({'saved':'ok'})
+
 
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)

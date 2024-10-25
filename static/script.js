@@ -111,7 +111,7 @@ function saveCode(run=false){
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename='New '+NOWSTR;
     }
-    mypost('ajax.php', {action:'save', who:pwd, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
+    mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
     if(run) runCode();
     return true;
 }
@@ -604,7 +604,7 @@ function refreshCloud(lf){
         }
         editor.setValue("", -1);
         currentFilename=ns;
-        mypost('ajax.php', {action:'save', who:pwd, fn:currentFilename, code:editor.getValue()}).then(initFiles);
+        mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then(initFiles);
    });
 }
 
