@@ -585,7 +585,7 @@ function refreshCloud(lf){
             });
         });
         btCopy.click(function(){
-            mypost('ajax.php', {action:'copy', who:pwd, fn:fn}).then((j)=>initFiles());
+            mypost('/copy', {who:pwd, fn:fn}).then((j)=>initFiles());
         });
     }
     let tr=$("<tr>").appendTo(table);

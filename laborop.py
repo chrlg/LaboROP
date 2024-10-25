@@ -247,5 +247,22 @@ def routeMv():
     logging.info(f"==Move== {now} {user=} {who=} {src=} {dest=}")
     return jsonify({'ok':'ok'})
 
+@app.route('/copy', methods=['POST'])
+def routeCopy():
+    if 'user' not in session: return jsonify({'error':'login'})
+    fn=request.json['fn']
+    who=request.json['who']
+    user=session['user']
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    thisdir,histdir=wdir(who)
+    logging.debug(f"Called copy {now=} {user=} {who=} {fn=}")
+    if illegalFn(fn): 
+        logging.debug(f"{now} Illegal file name in copy <{fn}> for {user=}")
+        return returnError('copy', f"Illegal filename «{fn}»")
+    shutil.copy(os.path.join(thisdir, fn), os.path.join(thisdir, f"Copie de {fn}"))
+    logging.info(f"==Copy== {now} {user=} {who=} {fn=}")
+    return jsonify({'ok':'ok'})
+
+
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)
