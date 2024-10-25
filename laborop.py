@@ -217,7 +217,6 @@ def routeLoad():
 
 @app.route("/lsUsers", methods=['POST'])
 def routeLsUsers():
-    logging.debug('xxxxx')
     # For teachers, return a list of users. For others, return nothing
     if 'user' not in session: return jsonify({'error':'login'})
     if session['prof']==0: return jsonify({'permission':'denied'})
@@ -230,6 +229,23 @@ def routeLsUsers():
 def routeWhoami():
     if 'user' in session: return jsonify({'me':session['user']})
     return jsonify({})
+
+@app.route("/mv", methods=['POST'])
+def routeMv():
+    if 'user' not in session: return jsonify({'error':'login'})
+    src=request.json['src']
+    dest=request.json['dest']
+    who=request.json['who']
+    user=session['user']
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    thisdir,histdir=wdir(who)
+    logging.debug(f"Called mv {now=} {user=} {who=} {src=} {dest=}")
+    if illegalFn(dest): 
+        logging.debug(f"{now} Illegal file name in mv <{dest}> for {user=}")
+        return returnError('mv', f"Illegal filename «{dest}»")
+    shutil.move(os.path.join(thisdir, src), os.path.join(thisdir, dest))
+    logging.info(f"==Move== {now} {user=} {who=} {src=} {dest=}")
+    return jsonify({'ok':'ok'})
 
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)

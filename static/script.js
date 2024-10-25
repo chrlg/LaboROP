@@ -559,7 +559,7 @@ function refreshCloud(lf){
                 if(inputName.val()=="") return;
                 let ns=inputName.val().replaceAll('/','╱');
                 if(fn==currentFilename) currentFilename=ns;
-                mypost('ajax.php', {action:'mv', who:pwd, src:fn, dest:ns}).then(function(j){
+                mypost('/mv', {who:pwd, src:fn, dest:ns}).then(function(j){
                     initFiles();
                 });
             }
