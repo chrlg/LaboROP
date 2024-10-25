@@ -68,6 +68,7 @@ def retourcas():
         xml=xmltodict.parse(r.content)['cas:serviceResponse']['cas:authenticationSuccess']
         # Keep user name in session, for every "cloud" action 
         session['user']=xml['cas:user']
+        user=session['user']
         logging.debug(f"Returned auth {xml['cas:user']} from CAS")
         # Plus, update database
         attrs=xml['cas:attributes']
@@ -89,7 +90,12 @@ def retourcas():
         sqcon.commit()
         logging.debug(f"{tse} Added login to DB")
 
+        # Log login
         logging.info(f"==Login== {tss} from <{session['user']}>=<{uid}> @{ip} role={role}")
+
+        # Warn if one is not lowercase or if login different from uid
+        if user!=user.lower() or uid!=uid.lower() or user!=uid:
+            logging.warn(f"***WARNING*** {user=} {uid=}")
         return redirect("static/main.html?fromlogin")
     except:
         # Unless there was an error with CAS, in which case display a dumb error page
