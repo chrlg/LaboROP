@@ -226,5 +226,10 @@ def routeLsUsers():
     res=cur.execute('select login, cn, groupe from Users')
     return jsonify({'users': [(r[0], r[1], r[2]) for r in res]})
 
+@app.route("/whoami", methods=['POST'])
+def routeWhoami():
+    if 'user' in session: return jsonify({'me':session['user']})
+    return jsonify({})
+
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)

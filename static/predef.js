@@ -605,9 +605,9 @@ choisit ce mode d'affichage pour le graphe G (par défaut Gr)
 function preWhoami(args, named, ln, fname){
     let req=new XMLHttpRequest();
     req.responseType = 'json';
-    req.open('POST', 'ajax.php', false);
+    req.open('POST', '/whoami', false);
     req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    req.send(JSON.stringify({action:'whoami'}));
+    req.send(JSON.stringify({}));
     let j=req.response;
     if(j.me===undefined) return Cst.NONE;
     return {t:'string', val:j.me};
