@@ -565,7 +565,7 @@ function refreshCloud(lf){
         });
 
         btOpen.click(function(){
-            mypost('ajax.php', {action:'load', who:pwd, src:fn}).then(loadCloudFile);
+            mypost('/load', {who:pwd, src:fn}).then(loadCloudFile);
         });
 
         btDel.click(function(){

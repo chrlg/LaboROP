@@ -182,6 +182,25 @@ def routeSave():
     # Return a ok
     return jsonify({'saved':'ok'})
 
+@app.route("/load", methods=['POST'])
+def routeLoad():
+    src=request.json['src']
+    who=request.json['who']
+    user=session['user']
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    thisdir,histdir=wdir(who)
+    if illegalFn(src):
+        logging.debug(f"{now} Illegal file name in load <{src}> for {user=}")
+        return returnError('load', f"Illegal filename «{src}»")
+    try:
+        with open(os.path.join(thisdir,src)) as f: code=f.read()
+        logging.debug(f"{now} open file {src} by {user} {who=}")
+        return jsonify({'src':src, 'code':code})
+    except:
+        logging.error(f"{now} failed open file {src} by {user} {who=} {thisdir=}")
+        return returnError('load', 'cannot open file')
+
+        
 
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)
