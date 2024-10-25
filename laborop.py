@@ -236,7 +236,7 @@ def routeLsUsers():
     if session['prof']==0: return jsonify({'permission':'denied'})
     logging.debug(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} lsUsers user={session['user']} prof={session['prof']}")
     cur=getdb().cursor()
-    res=cur.execute('select login, cn, groupe from Users')
+    res=cur.execute('select login, cn, groupe from Users ORDER by sn, givenName')
     return jsonify({'users': [(r[0], r[1], r[2]) for r in res]})
 
 @app.route("/whoami", methods=['POST'])
