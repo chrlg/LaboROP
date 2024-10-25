@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, redirect, request, session, g
+from flask import Flask, send_from_directory, redirect, request, session, g, jsonify
 import os
 import requests
 import xmltodict
@@ -34,7 +34,8 @@ def createDbIfNeeded():
     db=sqlite3.connect(sqpath)
     cur=db.cursor()
     # User table. Only last login information. Used to get user from position or from group. Hence indexes
-    cur.execute('create table if not exists Users (login text primary key, cn text, ip text, ts int, sn text, givenName text, uid text, role text, groupe text);')
+    # Note: role is from CAS. prof is manually inserted. If 'role' is reliable, could be used instead of 'prof'
+    cur.execute('create table if not exists Users (login text primary key, cn text, ip text, ts int, sn text, givenName text, uid text, role text, groupe text, prof int default 0);')
     cur.execute("CREATE INDEX idx_groupe ON Users(groupe);")
     cur.execute("CREATE INDEX idx_user_ip ON Users(ip);")
     # Static table, to be filled by admin once for all. Associate IP with fancy names (dns or other), room name, and a position x/y on the room map
@@ -85,10 +86,12 @@ def retourcas():
         cur=sqcon.cursor()
         logging.debug("before exec")
         cur.execute('INSERT INTO Users (login, cn, ip, ts, sn, givenName, uid, role) values (?,?,?,?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET ip=?,ts=?', (session['user'].lower(), cn, ip, tse, nom, prenom, uid, role, ip,tse))
-        logging.debug(f"{tse} after exec")
         cur.close()
         sqcon.commit()
-        logging.debug(f"{tse} Added login to DB")
+        cur=sqcon.cursor()
+        res=cur.execute("SELECT prof from Users where login=?", (user.lower(),))
+        prof=session['prof']=list(res)[0][0]
+        cur.close()
 
         # Log login
         logging.info(f"==Login== {tss} from <{session['user']}>=<{uid}> @{ip} role={role}")
@@ -107,6 +110,33 @@ def logout():
     del session['user']
     #return redirect("/")
     return redirect("https://cas.enib.fr/logout?service=https://laborop.enib.fr/retourcas")
+
+@app.route("/ls", methods=['POST'])
+def routeLs():
+    who=request.json['who']
+    prof=session['prof']
+    user=session['user']
+    logging.debug(f"ls {user=} {who=} {prof=}")
+    # Default dir is just DB/Root/user
+    thisdir=os.path.join(userdir, user)
+    # Unless we are a teacher and have specified another user dir
+    if prof==1 and who:
+        thisdir=os.path.join(userdir, who)
+    # Unless that dir contains a "·Eval" subdir
+    evaldir=os.path.join(thisdir, '·Eval')
+    if os.path.isdir(evaldir):
+        logging.debug(f"Found a eval dir in {thisdir}")
+        thisdir=evaldir
+    # Create thisdir if it doesn't exist
+    if not os.path.isdir(thisdir):
+        logging.debug(f"creating user dir {thisdir}")
+        os.mkdir(thisdir)
+        os.chmod(thisdir, 0o775)
+    # List of files
+    l=[x for x in os.listdir(thisdir) if x[0]!='.' and x[0]!='·' and os.path.isdir(x)]
+    logging.debug(f"result is {l=}")
+
+    return jsonify(l)
 
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)

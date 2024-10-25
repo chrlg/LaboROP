@@ -611,7 +611,7 @@ function refreshCloud(lf){
 
 function initFiles(){
    $("#files").empty();
-   mypost("ajax.php", {action:'ls', who:pwd}).then(refreshCloud);
+   mypost("/ls", {who:pwd}).then(refreshCloud);
    return;
 }
 
