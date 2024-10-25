@@ -50,7 +50,7 @@ def root():
     if 'user' in session:
         logging.debug(f"Root route called by {session['user']}. Redirecting to main")
         # Already connected. Just load main html file
-        return redirect("static/main.html?fromroot")
+        return redirect("static/main.html")
     # Not connected. Redirect to CAS 
     logging.debug(f"Root route called by unknown user. Redirecting to CAS")
     return redirect("https://cas.enib.fr/login?service=https://laborop.enib.fr/retourcas")
@@ -98,7 +98,7 @@ def retourcas():
         # Warn if one is not lowercase or if login different from uid
         if user!=xml['cas:user'] or uid!=uid.lower() or user!=uid:
             logging.warn(f"***WARNING*** user={xml['cas:user']} {uid=}")
-        return redirect("static/main.html?fromlogin")
+        return redirect("static/main.html")
     except:
         # Unless there was an error with CAS, in which case display a dumb error page
         return f"<html><body><h3 style='color:red'>Erreur d'authentification</h3><a href='/'>Réessayer</a></body></html>"
