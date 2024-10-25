@@ -576,7 +576,7 @@ function refreshCloud(lf){
         btDel.click(function(){
             let sur=confirm("Supprimer le fichier "+fn+ " ?");
             if(!sur) return;
-            mypost('ajax.php', {action:'rm', who:pwd, fn:fn}).then(function(j){
+            mypost('/rm', {who:pwd, fn:fn}).then(function(j){
                 if(fn==currentFilename){
                     currentFilename=false;
                     editor.setValue('', -1);

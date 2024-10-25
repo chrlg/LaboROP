@@ -263,6 +263,22 @@ def routeCopy():
     logging.info(f"==Copy== {now} {user=} {who=} {fn=}")
     return jsonify({'ok':'ok'})
 
+@app.route('/rm', methods=['POST'])
+def routeRm():
+    if 'user' not in session: return jsonify({'error':'login'})
+    fn=request.json['fn']
+    who=request.json['who']
+    user=session['user']
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    thisdir,histdir=wdir(who)
+    logging.debug(f"Called rm {now=} {user=} {who=} {fn=}")
+    if illegalFn(fn): 
+        logging.debug(f"{now} Illegal file name in rm <{fn}> for {user=}")
+        return returnError('rm', f"Illegal filename «{fn}»")
+    os.remove(os.path.join(thisdir, fn))
+    logging.info(f"==Rm== {now} {user=} {who=} {fn=}")
+    return jsonify({'ok':'ok'})
+
 
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)
