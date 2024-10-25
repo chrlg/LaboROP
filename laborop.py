@@ -146,6 +146,7 @@ def wdir(who):
 
 @app.route("/ls", methods=['POST'])
 def routeLs():
+    if 'user' not in session: return jsonify({'error':'login'})
     who=request.json['who']
     prof=session['prof']
     logging.debug(f"ls user={session['user']} {who=} {prof=}")
@@ -153,12 +154,16 @@ def routeLs():
     # List of files
     logging.debug(f"listdir={os.listdir(thisdir)} thistdir={thisdir}")
     l=[x for x in os.listdir(thisdir) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
+    # For teachers, add a list of users
+    if prof:
+        pass
     logging.debug(f"result is {l=}")
 
     return jsonify(l)
 
 @app.route("/save", methods=['POST'])
 def routeSave():
+    if 'user' not in session: return jsonify({'error':'login'})
     fn=request.json['fn']
     code=request.json['code']
     who=request.json['who']
@@ -192,6 +197,7 @@ def routeSave():
 
 @app.route("/load", methods=['POST'])
 def routeLoad():
+    if 'user' not in session: return jsonify({'error':'login'})
     src=request.json['src']
     who=request.json['who']
     user=session['user']
@@ -208,7 +214,17 @@ def routeLoad():
         logging.error(f"{now} failed open file {src} by {user} {who=} {thisdir=}")
         return returnError('load', 'cannot open file')
 
-        
+
+@app.route("/lsUsers", methods=['POST'])
+def routeLsUsers():
+    logging.debug('xxxxx')
+    # For teachers, return a list of users. For others, return nothing
+    if 'user' not in session: return jsonify({'error':'login'})
+    if session['prof']==0: return jsonify({'permission':'denied'})
+    logging.debug(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} lsUsers user={session['user']} prof={session['prof']}")
+    cur=getdb().cursor()
+    res=cur.execute('select login, cn, groupe from Users')
+    return jsonify({'users': [(r[0], r[1], r[2]) for r in res]})
 
 if __name__ == '__main__':
     app.run(debug=True, host="127.0.0.1", port=5000)

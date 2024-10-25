@@ -88,6 +88,12 @@ function runCode(){
 
 let currentFilename=false;
 let pwd=false; // Directory for 'ls' (that is, user of files)
+let listUsers=false; // list of all users of the system. false=unintialized or non available
+// Let's initialise it now
+mypost('/lsUsers', {}).then(function(r){
+    if(r.users) listUsers=r.users;
+});
+
 function checkSavedCode(j){
     if(j.error=='login'){
         document.getElementById('relogin').classList.add('show');
@@ -487,14 +493,13 @@ function refreshCloud(lf){
        return saveCode(false);
     }
     let table=$("<table></table>").appendTo($("#files"));
-    if(lf.length>0 && !(lf[0].substring)){
-        let lf0=lf.shift();
+    if(listUsers){
         let tr=$('<tr></tr>').appendTo(table);
         let td=$('<td colspan=4></td>').appendTo(tr);
         let userSelect=$('<select></select>').appendTo(td);
         $('<option value=0>ME</option>').appendTo(userSelect);
         let groupes={};
-        for(let p of lf0){
+        for(let p of listUsers){
             if(!(p[2])) p[2]='Other';
             let o=$(`<option data-gid="${p[2]}" value=${p[0]}>${p[1]}</option>`).appendTo(userSelect);
             if(p[0]==pwd){
