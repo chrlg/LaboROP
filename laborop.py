@@ -68,8 +68,7 @@ def retourcas():
         r=requests.get(f"https://cas.enib.fr/serviceValidate?ticket={ticket}&service=https://laborop.enib.fr/retourcas")
         xml=xmltodict.parse(r.content)['cas:serviceResponse']['cas:authenticationSuccess']
         # Keep user name in session, for every "cloud" action 
-        session['user']=xml['cas:user']
-        user=session['user']
+        session['user']=user=xml['cas:user'].lower()
         logging.debug(f"Returned auth {xml['cas:user']} from CAS")
         # Plus, update database
         attrs=xml['cas:attributes']
@@ -85,20 +84,20 @@ def retourcas():
         sqcon=getdb()
         cur=sqcon.cursor()
         logging.debug("before exec")
-        cur.execute('INSERT INTO Users (login, cn, ip, ts, sn, givenName, uid, role) values (?,?,?,?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET ip=?,ts=?', (session['user'].lower(), cn, ip, tse, nom, prenom, uid, role, ip,tse))
+        cur.execute('INSERT INTO Users (login, cn, ip, ts, sn, givenName, uid, role) values (?,?,?,?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET ip=?,ts=?', (user, cn, ip, tse, nom, prenom, uid, role, ip,tse))
         cur.close()
         sqcon.commit()
         cur=sqcon.cursor()
-        res=cur.execute("SELECT prof from Users where login=?", (user.lower(),))
+        res=cur.execute("SELECT prof from Users where login=?", (user,))
         prof=session['prof']=list(res)[0][0]
         cur.close()
 
         # Log login
-        logging.info(f"==Login== {tss} from <{session['user']}>=<{uid}> @{ip} role={role}")
+        logging.info(f"==Login== {tss} from <{user}>=<{uid}> @{ip} role={role}")
 
         # Warn if one is not lowercase or if login different from uid
-        if user!=user.lower() or uid!=uid.lower() or user!=uid:
-            logging.warn(f"***WARNING*** {user=} {uid=}")
+        if user!=xml['cas:user'] or uid!=uid.lower() or user!=uid:
+            logging.warn(f"***WARNING*** user={xml['cas:user']} {uid=}")
         return redirect("static/main.html?fromlogin")
     except:
         # Unless there was an error with CAS, in which case display a dumb error page
@@ -164,7 +163,9 @@ def routeSave():
     code=request.json['code']
     who=request.json['who']
     user=session['user']
-    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    dt=datetime.datetime.now()
+    now = dt.strftime("%Y-%m-%d_%H:%M:%S")
+    ts=int(dt.timestamp())
     # Check filename for / and . and stuff
     if illegalFn(fn): 
         logging.debug(f"{now} Illegal file name in save <{fn}> for {user=}")
@@ -178,6 +179,13 @@ def routeSave():
         shutil.move(fullName, histName)
     with open(fullName, 'w') as f: f.write(code)
     logging.info(f"==Save== {now} {user=} {who=} file=<{fullName} size={len(code)}>")
+
+    # Update user activity
+    ip=request.remote_addr
+    db=getdb()
+    cur=db.cursor()
+    cur.execute('UPDATE Users SET ts=?, ip=? WHERE login=?', (ts, ip, user))
+    db.commit()
     
     # Return a ok
     return jsonify({'saved':'ok'})
