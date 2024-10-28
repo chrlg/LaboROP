@@ -117,6 +117,7 @@
 
 /lex
 
+%left "Graphe"
 %left "Sommet"
 %right ":" "?"
 %left "||" "or"
@@ -382,9 +383,6 @@ expr4
       | expr4 "[" borne ":" borne "]" {
          $$={t:"subarray", tab:$1, indexinf:$3, indexsup:$5, ln:@2.firstline};
       }
-      | expr4 "." ID '(' listArg ')' {
-         $$ = { t:"methcall", this: $1, f:$3, args:$3.o, named:$5.o, ln:@1.first_line};
-      }
       ;
 
 expr5
@@ -496,6 +494,9 @@ expr
       }
       | "!" expr {
 	 $$ = {t:"!", right:$2, ln:@1.first_line};
+      }
+      | "Graphe" expr {
+         $$ = { t:"Graphe", arg:$2, ln:@1.first_line};
       }
       ;
 

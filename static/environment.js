@@ -99,11 +99,12 @@ export function addPredvar(name, fn, optarg=true){
 // Get a graphe by its name
 // If name is false/undefined, return graph Gr
 export function getGraph(name, ln){
-   if(name){
-      if(!Graphes[name]) throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+name+" n'existe pas", ln:ln};
-      return Graphes[name];
-   }
-   return Gr;
+    if(name){
+        let g=get(name);
+        if(g.t!='graphe') throw {error:"env", name:"Graphe non existant", msg:"Le graphe "+name+" n'existe pas", ln:ln};
+        return g
+    }
+    return Gr;
 }
 
 // Return graph containing a given node s

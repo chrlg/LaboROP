@@ -4,7 +4,7 @@
 import * as Env from "./environment.js";
 import * as Mat from "./matrix.js";
 import {FALSE, TRUE, NONE} from "./constants.js";
-import {evalSommet, creerArc, creerArete} from "./graphe.js";
+import {evalSommet, evalGraphe, creerArc, creerArete} from "./graphe.js";
 import {interpCall, setRef} from "./instructions.js";
 import Decimal from "./lib/decimal.mjs";
 
@@ -546,18 +546,21 @@ export function evaluate(expr){
         if(tab.t=="array") return {t:"array", val:nv};
         else return {t:"string", val:nv};
     }
-    if(expr.t=="Arc"){
-        return creerArc(expr);
-    }
-    if(expr.t=="Arete"){
-        return creerArete(expr);
-    }
     if(expr.t=="staticArray"){
         let l=[];
         for(let a of expr.args){
             l.push(evaluate(a));
         }
         return {t:"array", val:l};
+    }
+    if(expr.t=="Arc"){
+        return creerArc(expr);
+    }
+    if(expr.t=="Arete"){
+        return creerArete(expr);
+    }
+    if(expr.t=="Graphe"){
+        return evalGraphe(expr, true);
     }
     console.trace("Cannot evaluate", expr);
 }

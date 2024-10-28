@@ -258,7 +258,7 @@ export function evalGraphe(ti, create){
         // should be a string
         let v=evaluate(arg);
         if(v===undefined) throw {error:"type", name:"Argument non défini pour Graphe", msg: "", ln:arg.ln};
-        if(v.t!="string") throw {error:"type", name:"Mauvais type", msg:`Une expression de type ${ev.t} n'est pas un argument correct pour Graphe`, ln:arg.ln};
+        if(v.t!="string") throw {error:"type", name:"Mauvais type", msg:`Une expression de type ${v.t} n'est pas un argument correct pour Graphe`, ln:arg.ln};
         name=v.val;
     }
 
@@ -271,6 +271,7 @@ export function evalGraphe(ti, create){
         Env.Graphes[name].reset();
     }else if(create){
         Env.addGraphe(name, ti.ln);
+        console.log("Created graphe", name);
     }
     return Env.Graphes[name];
 }
