@@ -1,7 +1,7 @@
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
-import {evalSommet, creerArc, creerArete} from "./graphe.js";
+import {evalSommet, evalGraphe, creerArc, creerArete} from "./graphe.js";
 import {FALSE} from "./constants.js";
 import Decimal from "./lib/decimal.mjs";
 
@@ -200,16 +200,7 @@ export function interpretWithEnv(tree, isloop){
             continue;
         }
         if(ti.t=="Graphe"){
-            if(Env.Predef[ti.name]) 
-                throw {error:"env", name:"Surdéfinition", msg:"Le nom "+ti.name+" est réservé", ln:ti.ln};
-            if(Env.Gr.sommets[ti.name])
-                throw {error:"env", name:"Surdéfinition", mrg:`Le nom ${ti.name} est celui d'un sommet du graphe principal`, ln:ti.ln};
-            // Graph already exist. Then we just reset it
-            if(Env.Graphes[ti.name]){
-                Env.Graphes[ti.name].reset();
-            }else{
-                Env.addGraphe(ti.name, ti.ln);
-            }
+            evalGraphe(ti, true);
             continue;
         }
         if(ti.t=="$"){

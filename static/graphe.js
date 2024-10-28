@@ -243,3 +243,34 @@ export function evalSommet(som, creer, graphe){
 }
 
 
+// Likewise evaluate Graphe instructions/expressions, whose argument could be either an inexistent identifier, or an expression
+
+export function evalGraphe(ti, create){
+    let name=null;
+    let arg=ti.arg;
+    if(arg.t=="id"){
+        // Case where Graphe is called with an identifier like «Graphe E»
+        // if that symbol is undefined, or is already the name of an existing graphe E, treat it as a string
+        if(Env.Graphes[arg.name] || Env.get(arg.name)===undefined) name=arg.name;
+    }
+    if(name===null){
+        // Either a more complex expression, or a symbol degignating an existing, non-graph, value. Treat it as an expression whole value
+        // should be a string
+        let v=evaluate(arg);
+        if(v===undefined) throw {error:"type", name:"Argument non défini pour Graphe", msg: "", ln:arg.ln};
+        if(v.t!="string") throw {error:"type", name:"Mauvais type", msg:`Une expression de type ${ev.t} n'est pas un argument correct pour Graphe`, ln:arg.ln};
+        name=v.val;
+    }
+
+    if(Env.Predef[name]) 
+        throw {error:"env", name:"Surdéfinition", msg:"Le nom "+name+" est réservé", ln:ti.ln};
+    if(Env.Gr.sommets[name])
+        throw {error:"env", name:"Surdéfinition", mrg:`Le nom ${name} est celui d'un sommet du graphe principal`, ln:ti.ln};
+    // Graph already exist. Then we just reset it
+    if(Env.Graphes[name]){
+        Env.Graphes[name].reset();
+    }else if(create){
+        Env.addGraphe(name, ti.ln);
+    }
+    return Env.Graphes[name];
+}

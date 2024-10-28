@@ -146,8 +146,8 @@ instructionNoColon
       | Arc grapheSpec "(" expr "," expr ")" {
 	 $$ = { t:"Arc", g:$2, left:$4, right:$6, ln:@1.first_line};
       }
-      | Graphe ID {
-         $$ = { t:"Graphe", name:$2, ln:@1.first_line};
+      | Graphe expr {
+         $$ = { t:"Graphe", arg:$2, ln:@1.first_line};
       }
       | llvalue "=" expr {
 	 $$ = { t:"=", left: $1, right:$3, ln:@2.first_line};
