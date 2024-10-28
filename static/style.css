@@ -197,7 +197,24 @@ div#tabs {
    background-color: #880;
 }
 #extragraph {
-   display:inline-block;
+    display:inline-block;
+}
+#tabs.multextra #extragraph {
+    display: none;
+}
+#tabs.multextra #extragraph.unrolled {
+    display: block;
+    position: absolute;
+    z-index: 1300;
+}
+#tabs.multextra #extragraph button {
+    display: block;
+}
+#unrollExtragraph {
+    display: none;
+}
+#tabs.multextra #unrollExtragraph {
+    display: inline-block;
 }
 
 div#misc{

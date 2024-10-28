@@ -5,6 +5,8 @@ var errorMarker=false;
 var lastError;
 var timeoutLen=120000;
 
+let $extragraph, $tabs, $unrollExtragraph;
+
 var _grlg = {
    svgw:false,
    svgh:false,
@@ -78,6 +80,7 @@ function runCode(){
     $("#errors").empty();
     $("#svgcont").empty();
     $("#extragraph").empty();
+    $tabs.classList.remove('multextra');
     _graphes={Gr:true};
     if(errorMarker){
         editor.session.removeMarker(errorMarker);
@@ -173,6 +176,10 @@ function createExtraGraph(name){
     $but.click(function(){
         showTab("show", $but);
     });
+    if(Object.keys(_graphes).length>2) {
+        $tabs.classList.add('multextra');
+        $extragraph.classList.remove('unrolled');
+    }
 }
 
 function showGraph(g){
@@ -373,6 +380,12 @@ function doZoom(delta){
 }
 
 function init(){
+   // Some global vars for dom quick access (objective : no jquery)
+   $extragraph=document.getElementById('extragraph');
+   $tabs=document.getElementById('tabs');
+   $unrollExtragraph=document.getElementById('unrollExtragraph');
+
+   // Ace init
    Range = ace.require('ace/range').Range;
    editor = ace.edit("editor");
    editor.setTheme("ace/theme/monokai");
@@ -432,10 +445,16 @@ function init(){
    $("#tabs button[data-target]").click(function(e){
       let t=$(this).attr("data-target");
       showTab(t, $(this));
+      $extragraph.classList.remove('unrolled');
    });
    $("#tabs button[data-target='show']").click(function() {
       refreshGraphs();
 //      if(_graphes["Gr"]) showGraph(_graphes["Gr"]);
+   });
+
+   $unrollExtragraph.addEventListener('click', function(){
+      $extragraph.classList.toggle('unrolled');
+      showTab('show');
    });
 
    // Fichiers

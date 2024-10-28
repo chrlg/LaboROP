@@ -271,7 +271,6 @@ export function evalGraphe(ti, create){
         Env.Graphes[name].reset();
     }else if(create){
         Env.addGraphe(name, ti.ln);
-        console.log("Created graphe", name);
     }
     return Env.Graphes[name];
 }
