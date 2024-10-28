@@ -191,9 +191,6 @@ instructionNoColon
       | ID '(' listArg ')' {
 	 $$ = { t:"call", f:$1, args:$3.p, named:$3.o, ln:@1.first_line};
       }
-      | expr4 '.' ID '(' listArg ')' {
-         $$ = { t:"methcall", this: $1, f:$3, args:$3.o, named:$5.o, ln:@1.first_line};
-      }
       | break {
 	 $$ = {t:"break", ln:@1.first_line};
       }
