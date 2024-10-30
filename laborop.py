@@ -18,7 +18,6 @@ sqpath=os.path.join(dbdir, 'base.sqlite3')
 modulepath=[os.path.join(basedir, x) for x in ('Modules', 'Modules/Eval', 'Modules/Matrix')]
 
 os.umask(0) # Let the members of www-data write anything we write (logs, db and user files)
-logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.DEBUG)
 
 def getdb():
     db = getattr(g, '_database', None)
@@ -337,4 +336,7 @@ def routeActivityRoom():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(filename='dev.log', level=logging.DEBUG)
     app.run(debug=True, host="127.0.0.1", port=5000)
+else:
+    logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.INFO)
