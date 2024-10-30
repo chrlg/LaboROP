@@ -178,7 +178,7 @@ def routeLs():
     thisdir,histdir=wdir(who)
     # List of files
     logging.debug(f"listdir={os.listdir(thisdir)} thistdir={thisdir}")
-    l=[x for x in os.listdir(thisdir) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
+    l=[x for x in sorted(os.listdir(thisdir)) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
     # For teachers, add a list of users
     if prof:
         pass
