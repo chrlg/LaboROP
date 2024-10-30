@@ -97,7 +97,8 @@ function interpret(tree){
 onmessage = function (evt){
    let str, out;
    try{
-      str=parseTabulation(evt.data);
+      Env.setArgv(evt.data.argv);
+      str=parseTabulation(evt.data.code);
       out = grlang.parse(str);
       interpret(out);
       postMessage({termine: 0, opcnt:Env.OpCnt});

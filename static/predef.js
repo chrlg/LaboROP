@@ -11,26 +11,26 @@ let Help={"predfn":{}, "type":{}, name:{}, "line":"═════════�
 
 export default function populate(){
     // TODO : int, round, str
+   Env.addPredfn("arcs", preArcs);
+   Env.addPredfn("aretes", preArcs);
    Env.addPredfn("clear", preClear);
-   Env.addPredfn("sommets", preSommets);
-   Env.addPredfn("len", preLen);
-   Env.addPredfn("random", preRandom);
-   Env.addPredfn("premier", prePremier);
    Env.addPredfn("dernier", preDernier);
+   Env.addPredfn("import", preImport);
+   Env.addPredfn("insert", preInsert);
+   Env.addPredfn("len", preLen);
+   Env.addPredfn("pop", prePop);
+   Env.addPredfn("premier", prePremier);
    Env.addPredfn("print", prePrint);
    Env.addPredfn("println", prePrint);
    Env.addPredfn("printnr", prePrint);
    Env.addPredfn("progress", preProgress);
-   Env.addPredfn("status", preStatus);
+   Env.addPredfn("random", preRandom);
    Env.addPredfn("refresh", preRefresh);
-   Env.addPredfn("arcs", preArcs);
-   Env.addPredfn("aretes", preArcs);
-   Env.addPredfn("import", preImport);
-   Env.addPredfn("pop", prePop);
-   Env.addPredfn("insert", preInsert);
+   Env.addPredfn("sommets", preSommets);
+   Env.addPredfn("status", preStatus);
    Env.addPredfn("type", preType);
-   Env.addPredfn("_grapheMode", preGraphMode);
    Env.addPredfn("whoami", preWhoami);
+   Env.addPredfn("_grapheMode", preGraphMode);
    Env.addPredfn("sum", preSum);
    Env.addPredfn("sqrt", preMaths1);
    Env.addPredfn("sqr", preMaths1);
@@ -52,12 +52,13 @@ export default function populate(){
    Env.addPredfn("int", preInt);
    Env.addPredfn("help", preHelp);
    Env.addPredvar("Adj", preM, true);
+   Env.addPredvar("Argv", ()=>{return Env.Argv});
    Env.addPredvar("Id", preId, true);
-   Env.addPredvar("Zero", preZero, true);
    Env.addPredvar("OpCount", () => { return {t:"number", val:Env.OpCnt}});
    Env.addPredvar("Time", () => {return {t:"number", val: (new Date()).valueOf()/1000.0}});
-   Env.Predef["True"]=Cst.TRUE;
+   Env.addPredvar("Zero", preZero, true);
    Env.Predef["False"]=Cst.FALSE;
+   Env.Predef["True"]=Cst.TRUE;
    Env.Predef["null"]=Cst.NONE;
    Env.Predef["None"]=Cst.NONE;
    Env.Predef["pi"]=Cst.PI;
@@ -378,7 +379,8 @@ function preProgress(args, named, ln, fname){
 Help.predfn['progress']=`progress(nombre): positionne la barre de progression.
 «nombre» doit être entre 0 et 1, et correspond à la proportion de la barre
 de progression affichée en bleu.
-Utilisez cette fonction pour visualisez l'avancée de vos algorithmes longs.`
+Utilisez cette fonction pour visualisez l'avancée de vos algorithmes longs.
+`
 
 function preStatus(args, named, ln, fname){
     if(args.length!=1) throw{error:"args", name:"Mauvais nombre d'arguments", msg:`La fonction status s'utilise avec un argument`, ln:ln};
@@ -397,7 +399,8 @@ function preStatus(args, named, ln, fname){
 }
 Help.predfn['status']=`status(chaine): change la chaîne de caractère de la barre de statut
 au dessus de l'éditeur. Utilisez cette fonction pour y mettre ce que vous voulez:
-trace d'exécution, valeurs de débugage, messages amicaux, etc.`
+trace d'exécution, valeurs de débugage, messages amicaux, etc.
+`
 
 function preRefresh(args, named, ln, fname){
    if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
@@ -1456,4 +1459,14 @@ Vous pouvez l'utiliser pour mesurer le temps d'exécution de vos codes
     t0=Time
     maFonction()
     print("Cela a pris",Time-t0,"secondes")
+`;
+
+Help.name['Argv']=`Tableau des mots saisis dans la zone de saisie des arguments.
+Vous pouvez l'utiliser pour écrire un code paramétrable, ne nécessitant pas de
+modifier le code pour choisir un argument.
+Notez que Argv[0] est implicite et est le nom de votre script.
+
+Par exemple 
+    if len(Argv)==2: # Argv[0] plus un argument saisi
+        depart=Sommet Argv[1] # le sommet de départ est celui saisi
 `;

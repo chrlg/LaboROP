@@ -281,11 +281,15 @@ pre#console{
    background-color: #aa4;
 }
 
+#argv {
+    width:9vw;
+}
+
 #progressCont {
     position: relative;
     border: solid 1px black;
     height: calc(4vh - 4px);
-    width: 12vw;
+    width: 9vw;
     display:inline-block;
     text-align: center;
     line-height: calc(4vh - 2px);
@@ -298,7 +302,7 @@ pre#console{
     top:0;
     left:0;
     bottom:0;
-    right: 12vw;
+    right: 9vw;
     z-index:-100;
 }
 #progress.over {

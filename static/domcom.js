@@ -28,7 +28,6 @@ function actualFlush(){
     _strChange=false;
     lastPrint=Date.now();
     postMessage({print: _str});
-    console.log(Date.now());
 }
 
 export function flush(){

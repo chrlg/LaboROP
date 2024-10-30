@@ -13,7 +13,7 @@ var PythonHighlightRules = function() {
     );
 
     var builtinConstants = (
-        "True|False|None|Infinity|null|pi|OpCount|Time|Id|Gr|Adj|Zero"
+        "True|False|None|Infinity|null|pi|OpCount|Time|Id|Gr|Adj|Zero|Argv"
     );
 
     var builtinFunctions = (

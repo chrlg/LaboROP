@@ -29,6 +29,9 @@ export let Local = null;
 // L'environnement courant (celui dans lequel on écrit) = env local, sauf s'il n'y en a pas = env global
 export let Current = Global;
 
+// Argv : an arry of string filled from GUI before running
+export let Argv = {t:'array', val:[]};
+
 // Reset all modifiable env (for new interpret run)
 export let OpCnt=0; // Operation count (not directly related to environment, but this is where global vars are, and this is a virtual global var)
 
@@ -44,6 +47,13 @@ export function reset(){
     Current=Global;
     addGraphe("Gr", 0);
     OpCnt=0;
+}
+
+export function setArgv(arr){
+    Argv.val=[];
+    for(let a of arr){
+        Argv.val.push({t:"string", val:a});
+    }
 }
 
 export function push(env){

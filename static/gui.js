@@ -2,7 +2,7 @@
 
 let $extragraph, $tabs, $unrollExtragraph;
 let $progress, $progressval, $userStatus;
-let $run, $stop;
+let $run, $stop, $argv;
 
 function showTab(t, button=false){
     $(".show").removeClass("selected");
@@ -60,7 +60,7 @@ function setProgress(x){
         $progressval.textContent = ''+x;
     }else{
         $progress.classList.remove('over');
-        $progress.style.right = `${12-x*12}vw`;
+        $progress.style.right = `${9-x*9}vw`;
         $progressval.textContent = (x*100).toFixed(2)+'%';
     }
 }
@@ -89,6 +89,7 @@ function initGui(){
     $userStatus=document.getElementById('userStatus');
     $stop=document.getElementById('stop');
     $run=document.getElementById('run');
+    $argv=document.getElementById('argv');
 
     // Initialise split handlers
     splitMove();
