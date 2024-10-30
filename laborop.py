@@ -10,14 +10,16 @@ import shutil
 
 # configure flask app
 app = Flask(__name__)
+app.secret_key="AbdeGilM@bstuv"
 basedir = os.path.abspath(os.path.dirname(__file__))
 staticdir = os.path.join(basedir, 'static')
 dbdir = os.path.join(basedir, 'DB')
 userdir = os.path.join(dbdir, 'Root')
 sqpath=os.path.join(dbdir, 'base.sqlite3')
 modulepath=[os.path.join(basedir, x) for x in ('Modules', 'Modules/Eval', 'Modules/Matrix')]
+URL="https://laborop.enib.fr"
 
-os.umask(0) # Let the members of www-data write anything we write (logs, db and user files)
+os.umask(2) # Let the members of www-data write anything we write (logs, db and user files)
 
 def getdb():
     db = getattr(g, '_database', None)
@@ -53,7 +55,7 @@ def root():
         return redirect("static/main.html")
     # Not connected. Redirect to CAS 
     logging.debug(f"Root route called by unknown user. Redirecting to CAS")
-    return redirect("https://cas.enib.fr/login?service=https://laborop.enib.fr/retourcas")
+    return redirect(f"https://cas.enib.fr/login?service={URL}/retourcas")
 
 @app.route("/Module/<path:text>", methods=['GET', 'POST'])
 def getModule(text):
@@ -70,15 +72,18 @@ def retourcas():
     try:
         ticket=request.args.get('ticket')
         logging.debug(f"retourcas received ticket {ticket} presumably from CAS")
-        logging.debug(f"uid={os.getuid()} gid={os.getgid()} groups={os.getgroups()} {sqpath=}")
-        createDbIfNeeded()
-        logging.debug("Db created if needed")
-        r=requests.get(f"https://cas.enib.fr/serviceValidate?ticket={ticket}&service=https://laborop.enib.fr/retourcas")
+        r=requests.get(f"https://cas.enib.fr/serviceValidate?ticket={ticket}&service={URL}/retourcas")
         xml=xmltodict.parse(r.content)['cas:serviceResponse']['cas:authenticationSuccess']
         # Keep user name in session, for every "cloud" action 
-        session['user']=user=xml['cas:user'].lower()
+        user=xml['cas:user'].lower()
         logging.debug(f"Returned auth {xml['cas:user']} from CAS")
-        # Plus, update database
+    except:
+        # Unless there was an error with CAS, in which case display a dumb error page
+        return f"<html><body><h3 style='color:red'>Erreur d'authentification</h3><a href='/'>Réessayer</a></body></html>"
+
+    session['user']=user
+
+    try:
         attrs=xml['cas:attributes']
         ip=attrs['cas:clientIpAddress']
         prenom=attrs['cas:givenName']
@@ -86,12 +91,19 @@ def retourcas():
         cn=attrs['cas:cn']
         uid=attrs['cas:uid']
         role=attrs['cas:eduPersonAffiliation']
+    except:
+        # Unless there was an error with CAS, in which case display a dumb error page
+        return f"<html><body><h3 style='color:red'>Erreur CAS</h3><p>Réponse CAS mal formée<p><a href='/'>Réessayer</a></body></html>"
+
+    try:
+        # Plus, update database
+        createDbIfNeeded()
+        logging.debug("Db created if needed")
         ts=datetime.datetime.now()
         tse=int(ts.timestamp())
         tss=ts.strftime("%Y-%m-%d %H:%M:%S")
         sqcon=getdb()
         cur=sqcon.cursor()
-        logging.debug("before exec")
         cur.execute('INSERT INTO Users (login, cn, ip, ts, sn, givenName, uid, role) values (?,?,?,?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET ip=?,ts=?', (user, cn, ip, tse, nom, prenom, uid, role, ip,tse))
         cur.close()
         sqcon.commit()
@@ -113,7 +125,7 @@ def retourcas():
         return redirect("static/main.html")
     except:
         # Unless there was an error with CAS, in which case display a dumb error page
-        return f"<html><body><h3 style='color:red'>Erreur d'authentification</h3><a href='/'>Réessayer</a></body></html>"
+        return f"<html><body><h3 style='color:red'>Erreur base de données</h3><a href='/'>Réessayer</a></body></html>"
     return rep
 
 @app.route("/logout")
@@ -121,7 +133,7 @@ def logout():
     del session['user']
     del session['prof']
     #return redirect("/")
-    return redirect("https://cas.enib.fr/logout?service=https://laborop.enib.fr/retourcas")
+    return redirect(f"https://cas.enib.fr/logout?service={URL}/retourcas")
 
 # Function to check filenames 
 def illegalFn(fn):
@@ -337,6 +349,9 @@ def routeActivityRoom():
 
 if __name__ == '__main__':
     logging.basicConfig(filename='dev.log', level=logging.DEBUG)
+    URL="http://localhost:5000"
     app.run(debug=True, host="127.0.0.1", port=5000)
+elif app.debug:
+    URL="http://localhost:5000"
 else:
     logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.INFO)
