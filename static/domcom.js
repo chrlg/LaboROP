@@ -49,3 +49,11 @@ export function print(s){
     _strChange=true;
     if(_str.length>11000) _str=_str.substring(_str.length-10000);
 }
+
+export function setProgress(p){
+    postMessage({progress: p});
+}
+
+export function setUserStatus(t,c){
+    postMessage({status: t, color:c});
+}

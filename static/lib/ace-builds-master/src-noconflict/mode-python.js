@@ -8,8 +8,8 @@ var PythonHighlightRules = function() {
 
     var keywords = (
         "and|break|continue|def|elif|else|exit|" +
-        "for|global|if|in|is|lambda|not|or|pass|this|" +
-        "Sommet|Arc|Arete|Graphe|range|return|try|while|xor"
+        "for|global|if|in|not|or|pass|this|" +
+        "Sommet|Arc|Arete|Graphe|range|return|while|xor"
     );
 
     var builtinConstants = (
@@ -19,7 +19,7 @@ var PythonHighlightRules = function() {
     var builtinFunctions = (
         "abs|acos|asin|atan|sqrt|sqr|exp|log|log10|log2|sin|cos|tan|" +
         "min|max|argmin|argmax|int|sum|" +
-	"print|printnr|println|arcs|aretes|sommets|import|" +
+	"print|printnr|println|progress|status|arcs|aretes|sommets|import|" +
         "premier|dernier|random|pop|insert|" +
         "clear|refresh|_grapheMode|" +
         "len|type|whoami|help"

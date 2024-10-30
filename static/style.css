@@ -51,6 +51,20 @@ div.mainbox {
 }
 
 div#editor {
+    position:absolute;
+    display:inline-block;
+    margin:0;
+    padding:0;
+    border:0;
+    top:4vh;
+    bottom:0;
+    left:0;
+    right:0;
+}
+
+div#ecrangauche {
+   position: absolute;
+   display: inline-block;
    top:0px;
    left:0px;
    width: 50vw;
@@ -251,4 +265,49 @@ pre#console{
    position: absolute;
    width: 100% !important;
    left: 0 !important;
+}
+
+#runBar button {
+    display: inline-block;
+    height: calc(4vh - 2px);
+    border-left: solid 1px black;
+    border-radius:0;
+    box-shadow:none;
+    width: 2em;
+    vertical-align:top;
+    margin-left:2px;
+}
+#runBar button:enabled:hover {
+   background-color: #aa4;
+}
+
+#progressCont {
+    position: relative;
+    border: solid 1px black;
+    height: calc(4vh - 4px);
+    width: 12vw;
+    display:inline-block;
+    text-align: center;
+    line-height: calc(4vh - 2px);
+    margin-left:2px;
+}
+#progress {
+    background-color: #88f;
+    display:inline-block;
+    position: absolute;
+    top:0;
+    left:0;
+    bottom:0;
+    right: 12vw;
+    z-index:-100;
+}
+#progress.over {
+    background-color: #f88;
+}
+
+#userStatus {
+    height: calc(4vh - 4px);
+    text-align: center;
+    line-height: calc(4vh - 2px);
+    margin-left:2px;
 }

@@ -6,6 +6,9 @@
    <script src="lib/viz.js"></script>
    <script src="lib/mathjax/es5/tex-chtml.js" id="MathJax-script" async></script>
    <script src="script.js" charset="utf-8"> </script>
+   <script src="srendering.js" charset="utf-8"> </script>
+   <script src="gui.js" charset="utf-8"> </script>
+   <script src="cloud.js" charset="utf-8"> </script>
    <link href="style.css" rel="stylesheet" type="text/css">
    <title>Laboratoire ROP</title>
 </head>
@@ -18,7 +21,17 @@
             Merci de vous <a href="/">Reconnecter</a>
         </div>
     </div>
-   <div class=mainbox id=editor></div>
+    <div id=ecrangauche>
+        <div id=runBar>
+            <button id=run>&#x25B6;</button><button id=stop>⏹</button>
+            <span id=progressCont>
+                <span id=progress></span>
+                <span id=progressval>0%</span>
+            </span>
+            <span id=userStatus></span>
+        </div>
+        <div id=editor></div>
+    </div>
    <div id=splithandle></div>
    <div id=ecrandroit>
       <div class=mainbox id=tabs>

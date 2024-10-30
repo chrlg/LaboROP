@@ -562,6 +562,14 @@ export function evaluate(expr){
     if(expr.t=="Graphe"){
         return evalGraphe(expr, true);
     }
+    // Ternary operator
+    if(expr.t=="?:"){
+        let c=evaluate(expr.cond);
+        if(c.t!='boolean') throw {error:'type', name:'Erreur de type', 
+            msg:`L'opérateur cond?oui:non s'utilise avec une condition booléenne, pas «${cond.t}»`, ln:expr.ln};
+        if(c.val) return evaluate(expr.oui);
+        return evaluate(expr.non);
+    }
     console.trace("Cannot evaluate", expr);
 }
 

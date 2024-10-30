@@ -3,7 +3,7 @@ import * as Env from "./environment.js";
 import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
 import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
-import {regularCheck, print, flush} from "./domcom.js";
+import {regularCheck, print, flush, setProgress, setUserStatus} from "./domcom.js";
 import Decimal from "./lib/decimal.mjs";
 
 // help available for different kind of objects. To be fill later in the code
@@ -20,6 +20,8 @@ export default function populate(){
    Env.addPredfn("print", prePrint);
    Env.addPredfn("println", prePrint);
    Env.addPredfn("printnr", prePrint);
+   Env.addPredfn("progress", preProgress);
+   Env.addPredfn("status", preStatus);
    Env.addPredfn("refresh", preRefresh);
    Env.addPredfn("arcs", preArcs);
    Env.addPredfn("aretes", preArcs);
@@ -366,6 +368,36 @@ C'est l'ancienne fonction «print».
     print(o1, o2, ..., end='', sep='')
 Voir aussi : print, println
 `
+
+function preProgress(args, named, ln, fname){
+    if(args.length!=1) throw{error:"args", name:"Mauvais nombre d'arguments", msg:`La fonction progress s'utilise avec un argument`, ln:ln};
+    let v=evaluate(args[0]);
+    if(!isNumeric(v)) throw{error:"type", name:"Erreur de type", msg:`Argument de type «${v.t}» passé à progress au lieu d'un nombre`, ln:ln};
+    setProgress(numericValue(v));
+}
+Help.predfn['progress']=`progress(nombre): positionne la barre de progression.
+«nombre» doit être entre 0 et 1, et correspond à la proportion de la barre
+de progression affichée en bleu.
+Utilisez cette fonction pour visualisez l'avancée de vos algorithmes longs.`
+
+function preStatus(args, named, ln, fname){
+    if(args.length!=1) throw{error:"args", name:"Mauvais nombre d'arguments", msg:`La fonction status s'utilise avec un argument`, ln:ln};
+    let v=evaluate(args[0]);
+    if(v.t!='string') throw{error:"type", name:"Erreur de type", msg:`Argument de type «${v.t}» passé à status au lieu d'une chaîne`, ln:ln};
+    let col=false;
+    for(let x of named){
+        if(x.name=='color'){
+            col=evaluate(x.a);
+            if(col.t!='string') throw{error:"type", name:"Erreur de type", msg:`Argument de type «${col.t}» passé comme color à status au lieu d'une chaîne`, ln:ln};
+            col=col.val;
+            break;
+        }
+    }
+    setUserStatus(v.val, col);
+}
+Help.predfn['status']=`status(chaine): change la chaîne de caractère de la barre de statut
+au dessus de l'éditeur. Utilisez cette fonction pour y mettre ce que vous voulez:
+trace d'exécution, valeurs de débugage, messages amicaux, etc.`
 
 function preRefresh(args, named, ln, fname){
    if(args.length!=0) throw{error:"args", name:"Mauvais nombre d'arguments",
