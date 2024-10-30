@@ -351,7 +351,8 @@ if __name__ == '__main__':
     logging.basicConfig(filename='dev.log', level=logging.DEBUG)
     URL="http://localhost:5000"
     app.run(debug=True, host="127.0.0.1", port=5000)
-elif app.debug:
+elif 'Dev' in app.root_path:
+    print('Dev version')
     URL="http://localhost:5000"
 else:
     logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.INFO)
