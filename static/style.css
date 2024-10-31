@@ -217,12 +217,18 @@ div#tabs {
     display: none;
 }
 #tabs.multextra #extragraph.unrolled {
-    display: block;
+    display: grid;
+    overflow-y: scroll;
+    width: 14vw;
+    border: solid 2px black;
+    background-color: #bbb;
     position: absolute;
     z-index: 1300;
+    max-height: 60vh;
 }
 #tabs.multextra #extragraph button {
-    display: block;
+    display: inline-block;
+    padding-top: 3px;
 }
 #unrollExtragraph {
     display: none;

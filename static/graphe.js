@@ -271,6 +271,7 @@ export function evalGraphe(ti, create){
         Env.Graphes[name].reset();
     }else if(create){
         Env.addGraphe(name, ti.ln);
+        if(name!='Gr') Env.Graphes[name].mode = Env.Gr.mode;
     }
     return Env.Graphes[name];
 }
