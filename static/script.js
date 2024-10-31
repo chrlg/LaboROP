@@ -5,6 +5,7 @@ var errorMarker=false;
 var lastError;
 var timeoutLen=120000;
 var timeout=false;
+var editorOptions=false;
 
 function messageFromWorker(event){
     if(event.data.error){
@@ -61,9 +62,6 @@ function messageFromWorker(event){
     }
 }
 
-function oneditorChange(e){
-}
-
 function runCode(){
     if(worker) worker.terminate();
     if(timeout) clearTimeout(timeout);
@@ -99,6 +97,41 @@ function Terminate(){
     worker=false;
     setStateStop();
     $("#status").html("<i>Programme en boucle, interrompu au bout de "+(timeoutLen/1000)+" secondes</i>");
+}
+
+function checkEditorSettings(){
+    const tocheck=["fontSize"];
+    // There are 3 places where options are stored : localStorage, editorOptions variable, and editor.get/setOption API
+    // 1st one is where we store persistent values
+    // 2nd is a localVariable whose main purpose is to detect changes in editor
+    // 3rd is the one actually used by the editor, and the one changed by ctrl+, panel
+
+    if(!editorOptions){
+        // First time we check this. Anything in localStorage is set both in editorOptions and in editor.setOption
+        // Anything not in localStorage is taken from default value of editor.getOption
+        editorOptions={};
+        for(let opt of tocheck){
+            let fromstore=localStorage.getItem('Rop-Ace-'+opt);
+            if(fromstore){
+                editorOptions[opt] = fromstore;
+                editor.setOption(opt, fromstore);
+            }else{
+                locateStorage.setItem('Rop-Ace-'+opt, editor.getOption(opt));
+                editor[opt] = editor.getOption(opt);
+            }
+        }
+    }else{
+        // Otherwise, we check for any differences between editor.getOption and editorOptions
+        // If there is one (despite the intial values being equal), that means that option has changed (using ctrl+,) since
+        // reflect that change on localStorage for next time
+        for(let opt of tocheck){
+            let op=editor.getOption(opt);
+            if(op!=editorOptions[opt]){
+                editorOptions[opt] = op
+                localStorage.setItem('Rop-Ace-'+opt, op);
+            }
+        }
+    }
 }
 
 function init(){
@@ -153,8 +186,12 @@ function init(){
          }
    });
 
-    editor.getSession().on('change', oneditorChange);
+    //editor.getSession().on('change', oneditorChange);
     editor.setOption("showInvisibles", true);
+
+    // Check for options in localStorage. And do that again anytime we get focus (presumably going back from ctrl+,)
+    editor.on('focus', checkEditorSettings);
+    checkEditorSettings();
 
     initGui();
 

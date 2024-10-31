@@ -49,7 +49,8 @@ def createDbIfNeeded():
 
 @app.route("/")
 def root():
-    if 'user' in session:
+    if ('user' in session):
+        if not 'prof' in session: session['prof']=0
         logging.debug(f"Root route called by {session['user']}. Redirecting to main")
         # Already connected. Just load main html file
         return redirect("static/main.html")
@@ -130,8 +131,10 @@ def retourcas():
 
 @app.route("/logout")
 def logout():
-    del session['user']
-    del session['prof']
+    if 'user' in session: 
+        del session['user']
+    if 'prof' in session:
+        del session['prof']
     #return redirect("/")
     return redirect(f"https://cas.enib.fr/logout?service={URL}/retourcas")
 
@@ -346,7 +349,6 @@ def routeActivityRoom():
     res=cur.execute('SELECT Users.cn, Dns.name, Users.ts, Dns.x, Dns.y from Users LEFT JOIN Dns ON Users.ip=Dns.ip where Dns.salle=? AND ts>?', (room, limit))
     return jsonify([(r[0], r[1], now-r[2], r[3], r[4]) for r in res])
 
-
 if __name__ == '__main__':
     logging.basicConfig(filename='dev.log', level=logging.DEBUG)
     URL="http://localhost:5000"
@@ -354,5 +356,7 @@ if __name__ == '__main__':
 elif 'Dev' in app.root_path:
     print('Dev version')
     URL="http://localhost:5000"
+    if os.getenv('URL'):
+        URL=os.getenv('URL')
 else:
     logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.INFO)
