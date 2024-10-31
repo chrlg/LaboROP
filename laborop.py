@@ -36,8 +36,7 @@ def createDbIfNeeded():
     db=sqlite3.connect(sqpath)
     cur=db.cursor()
     # User table. Only last login information. Used to get user from position or from group. Hence indexes
-    # Note: role is from CAS. prof is manually inserted. If 'role' is reliable, could be used instead of 'prof'
-    cur.execute('create table if not exists Users (login text primary key, cn text, ip text, ts int, sn text, givenName text, uid text, role text, groupe text);')
+    cur.execute('create table if not exists Users (login text primary key, cn text, ip text, ts int, sn text, givenName text, uid text, groupe text);')
     cur.execute("CREATE INDEX idx_groupe ON Users(groupe);")
     cur.execute("CREATE INDEX idx_user_ip ON Users(ip);")
     # Static table, to be filled by admin once for all. Associate IP with fancy names (dns or other), room name, and a position x/y on the room map
@@ -91,43 +90,37 @@ def retourcas():
         nom=attrs['cas:sn']
         cn=attrs['cas:cn']
         uid=attrs['cas:uid']
-        role=attrs['cas:eduPersonAffiliation']
     except:
         # Unless there was an error with CAS, in which case display a dumb error page
         return f"<html><body><h3 style='color:red'>Erreur CAS</h3><p>Réponse CAS mal formée<p><a href='/'>Réessayer</a></body></html>"
 
-    try:
-        # Plus, update database
-        createDbIfNeeded()
-        logging.debug("Db created if needed")
-        ts=datetime.datetime.now()
-        tse=int(ts.timestamp())
-        tss=ts.strftime("%Y-%m-%d %H:%M:%S")
-        sqcon=getdb()
-        cur=sqcon.cursor()
-        cur.execute('INSERT INTO Users (login, cn, ip, ts, sn, givenName, uid, role) values (?,?,?,?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET ip=?,ts=?', (user, cn, ip, tse, nom, prenom, uid, role, ip,tse))
-        cur.close()
-        sqcon.commit()
-        cur=sqcon.cursor()
-        res=cur.execute("SELECT groupe from Users where login=?", (user,))
-        gr=list(res)[0][0]
-        if gr=='prof':
-            prof=session['prof']=1
-        else:
-            prof=session['prof']=0
-        cur.close()
+    # Plus, update database
+    createDbIfNeeded()
+    logging.debug("Db created if needed")
+    ts=datetime.datetime.now()
+    tse=int(ts.timestamp())
+    tss=ts.strftime("%Y-%m-%d %H:%M:%S")
+    sqcon=getdb()
+    cur=sqcon.cursor()
+    cur.execute('INSERT INTO Users (login, cn, ip, ts, sn, givenName, uid) values (?,?,?,?,?,?,?) ON CONFLICT(login) DO UPDATE SET ip=?,ts=?', (user, cn, ip, tse, nom, prenom, uid, ip,tse))
+    cur.close()
+    sqcon.commit()
+    cur=sqcon.cursor()
+    res=cur.execute("SELECT groupe from Users where login=?", (user,))
+    gr=list(res)[0][0]
+    if gr=='prof':
+        prof=session['prof']=1
+    else:
+        prof=session['prof']=0
+    cur.close()
 
-        # Log login
-        logging.info(f"==Login== {tss} from <{user}>=<{uid}> @{ip} role={role}")
+    # Log login
+    logging.info(f"==Login== {tss} from <{user}>=<{uid}> @{ip}")
 
-        # Warn if one is not lowercase or if login different from uid
-        if user!=xml['cas:user'] or uid!=uid.lower() or user!=uid:
-            logging.warn(f"***WARNING*** user={xml['cas:user']} {uid=}")
-        return redirect("static/main.html")
-    except:
-        # Unless there was an error with CAS, in which case display a dumb error page
-        return f"<html><body><h3 style='color:red'>Erreur base de données</h3><a href='/'>Réessayer</a></body></html>"
-    return rep
+    # Warn if one is not lowercase or if login different from uid
+    if user!=xml['cas:user'] or uid!=uid.lower() or user!=uid:
+        logging.warn(f"***WARNING*** user={xml['cas:user']} {uid=}")
+    return redirect("static/main.html")
 
 @app.route("/logout")
 def logout():

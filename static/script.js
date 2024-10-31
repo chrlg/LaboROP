@@ -116,7 +116,7 @@ function checkEditorSettings(){
                 editorOptions[opt] = fromstore;
                 editor.setOption(opt, fromstore);
             }else{
-                locateStorage.setItem('Rop-Ace-'+opt, editor.getOption(opt));
+                localStorage.setItem('Rop-Ace-'+opt, editor.getOption(opt));
                 editor[opt] = editor.getOption(opt);
             }
         }
