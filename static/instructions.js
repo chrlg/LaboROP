@@ -335,6 +335,8 @@ function interpWhile(tant){
 function interpPlusEgal(tree){
    let lv=evaluateLVal(tree.left);
    let lvv = lv[0][lv[1]];
+   if (!lvv) throw {error:"semantic", name:"Destination inexistante", 
+       msg:"La partie gauche de += n'existe pas", ln:tree.left.ln};
    if(lvv.t=="array"){ // Pour les tableaux on fait une modification in situ
       let r=evaluate(tree.right);
       if(r.t=="array") lvv.val = lvv.val.concat(r.val);

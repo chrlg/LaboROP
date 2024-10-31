@@ -425,19 +425,46 @@ function preArcs(args, named, ln, fname){
     if(!g){
         // Pas de graphe précisé. Mais puisqu'il y a un sommet de donné, on peut le trouver via le sommet
         if(s) g=Env.grapheContaining(s);
-        else g=Env.Gr;
+        else g=Env.Gr; // Sinon, c'est le graphe par défaut (Gr)
     }
     if(s===false) {
-        if(g.discover){
-            if(g.isOrient()){
-                return {t:"array", val: g.arcs.filter(a=>a.i.marques.visible)};
+        // arcs ou aretes appelé sans sommet de départ : juste la liste des arcs et arêtes
+        // Avec deux cas à traiter
+        // 1. Si on est en mode discover, il ne font montrer que ceux qui sont visibles
+        // 2. Et/ou si on est dans un graphe non-orienté, mais qu'on demande les arcs
+        //    il faut les donner en double dans chaque sens (une arête étant considérée
+        //    pour ce cas comme deux arcs, un dans chaque sens)
+        let larcs=g.arcs;
+        // Pour le point 2 on se fabrique une liste d'arcs bidons si nécessaire
+        // (dans le cas 1, on filtrera après, même s'il serait plus optimal de le faire avant)
+        if(!g.isOrient() && fname=='arcs'){
+            larcs=[];
+            for(let a of g.arcs){
+                larcs.push(a);
+                larcs.push({t:'Arc', i:a.a, a:a.i, marques:a.marques});
             }
-            else{
-                return {t:"array", val: g.arcs.filter(a=>a.i.marques.visible || a.a.marques.visible)};
+        }
+        if(g.discover){
+            // On note que puisqu'on a dupliqué
+            if(fname=='arcs'){
+                // On demande les arcs (que ce soit les vrais, d'un graphe orientés, 
+                // ou les bidons qu'on vient de calculer, d'un non-orienté)
+                // => on retourne seulement ceux dont le sommet de départ est visible
+                // Dans le premier cas, c'est les seuls qu'on peut emprunter
+                // Dans le deuxième, on peut aussi utiliser l'arête dans l'autre sens pour
+                // utiliser celles dont l'arrivée est visible... mais cela sera fait 
+                // par son miroir 
+                return {t:"array", val: larcs.filter(a=>a.i.marques.visible)};
+            }else{
+                // On demande les arêtes (d'un graphe a priori non orienté — pas de sémantique
+                // décidée pour ce que veut dire «arete» dans un graphe orienté).
+                // Il faut retourner celles qui touchent un sommet visible
+                // Peut importe si c'est en .i ou .a, ce qui est arbitraire pour une arête
+                return {t:"array", val: larcs.filter(a=>a.i.marques.visible || a.a.marques.visible)};
             }
         }
         else{
-            return {t:"array", val:g.arcs};
+            return {t:"array", val:larcs};
         }
     }
 
@@ -531,6 +558,8 @@ function prePop(args, named, ln, fname){
       msg:"pop(tableau [,indice]) s'utilise avec un ou deux arguments", ln:ln};
    let ref=evaluateLVal(args[0]);
    let lvv=ref[0][ref[1]];
+   if(!lvv) throw {error:"type", name:"Tableau non existant", 
+            msg:`Le tableau passé comme premier argument de pop n'existe pas`, ln:ln};
    if(lvv.t!="array") throw {error:"type", name:"Mauvais type pour pop", 
       msg:"Le premier argument de pop est obligatoirement un tableau", ln:args[0].ln};
    let index=lvv.val.length-1;
