@@ -117,8 +117,8 @@ onmessage = function (evt){
       else if(e.msg){
          let rawLineIdx=0, parseLineIdx=0, rawLineIdxEnd=0, parseLineIdxEnd=0;
          let nn=0;
-         for(;rawLineIdxEnd<evt.data.length; rawLineIdxEnd++){
-            if(evt.data.charCodeAt(rawLineIdxEnd)==10){
+         for(;rawLineIdxEnd<evt.data.code.length; rawLineIdxEnd++){
+            if(evt.data.code.charCodeAt(rawLineIdxEnd)==10){
                 nn++;
                 if(nn==e.line) rawLineIdx=rawLineIdxEnd;
                 if(nn==e.line+1) break;
