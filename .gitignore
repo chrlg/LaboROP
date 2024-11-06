@@ -3,4 +3,6 @@ Future-interpret.js
 DB
 src/grlang.js
 dev.log
+src/*.wasm
+static/*.wasm
 __pycache__
