@@ -6,3 +6,4 @@ dev.log
 src/*.wasm
 static/*.wasm
 __pycache__
+.env

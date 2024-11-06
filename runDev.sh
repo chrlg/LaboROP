@@ -1,6 +1,11 @@
 #!/bin/bash
 
-. ../env/bin/activate
+if [[ -d ../env ]]
+then
+    . ../env/bin/activate
+else
+    . ./.env/bin/activate
+fi
 
 ssh -N -R 5000:localhost:5000 tunnel@christophe.legal &
 pid=$!

@@ -7,6 +7,7 @@ import datetime
 import sqlite3
 import datetime
 import shutil
+import sys
 
 # configure flask app
 app = Flask(__name__)
@@ -48,6 +49,7 @@ def createDbIfNeeded():
 
 @app.route("/")
 def root():
+    print('root')
     if ('user' in session):
         if not 'prof' in session: session['prof']=0
         logging.debug(f"Root route called by {session['user']}. Redirecting to main")
@@ -346,10 +348,11 @@ if __name__ == '__main__':
     logging.basicConfig(filename='dev.log', level=logging.DEBUG)
     URL="http://localhost:5000"
     app.run(debug=True, host="127.0.0.1", port=5000)
-elif 'Dev' in app.root_path:
-    print('Dev version')
+elif ('Dev' in app.root_path) or ('runDev' in sys.argv[0]) or ('--debug' in sys.argv):
     URL="http://localhost:5000"
     if os.getenv('URL'):
         URL=os.getenv('URL')
+    print('Dev version on', URL)
+
 else:
     logging.basicConfig(filename='/var/www/laborop/laborop.log', level=logging.INFO)
