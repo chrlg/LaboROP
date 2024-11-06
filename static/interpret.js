@@ -132,7 +132,7 @@ onmessage = function (evt){
                 if(nn==e.line+1) break;
             }
          }
-         let rawLine = evt.data.substr(rawLineIdx+1, rawLineIdxEnd-rawLineIdx-1);
+         let rawLine = evt.data.code.substr(rawLineIdx+1, rawLineIdxEnd-rawLineIdx-1);
          let parseLine = str.substr(parseLineIdx+1, parseLineIdxEnd-parseLineIdx-1);
          let colnum=e.loc.last_column;
          while(parseLine[0]=='§'){
