@@ -3,6 +3,9 @@
 if [[ -d ../env ]]
 then
     . ../env/bin/activate
+elif [[ -d .env.nosync ]]
+then
+    . ./.env.nosync/bin/activate
 else
     . ./.env/bin/activate
 fi

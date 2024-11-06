@@ -7,3 +7,4 @@ src/*.wasm
 static/*.wasm
 __pycache__
 .env
+.env.nosync
