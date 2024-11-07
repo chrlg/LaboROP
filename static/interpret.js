@@ -4,6 +4,7 @@ import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck} from "./domcom.js";
 import {interpretWithEnv, Line} from "./instructions.js";
+import * as Process from "./process.js";
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
@@ -89,7 +90,7 @@ function parseTabulation(str){
 
 
 function interpret(tree){
-    Env.reset();
+    Process.reset();
     interpretWithEnv(tree, false);
     regularCheck(true);
 }

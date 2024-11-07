@@ -1,5 +1,6 @@
 var editor;
-var worker;
+var worker=false;
+var workerRunning=false;
 var Range;
 var errorMarker=false;
 var lastError;
@@ -18,8 +19,8 @@ function messageFromWorker(event){
         $e.append("<div>Consultez la documentation fournie par la fonction <b>help()</b></div>");
         errorMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "error", "line");
         lastError = e;
-        worker=false;
         setStateStop();
+        workerRunning=false;
         if(timeout) clearTimeout(timeout); timeout=false;
         let $m=$("#misc")[0];
         $m.scrollTop=$m.scrollHeight;
@@ -51,27 +52,51 @@ function messageFromWorker(event){
     }
     if(event.data.termine!==undefined){
         $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
-        worker=false;
         if(timeout) clearTimeout(timeout); timeout=false;
         setStateStop();
+        workerRunning=false;
         let $m=$("#misc")[0];
         $m.scrollTop=$m.scrollHeight;
     }
-    if(event.data.store){
-        window[event.data.name]=event.data.store;
-    }
 }
 
-function runCode(){
-    if(worker) worker.terminate();
+function endWorker(){
+    if(!worker) return;
     if(timeout) clearTimeout(timeout);
     timeout=false;
+    worker.terminate();
     worker=false;
+    workerRunning=false;
+}
+
+function startWorker(){
+    endWorker(); // End current worker if there is one
     worker = new Worker("interpret.js", {type:"module"});
+    workerRunning=false;
     worker.onmessage = messageFromWorker;
-    worker.onerror = (e) => {console.log(e);};
+    worker.onerror = (e) => {
+        // Shouldn't happen (language error are conveyed in normal data.error messages).
+        // So, in doubt, kill the worker, and don't restart it yet (to avoid loops if the error was at startup)
+        // By setting worker to false, we ensure that another start will be attempted next time we click on start
+        console.log('error received by worker', e); 
+        endWorker();
+    };
+}
+
+// Start worker in advance for future code run
+startWorker();
+
+function runCode(){
+    if(timeout) clearTimeout(timeout);
+    timeout=false;
+    // If there is no worker, or if there is already a running code, kill the former worker and start a new one
+    // (only case where !worker, is because there was an internal error previous time and we dare not start it again immediatly
+    // Otherwise, we start workers as soon as we end the previous one, so that it is already there to run code
+    // (it avoids 1/2 second delay, approx, of starting time)
+    if((!worker) || workerRunning) startWorker(); 
     let argv=[currentFilename];
     if($argv.value!='') argv=argv.concat($argv.value.split(' '));
+    workerRunning=true;
     worker.postMessage({argv:argv, code:editor.getValue()});
     setStateRunning();
     timeout=setTimeout(Terminate, timeoutLen);
@@ -93,8 +118,9 @@ function runCode(){
 
 function Terminate(){
     timeout=false;
-    if(worker) worker.terminate();
-    worker=false;
+    // Start a new worker (and, more importantly here, kill the former one
+    // but starting a new one — not running — make it ready for next code run)
+    startWorker(); 
     setStateStop();
     $("#status").html("<i>Programme en boucle, interrompu au bout de "+(timeoutLen/1000)+" secondes</i>");
 }

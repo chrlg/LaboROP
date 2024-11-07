@@ -1,13 +1,14 @@
 // Fonctions de communications avec le thread principal (en charge du DOM)
 
+import * as Process from "./process.js";
 import * as Env from "./environment.js";
 
 // String to be sent as stdout to console
 let _str='';
 let _strChange=false; // true iff _str has changed since last display of stdout
-let lastPrint=0;
+let lastPrint=0; // Date of last print (to avoid to flush too frequently)
 
-// Just un log
+// Just a log
 function myLog(msg){
     postMessage({"console":JSON.stringify(msg)});
 }
@@ -56,3 +57,12 @@ export function setProgress(p){
 export function setUserStatus(t,c){
     postMessage({status: t, color:c});
 }
+
+// Reset state as it were when worker starts
+function reset(){
+    _str='';
+    _strChange=false; 
+    lastPrint=0;
+}
+
+Process.onreset(reset);

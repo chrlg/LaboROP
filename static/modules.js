@@ -1,19 +1,6 @@
 import * as Env from "./environment.js";
 import {TRUE} from "./constants.js";
 
-let modules = {};
-
-export function isLoaded(name){
-    return modules[name];
-}
-
-export function markLoaded(name){
-    modules[name]=true;
-}
-
-let _r=0;
-
-
 export function load(name, ln){
     let req=new XMLHttpRequest();
     req.responseType = 'json';

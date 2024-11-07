@@ -1,3 +1,4 @@
+import * as Process from "./process.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, print} from "./domcom.js";
@@ -7,6 +8,12 @@ import Decimal from "./lib/decimal.mjs";
 
 export let Line = 0; // Default line number for internal error log
 let _instrCnt=0; // Number of executed instruction (for regular display refresh check)
+
+function reset(){
+    Line=0;
+    _instrCnt=0;
+}
+Process.onreset(reset);
 
 // Affect l-value designated by ref with value val
 export function setRef(ref, val, ln){

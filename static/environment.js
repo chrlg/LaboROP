@@ -1,3 +1,4 @@
+import * as Process from "./process.js";
 import {Graphe} from "./graphe.js";
 import populatePredef from "./predef.js";
 
@@ -39,7 +40,7 @@ export function addCnt(a){
     OpCnt += a;
 }
 
-export function reset(){
+function reset(){
     Graphes={};
     Global={};
     LocalEnvStack=[];
@@ -48,6 +49,7 @@ export function reset(){
     addGraphe("Gr", 0);
     OpCnt=0;
 }
+Process.onreset(reset);
 
 export function setArgv(arr){
     Argv.val=[];
@@ -165,5 +167,8 @@ export function getIdlv(name, ln){
     return Current;
 }
 
+export function onreset(resetfn){
+    _resetListeners.push(resetfn);
+}
 
 populatePredef();
