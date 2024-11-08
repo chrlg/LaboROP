@@ -1,15 +1,38 @@
 import * as Env from "./environment.js";
 import {TRUE} from "./constants.js";
 
-export function load(name, ln){
-    let req=new XMLHttpRequest();
-    req.responseType = 'json';
-    req.open('GET', '/Module/'+name, false);
-    req.send(null);
+let cache = {};
 
-    if(req.status!=200) throw {error:"module", name:"Module introuvable", msg:`Module ${name} inexistant`, ln:ln};
-    if(!req.response) throw {error:"module", name:"Erreur dans le module", msg:`Impossible de charger module ${name}`, ln:ln};
-    let j=req.response;
+export function load(name, ln){
+    let nameparts=name.split('$');
+    let fn=nameparts[0];
+    let subnum=false;
+    if(nameparts.length>2 || nameparts.length<1 || name.indexOf(' ')>=0 || name.indexOf('/')>=0 || name.indexOf('\\')>=0)
+        throw {error:"module", name:"Nom illégal", msg:`${name} n'est pas un nom bien formé pour un module`, ln:ln};
+    try{
+        if(nameparts.length==2) subnum=parseInt(nameparts[1]);
+    }catch(e){
+        throw {error:"module", name:"Nom illégal", msg:`${name} n'est pas un nom bien formé pour un module`, ln:ln};
+    }
+    if(! cache[fn]){
+        let req=new XMLHttpRequest();
+        req.responseType = 'json';
+        req.open('GET', '/Module/'+fn, false);
+        req.send(null);
+
+        if(req.status!=200) throw {error:"module", name:"Module introuvable", msg:`Module ${name} inexistant`, ln:ln};
+        if(!req.response) throw {error:"module", name:"Erreur dans le module", msg:`Impossible de charger module ${name}`, ln:ln};
+        cache[fn]=req.response;
+    }
+    let j=cache[fn];
+    if(!j) throw {error:"module", name:"Erreur de chargement", 
+        msg:`Le module ${name} semble avoir été trouvé, mais n'a pas pu être chargé`, ln:ln}
+    try{
+        if(subnum!==false) j=j[subnum];
+    }catch(e){
+        throw {error:"module", name:"Erreur dans le module", 
+            msg:`Le module ${name} devrait être multi-graphe, mais semble ne pas l'être`, ln:ln};
+    }
 
     // Modules is imported on graph Gr, unless said otherwise in the module itself (that may specify a graph name)
     let g=Env.Gr;
