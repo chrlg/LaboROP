@@ -5,6 +5,7 @@ import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck} from "./domcom.js";
 import {interpretWithEnv, Line} from "./instructions.js";
 import * as Process from "./process.js";
+import * as Gencode from "./gencode.js";
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
 grlang.yy.parseError = function(e, h){
@@ -101,6 +102,7 @@ onmessage = function (evt){
       Env.setArgv(evt.data.argv);
       str=parseTabulation(evt.data.code);
       out = grlang.parse(str);
+      Gencode.gencode(out);
       interpret(out);
       postMessage({termine: 0, opcnt:Env.OpCnt});
    }catch(e){
