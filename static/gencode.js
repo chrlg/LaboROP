@@ -1,3 +1,6 @@
+let code=[];
+
+let labels={};
 export function gencode(tree){
-    console.log(tree);
+    
 }
