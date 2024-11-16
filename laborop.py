@@ -146,13 +146,20 @@ def illegalFn(fn):
 def returnError(action, err):
     return jsonify({'action':action, 'error':err, 'user':session['user']})
 
+#Repositories ≡ the other dirs that all users can read (read-only). 
+#For now only "Prof" exists
+Repositories=["Prof"]
+
+def isProf():
+    return ('prof' in session) and (session['prof'==1)
+
 # Get the real directory from which pyro files should be taken 
 # (That is, DB/Root/user. Unless we are teacher and specified another user. Unless there is a ·Eval subdir in that dir)
 def wdir(who):
     # Default dir is just DB/Root/user
     thisdir=os.path.join(userdir, session['user'])
     # Unless we are a teacher and have specified another user dir
-    if session['prof']==1 and who:
+    if who and (isProf() or who in Repositories):
         thisdir=os.path.join(userdir, who)
     # Unless that dir contains a "·Eval" subdir
     evaldir=os.path.join(thisdir, '·Eval')
@@ -171,15 +178,11 @@ def wdir(who):
 def routeLs():
     if 'user' not in session: return jsonify({'error':'login'})
     who=request.json['who']
-    prof=session['prof']
-    logging.debug(f"ls user={session['user']} {who=} {prof=}")
+    logging.debug(f"ls user={session['user']} {who=} {'prof' if isProf() else ''}")
     thisdir,histdir=wdir(who)
     # List of files
     logging.debug(f"listdir={os.listdir(thisdir)} thistdir={thisdir}")
     l=[x for x in sorted(os.listdir(thisdir)) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
-    # For teachers, add a list of users
-    if prof:
-        pass
     logging.debug(f"result is {l=}")
 
     return jsonify(l)
@@ -202,11 +205,14 @@ def routeSave():
     thisdir,histdir=wdir(who)
     fullName = os.path.join(thisdir, fn)
     histName = os.path.join(histdir, f"{now}_{fn}")
-    # If file exists already, save it
-    if os.path.isfile(fullName):
-        shutil.move(fullName, histName)
-    with open(fullName, 'w') as f: f.write(code)
-    logging.info(f"==Save== {now} {user=} {who=} file=<{fullName} size={len(code)}>")
+    # If this is a non-teacher, reading read-only global repo, then do nothing
+    # (action is still allowed, because client code calls "save" for each "run")
+    if isProf() or who not in Repositories:
+        # If file exists already, save it
+        if os.path.isfile(fullName):
+            shutil.move(fullName, histName)
+        with open(fullName, 'w') as f: f.write(code)
+        logging.info(f"==Save== {now} {user=} {who=} file=<{fullName} size={len(code)}>")
 
     # Update user activity
     ip=request.remote_addr
