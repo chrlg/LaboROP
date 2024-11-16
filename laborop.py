@@ -316,7 +316,7 @@ def routeCopy():
         logging.debug(f"{now} Illegal file name in copy <{fn}> for {user=}")
         return returnError('copy', f"Illegal filename «{fn}»")
     if not canwrite:
-        returnError('copy', 'Permission denied')
+        return returnError('copy', 'Permission denied')
     shutil.copy(os.path.join(thisdir, fn), os.path.join(thisdir, f"Copie de {fn}"))
     logging.info(f"==Copy== {now} {user=} {who=} {fn=}")
     return jsonify({'ok':'ok'})
