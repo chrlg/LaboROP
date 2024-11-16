@@ -1,3 +1,4 @@
 src/*.c linguist-vendored=false linguist-language=C linguist-documentation=false linguist-detectable=true
+static/lib/ace-builds-master/src/*.js linguist-vendored
 static/lib/* linguist-vendored
 static/lib/** linguist-vendored
