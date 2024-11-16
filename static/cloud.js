@@ -5,6 +5,18 @@ let pwd=false; // Directory for 'ls' (that is, user of files)
 let listUsers=false; // list of all users of the system. false=unintialized or non available
 let profGroupFilter='all';
 
+function setPwd(p){
+    if(p=='0' || p==0) pwd=false;
+    else pwd=p;
+    if(pwd=='_Prof'){
+        $ecrandroit.style.backgroundColor='#bbf';
+    }else if(pwd){
+        $ecrandroit.style.backgroundColor='#f88';
+    }else{
+        $ecrandroit.style.backgroundColor='#fff';
+    }
+}
+
 function mypost(url,payload){
     return fetch(url, {
         method: 'post',
@@ -21,7 +33,7 @@ function mypost(url,payload){
 function loadCloudFile(j){
     currentFilename=j.src;
     editor.setValue(j.code, -1);
-    initFiles();
+    initFiles(j.who);
     //runCode();
 }
 
@@ -54,8 +66,8 @@ function saveCode(run=false){
     return true;
 }
 
-function refreshCloud(lf){
-    if(lf.error=='login'){
+function refreshCloud(rep){
+    if(rep.error=='login'){
         document.getElementById('relogin').classList.add("show");
         return;
     }
@@ -68,8 +80,11 @@ function refreshCloud(lf){
        localStorage.setItem("laborop_restore", "false");
        return saveCode(false);
     }
-    let table=$("<table></table>").appendTo($("#files"));
-    if(listUsers){
+    let tab='#files';
+    if(rep.who=='_Prof') tab='#repository';
+    $(tab).empty();
+    let table=$("<table></table>").appendTo($(tab));
+    if(listUsers && tab=='#files'){
         let tr=$('<tr></tr>').appendTo(table);
         let td=$('<td colspan=4></td>').appendTo(tr);
         let userSelect=$('<select></select>').appendTo(td);
@@ -93,11 +108,10 @@ function refreshCloud(lf){
             if(g==profGroupFilter) o.attr('selected', 'selected');
         }
         userSelect.change(function(e){
-            pwd = userSelect.val(); 
-            if(pwd=='0' || pwd==0) pwd=false;
+            setPwd(userSelect.val());
             currentFilename=false;
             editor.setValue('', -1);
-            initFiles();
+            initFiles(pwd);
         });
         let filterGroup=function(e){
             profGroupFilter=groupSelect.val();
@@ -110,6 +124,7 @@ function refreshCloud(lf){
         filterGroup();
         $('<a href="/static/prof.html">Activité</a>').appendTo(td);
     }
+    let lf=rep.ls;
     for(let i=0; i<lf.length; i++){
         let fn=lf[i];
      
@@ -136,7 +151,7 @@ function refreshCloud(lf){
                 let ns=inputName.val().replaceAll('/','╱');
                 if(fn==currentFilename) currentFilename=ns;
                 mypost('/mv', {who:pwd, src:fn, dest:ns}).then(function(j){
-                    initFiles();
+                    initFiles(pwd);
                 });
             }
             if(e.keyCode===27){
@@ -157,11 +172,11 @@ function refreshCloud(lf){
                     currentFilename=false;
                     editor.setValue('', -1);
                 }
-                initFiles()
+                initFiles(pwd)
             });
         });
         btCopy.click(function(){
-            mypost('/copy', {who:pwd, fn:fn}).then((j)=>initFiles());
+            mypost('/copy', {who:pwd, fn:fn}).then((j)=>initFiles(pwd));
         });
     }
     let tr=$("<tr>").appendTo(table);
@@ -185,14 +200,13 @@ function refreshCloud(lf){
         }
         editor.setValue("", -1);
         currentFilename=ns;
-        mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then(initFiles);
+        mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then((j)=>initFiles(pwd));
    });
 }
 
-function initFiles(){
-   $("#files").empty();
-   mypost("/ls", {who:pwd}).then(refreshCloud);
-   return;
+function initFiles(who=false){
+    setPwd(who);
+    mypost("/ls", {who:pwd}).then(refreshCloud);
 }
 
 function importPyroFile(txt){
@@ -204,6 +218,6 @@ function initCloud(){
     mypost('/lsUsers', {}).then(function(r){
         if(r.users) listUsers=r.users;
     });
-    initFiles();
+    initFiles(pwd);
 }
 
