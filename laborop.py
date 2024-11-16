@@ -147,8 +147,8 @@ def returnError(action, err):
     return jsonify({'action':action, 'error':err, 'user':session['user']})
 
 #Repositories ≡ the other dirs that all users can read (read-only). 
-#For now only "Prof" exists
-Repositories=["Prof"]
+#For now only "_Prof" exists
+Repositories=["_Prof"]
 
 def isProf():
     return ('prof' in session) and (session['prof']==1)
@@ -176,6 +176,28 @@ def wdir(who):
         os.mkdir(histdir)
     return thisdir, histdir, canwrite
 
+@app.route("/setProf", methods=['POST'])
+def routeSetprof():
+    if 'user' not in session: return jsonify({'error':'login'})
+    user=session['user']
+    newval=request.json['prof']
+    now=datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    # If user want to renounce teacher priviledges, that is easy done
+    if newval=='0':
+        session['prof']=0
+        logging.info(f"==UnsetProf== {now} {user=}")
+    # If, on the contrary, they want to get them back, we need to check the database
+    else:
+        db=getdb()
+        cur=db.cursor()
+        res=cur.execute("SELECT groupe from Users where login=?", (user,))
+        gr=list(res)[0][0]
+        if gr=='prof':
+            session['prof']=1
+            logging.warn(f"==SETPROF== {now} {user=}")
+        cur.close()
+    return {'me':user, 'prof':session['prof'] if 'prof' in session else None}
+
 @app.route("/ls", methods=['POST'])
 def routeLs():
     if 'user' not in session: return jsonify({'error':'login'})
@@ -186,8 +208,9 @@ def routeLs():
     logging.debug(f"listdir={os.listdir(thisdir)} thistdir={thisdir}")
     l=[x for x in sorted(os.listdir(thisdir)) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
     logging.debug(f"result is {l=}")
-
-    return jsonify(l)
+    ans={'ls':l}
+    if who: ans['who']=who
+    return jsonify(ans)
 
 @app.route("/save", methods=['POST'])
 def routeSave():
@@ -240,7 +263,7 @@ def routeLoad():
     try:
         with open(os.path.join(thisdir,src)) as f: code=f.read()
         logging.debug(f"{now} open file {src} by {user} {who=}")
-        return jsonify({'src':src, 'code':code})
+        return jsonify({'src':src, 'who':who, 'code':code})
     except:
         logging.error(f"{now} failed open file {src} by {user} {who=} {thisdir=}")
         return returnError('load', 'cannot open file')
@@ -250,11 +273,11 @@ def routeLoad():
 def routeLsUsers():
     # For teachers, return a list of users. For others, return nothing
     if 'user' not in session: return jsonify({'error':'login'})
-    if not isProf(): return jsonify({'permission':'denied'})
+    if not isProf(): return jsonify({'me':session['user']})
     logging.debug(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} lsUsers user={session['user']}")
     cur=getdb().cursor()
     res=cur.execute('select login, cn, groupe from Users ORDER by sn, givenName')
-    return jsonify({'users': [(r[0], r[1], r[2]) for r in res]})
+    return jsonify({'me':session['user'], 'users': [(r[0], r[1], r[2]) for r in res]})
 
 @app.route("/whoami", methods=['POST'])
 def routeWhoami():

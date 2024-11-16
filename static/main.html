@@ -38,10 +38,11 @@
       <div class=mainbox id=tabs>
          <button class="selected" data-graph="Gr" data-target=show>Graphe</button>
          <button data-target=files>Fichiers</button>
-         <button style="display:none;" data-target=etudiants>Étudiants</button>
+         <button data-target=repository>Fichiers profs</button>
          <div id=extragraph></div>
          <button id=unrollExtragraph>Autres graphes</button>
          <span style="float:right">
+         <input id=beprof type=checkbox title='Prendre les privilèges professeur' style="display:none"></input>
          <a href="/logout">Log out</a>
          &#x1F50D;
          <button id=zoomPlus onclick='doZoom(-1)'>+</button>
@@ -55,6 +56,7 @@
             <a id=saveimage href="#">⇩</a>
          </div>
          <div class="mainbox show" id="files">FILES</div>
+         <div class="mainbox show" id="repository">REPO</div>
       </div>
       <div id=splithandled></div>
       <div class=mainbox id=misc><pre id=console></pre><div id=errors></div><div id=status></div></div>

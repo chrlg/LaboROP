@@ -4,6 +4,7 @@ let $extragraph, $tabs, $unrollExtragraph;
 let $progress, $progressval, $userStatus;
 let $run, $stop, $argv;
 let $ecrandroit;
+let $beprof;
 
 function showTab(t, button=false){
     $(".show").removeClass("selected");
@@ -93,6 +94,7 @@ function initGui(){
     $run=document.getElementById('run');
     $argv=document.getElementById('argv');
     $ecrandroit=document.getElementById('ecrandroit');
+    $beprof=document.getElementById('beprof');
 
     // Initialise split handlers
     splitMove();

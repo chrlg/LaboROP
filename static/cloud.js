@@ -4,6 +4,7 @@ let currentFilename=false;
 let pwd=false; // Directory for 'ls' (that is, user of files)
 let listUsers=false; // list of all users of the system. false=unintialized or non available
 let profGroupFilter='all';
+let whoami=false;
 
 function setPwd(p){
     if(p=='0' || p==0) pwd=false;
@@ -216,8 +217,25 @@ function importPyroFile(txt){
 
 function initCloud(){
     mypost('/lsUsers', {}).then(function(r){
-        if(r.users) listUsers=r.users;
+        if(r.users) {
+            listUsers=r.users;
+            $beprof.style.display='inline';
+            $beprof.checked=true;
+        }
+        if(r.me) {
+            whoami=r.me;
+        }
     });
     initFiles(pwd);
+    $beprof.addEventListener('click', function(){
+        let nstate="0";
+        if($beprof.checked) nstate="1";
+        mypost('/setProf', {prof:nstate}).then(function(){
+            mypost('/lsUsers', {}).then(function(r){
+                listUsers=r.users;
+                initFiles();
+            });
+        });
+    });
 }
 
