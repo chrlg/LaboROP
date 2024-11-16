@@ -273,7 +273,7 @@ def routeLoad():
 def routeLsUsers():
     # For teachers, return a list of users. For others, return nothing
     if 'user' not in session: return jsonify({'error':'login'})
-    if not isProf(): return jsonify({'me':session['user']})
+    if not isProf(): return jsonify({'me':session['user'],'users':False})
     logging.debug(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} lsUsers user={session['user']}")
     cur=getdb().cursor()
     res=cur.execute('select login, cn, groupe from Users ORDER by sn, givenName')

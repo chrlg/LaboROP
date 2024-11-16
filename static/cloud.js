@@ -126,26 +126,21 @@ function refreshCloud(rep){
         $('<a href="/static/prof.html">Activité</a>').appendTo(td);
     }
     let lf=rep.ls;
+    let canwrite=false;
+    if(listUsers || pwd===false) canwrite=true;
     for(let i=0; i<lf.length; i++){
         let fn=lf[i];
      
+        // New row for file fn
         let tr=$("<tr></tr>").appendTo(table);
-        let spanName=$("<span>"+fn+"</span>");
-        if(fn==currentFilename) spanName.css("color", "red");
-        let inputName=$("<input />").val(fn).hide();
+        let spanName=$("<span>"+fn+"</span>");  // File name
+        if(fn==currentFilename) spanName.css("color", "red"); // Colored in red if we are editing this
+
+        // ==== Field to rename it
+        let inputName=$("<input />").val(fn).hide();  
         $("<td>").appendTo(tr).append(spanName).append(inputName);
-        let btOpen=$("<button>Ouvrir</button>");
-        let btCopy=$("<button>Copier</button>");
-        let btRename=$("<button>Renommer</button>");
-        let btDel=$("<button>Supprimer</button>");
-        $("<td>").appendTo(tr).append(btOpen);
-        $("<td>").appendTo(tr).append(btCopy);
-        $("<td>").appendTo(tr).append(btRename);
-        $("<td>").appendTo(tr).append(btDel);
-        btRename.click(function(){
-            spanName.hide();
-            inputName.show();
-        });
+
+        // Shows only when clicked on rename.
         inputName.keyup(function(e){
             if(e.keyCode===13){
                 if(inputName.val()=="") return;
@@ -161,25 +156,50 @@ function refreshCloud(rep){
             }
         });
 
+        // ==== Open button
+        let btOpen=$("<button>Ouvrir</button>");
+        $("<td>").appendTo(tr).append(btOpen);
         btOpen.click(function(){
             mypost('/load', {who:pwd, src:fn}).then(loadCloudFile);
         });
 
-        btDel.click(function(){
-            let sur=confirm("Supprimer le fichier "+fn+ " ?");
-            if(!sur) return;
-            mypost('/rm', {who:pwd, fn:fn}).then(function(j){
-                if(fn==currentFilename){
-                    currentFilename=false;
-                    editor.setValue('', -1);
-                }
-                initFiles(pwd)
-            });
-        });
+
+        // ==== Copy button. Create copy here if I can write, or in my own dir if not
+        let btCopy=$("<button>Copier</button>");
+        $("<td>").appendTo(tr).append(btCopy);
         btCopy.click(function(){
             mypost('/copy', {who:pwd, fn:fn}).then((j)=>initFiles(pwd));
         });
+
+        // ==== Rename button : just show inputRename, and everything will be done there
+        if(canwrite){
+            let btRename=$("<button>Renommer</button>");
+            $("<td>").appendTo(tr).append(btRename);
+            btRename.click(function(){
+                spanName.hide();
+                inputName.show();
+            });
+        }
+
+        // ==== Delete button
+        if(canwrite){
+            let btDel=$("<button>Supprimer</button>");
+            $("<td>").appendTo(tr).append(btDel);
+            btDel.click(function(){
+                let sur=confirm("Supprimer le fichier "+fn+ " ?");
+                if(!sur) return;
+                mypost('/rm', {who:pwd, fn:fn}).then(function(j){
+                    if(fn==currentFilename){
+                        currentFilename=false;
+                        editor.setValue('', -1);
+                    }
+                    initFiles(pwd)
+                });
+            });
+        }
     }
+
+    // At the end of the file list, a field to create a new file
     let tr=$("<tr>").appendTo(table);
     let inputNew=$("<input />");
     $("<td>").appendTo(tr).append(inputNew);
@@ -215,26 +235,31 @@ function importPyroFile(txt){
 }
 
 
-function initCloud(){
+function lsUsers(){
     mypost('/lsUsers', {}).then(function(r){
         if(r.users) {
             listUsers=r.users;
-            $beprof.style.display='inline';
+            $beprof.style.opacity='1';
             $beprof.checked=true;
+        }else{
+            listUsers=false;
         }
         if(r.me) {
             whoami=r.me;
         }
+        initFiles(pwd);
     });
-    initFiles(pwd);
+}
+
+function initCloud(){
+    lsUsers();
+
     $beprof.addEventListener('click', function(){
         let nstate="0";
         if($beprof.checked) nstate="1";
         mypost('/setProf', {prof:nstate}).then(function(){
-            mypost('/lsUsers', {}).then(function(r){
-                listUsers=r.users;
-                initFiles();
-            });
+            if(nstate=="0" && pwd!==false && pwd!="_Prof") setPwd(false);
+            lsUsers(); // Implies `ls`
         });
     });
 }
