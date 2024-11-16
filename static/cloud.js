@@ -78,12 +78,14 @@ function saveCode(run=false){
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename='New '+NOWSTR;
     }
+
     let code=editor.getValue();
     // Save only if needed
     if(code!=originalCode){
         mypost('/save', {who:pwd, fn:currentFilename, code:code}).then(checkSavedCode);
         originalCode=code;
     }
+
     if(run) runCode();
     return true;
 }
