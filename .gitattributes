@@ -1,0 +1,2 @@
+src/*.c linguist-vendored=false linguist-language=C
+static/lib linguist-vendored=true
