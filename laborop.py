@@ -151,16 +151,18 @@ def returnError(action, err):
 Repositories=["Prof"]
 
 def isProf():
-    return ('prof' in session) and (session['prof'==1)
+    return ('prof' in session) and (session['prof']==1)
 
 # Get the real directory from which pyro files should be taken 
 # (That is, DB/Root/user. Unless we are teacher and specified another user. Unless there is a ·Eval subdir in that dir)
 def wdir(who):
     # Default dir is just DB/Root/user
     thisdir=os.path.join(userdir, session['user'])
-    # Unless we are a teacher and have specified another user dir
-    if who and (isProf() or who in Repositories):
+    canwrite=True
+    # Unless we are a teacher and have specified another user dir, or a user who need to access a public Repo
+    if who and (isProf() or (who in Repositories)):
         thisdir=os.path.join(userdir, who)
+        canwrite=isProf()
     # Unless that dir contains a "·Eval" subdir
     evaldir=os.path.join(thisdir, '·Eval')
     if os.path.isdir(evaldir):
@@ -172,14 +174,14 @@ def wdir(who):
         logging.debug(f"creating user dir {thisdir}")
         os.mkdir(thisdir)
         os.mkdir(histdir)
-    return thisdir, histdir
+    return thisdir, histdir, canwrite
 
 @app.route("/ls", methods=['POST'])
 def routeLs():
     if 'user' not in session: return jsonify({'error':'login'})
     who=request.json['who']
     logging.debug(f"ls user={session['user']} {who=} {'prof' if isProf() else ''}")
-    thisdir,histdir=wdir(who)
+    thisdir,histdir,canwrite=wdir(who)
     # List of files
     logging.debug(f"listdir={os.listdir(thisdir)} thistdir={thisdir}")
     l=[x for x in sorted(os.listdir(thisdir)) if x[0]!='.' and x[0]!='·' and os.path.isfile(f"{thisdir}/{x}")]
@@ -202,12 +204,12 @@ def routeSave():
         logging.debug(f"{now} Illegal file name in save <{fn}> for {user=}")
         return returnError('save', f"Illegal filename «{fn}»")
     # This is the full path of the file we are about to save
-    thisdir,histdir=wdir(who)
+    thisdir,histdir,canwrite=wdir(who)
     fullName = os.path.join(thisdir, fn)
     histName = os.path.join(histdir, f"{now}_{fn}")
     # If this is a non-teacher, reading read-only global repo, then do nothing
     # (action is still allowed, because client code calls "save" for each "run")
-    if isProf() or who not in Repositories:
+    if canwrite:
         # If file exists already, save it
         if os.path.isfile(fullName):
             shutil.move(fullName, histName)
@@ -231,7 +233,7 @@ def routeLoad():
     who=request.json['who']
     user=session['user']
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    thisdir,histdir=wdir(who)
+    thisdir,histdir,canwrite=wdir(who)
     if illegalFn(src):
         logging.debug(f"{now} Illegal file name in load <{src}> for {user=}")
         return returnError('load', f"Illegal filename «{src}»")
@@ -248,8 +250,8 @@ def routeLoad():
 def routeLsUsers():
     # For teachers, return a list of users. For others, return nothing
     if 'user' not in session: return jsonify({'error':'login'})
-    if session['prof']==0: return jsonify({'permission':'denied'})
-    logging.debug(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} lsUsers user={session['user']} prof={session['prof']}")
+    if not isProf(): return jsonify({'permission':'denied'})
+    logging.debug(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} lsUsers user={session['user']}")
     cur=getdb().cursor()
     res=cur.execute('select login, cn, groupe from Users ORDER by sn, givenName')
     return jsonify({'users': [(r[0], r[1], r[2]) for r in res]})
@@ -267,8 +269,10 @@ def routeMv():
     who=request.json['who']
     user=session['user']
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    thisdir,histdir=wdir(who)
+    thisdir,histdir,canwrite=wdir(who)
     logging.debug(f"Called mv {now=} {user=} {who=} {src=} {dest=}")
+    if not canwrite:
+        return returnError('mv', "You cannot rename a file here")
     if illegalFn(dest): 
         logging.debug(f"{now} Illegal file name in mv <{dest}> for {user=}")
         return returnError('mv', f"Illegal filename «{dest}»")
@@ -283,11 +287,13 @@ def routeCopy():
     who=request.json['who']
     user=session['user']
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    thisdir,histdir=wdir(who)
+    thisdir,histdir,canwrite=wdir(who)
     logging.debug(f"Called copy {now=} {user=} {who=} {fn=}")
     if illegalFn(fn): 
         logging.debug(f"{now} Illegal file name in copy <{fn}> for {user=}")
         return returnError('copy', f"Illegal filename «{fn}»")
+    if not canwrite:
+        returnError('copy', 'Permission denied')
     shutil.copy(os.path.join(thisdir, fn), os.path.join(thisdir, f"Copie de {fn}"))
     logging.info(f"==Copy== {now} {user=} {who=} {fn=}")
     return jsonify({'ok':'ok'})
@@ -299,35 +305,33 @@ def routeRm():
     who=request.json['who']
     user=session['user']
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    thisdir,histdir=wdir(who)
+    thisdir,histdir,canwrite=wdir(who)
     logging.debug(f"Called rm {now=} {user=} {who=} {fn=}")
     if illegalFn(fn): 
         logging.debug(f"{now} Illegal file name in rm <{fn}> for {user=}")
         return returnError('rm', f"Illegal filename «{fn}»")
+    if not canwrite: return returnError('rm', 'Permission denied')
     os.remove(os.path.join(thisdir, fn))
     logging.info(f"==Rm== {now} {user=} {who=} {fn=}")
     return jsonify({'ok':'ok'})
 
 @app.route("/listRooms", methods=['POST', 'GET'])
 def routeLsRooms():
-    if 'prof' not in session: return jsonify([])
-    if session['prof']!=1: return jsonify([])
+    if not isProf(): return jsonify([])
     cur=getdb().cursor()
     res=cur.execute('SELECT DISTINCT salle FROM Dns ORDER by salle')
     return jsonify([r[0] for r in res if r[0] is not None and r[0].strip()!=''])
 
 @app.route("/listGroups", methods=['POST', 'GET'])
 def routeLsGroups():
-    if 'prof' not in session: return jsonify([])
-    if session['prof']!=1: return jsonify([])
+    if not isProf(): return jsonify([])
     cur=getdb().cursor()
     res=cur.execute('SELECT DISTINCT groupe FROM Users ORDER by groupe')
     return jsonify([r[0] for r in res if r[0] is not None and r[0].strip()!=''])
 
 @app.route("/activityGroup", methods=['POST'])
 def routeActivityGroup():
-    if 'prof' not in session: return jsonify([])
-    if session['prof']!=1: return jsonify([])
+    if not isProf(): return jsonify([])
     gr=request.json['group']
     now=datetime.datetime.now().timestamp()
     limit=int(now-request.json['limit'])
@@ -340,8 +344,7 @@ def routeActivityGroup():
 
 @app.route("/activityRoom", methods=['POST'])
 def routeActivityRoom():
-    if 'prof' not in session: return jsonify([])
-    if session['prof']!=1: return jsonify([])
+    if not isProf(): return jsonify([])
     room=request.json['room']
     if room is None or room=='-' or room=='': return jsonify([])
     now=datetime.datetime.now().timestamp()
