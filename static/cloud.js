@@ -5,6 +5,7 @@ let pwd=false; // Directory for 'ls' (that is, user of files)
 let listUsers=false; // list of all users of the system. false=unintialized or non available
 let profGroupFilter='all';
 let whoami=false;
+let originalCode=false;
 
 function setPwd(p){
     if(p=='0' || p==0) pwd=false;
@@ -37,12 +38,16 @@ function loadCloudFile(j){
     }
     currentFilename=j.src;
     editor.setValue(j.code, -1);
+    originalCode=j.code;
     initFiles(j.who);
     //runCode();
 }
 
 
+// Called with response from "/save" command
 function checkSavedCode(j){
+    // If we are not logged in (session expired while we were working), we show login banner again, and save content
+    // of editor in local storage
     if(j.error=='login'){
         document.getElementById('relogin').classList.add('show');
         if(currentFilename){
@@ -50,9 +55,16 @@ function checkSavedCode(j){
         }
         return;
     }
+    // If save could not succeed for another reason, show why and do nothing
+    if(j.error){
+        alert(j.msg);
+        return;
+    }
+    // If save was ok, erase restore from local storage (so that no unneeded files are created at next startup)
     if(j.saved=='ok'){
         localStorage.setItem("laborop_restore", JSON.stringify(false));
     }else{
+        // Should never happen, but if it does, just in case, store in localstorage
         if(currentFilename){
             localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
         }
@@ -60,12 +72,18 @@ function checkSavedCode(j){
 }
 
 function saveCode(run=false){
+    // If we try to save code without a file (we typed code with an editor when no file were opened), then create a filename
     if(!currentFilename){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
        currentFilename='New '+NOWSTR;
     }
-    mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then(checkSavedCode);
+    let code=editor.getValue();
+    // Save only if needed
+    if(code!=originalCode){
+        mypost('/save', {who:pwd, fn:currentFilename, code:code}).then(checkSavedCode);
+        originalCode=code;
+    }
     if(run) runCode();
     return true;
 }
@@ -114,6 +132,7 @@ function refreshCloud(rep){
         userSelect.change(function(e){
             setPwd(userSelect.val());
             currentFilename=false;
+            originalCode='';
             editor.setValue('', -1);
             initFiles(pwd);
         });
@@ -194,6 +213,7 @@ function refreshCloud(rep){
                 mypost('/rm', {who:pwd, fn:fn}).then(function(j){
                     if(fn==currentFilename){
                         currentFilename=false;
+                        originalCode='';
                         editor.setValue('', -1);
                     }
                     initFiles(pwd)
@@ -224,6 +244,7 @@ function refreshCloud(rep){
         }
         if(currentFilename) saveCode();
         editor.setValue("", -1);
+        originalCode="";
         currentFilename=ns;
         mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then((j)=>initFiles(pwd));
    });

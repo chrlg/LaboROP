@@ -225,7 +225,7 @@ def routeSave():
     # Check filename for / and . and stuff
     if illegalFn(fn): 
         logging.debug(f"{now} Illegal file name in save <{fn}> for {user=}")
-        return returnError('save', f"Illegal filename «{fn}»")
+        return returnError('save', 'illegalfn', msg=f"Illegal filename «{fn}»")
     # This is the full path of the file we are about to save
     thisdir,histdir,canwrite=wdir(who)
     fullName = os.path.join(thisdir, fn)
