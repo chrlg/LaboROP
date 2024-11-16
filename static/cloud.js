@@ -32,6 +32,9 @@ function mypost(url,payload){
 }
 
 function loadCloudFile(j){
+    if(currentFilename && currentFilename!=j.src){
+        saveCode();
+    }
     currentFilename=j.src;
     editor.setValue(j.code, -1);
     initFiles(j.who);
@@ -219,6 +222,7 @@ function refreshCloud(rep){
                 return;
             }
         }
+        if(currentFilename) saveCode();
         editor.setValue("", -1);
         currentFilename=ns;
         mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then((j)=>initFiles(pwd));
