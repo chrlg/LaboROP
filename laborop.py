@@ -358,6 +358,7 @@ if __name__ == '__main__':
     URL="http://localhost:5000"
     app.run(debug=True, host="127.0.0.1", port=5000)
 elif ('Dev' in app.root_path) or ('runDev' in sys.argv[0]) or ('--debug' in sys.argv):
+    logging.basicConfig(level=logging.DEBUG)
     URL="http://localhost:5000"
     if os.getenv('URL'):
         URL=os.getenv('URL')
