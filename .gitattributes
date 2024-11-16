@@ -2,3 +2,6 @@ src/*.c linguist-vendored=false linguist-language=C linguist-documentation=false
 static/lib/ace-builds-master/src/*.js linguist-vendored
 static/lib/* linguist-vendored
 static/lib/** linguist-vendored
+static/grlang.js linguist-detectable=false
+src/grlang.js linguist-detectable=false
+src/grlang.jison linguist-language=bison linguist-documentation=false linguist-vendored=false
