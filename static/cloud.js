@@ -42,6 +42,7 @@ function loadCloudFile(j){
     }
     currentFilename=j.src;
     editor.setValue(j.code, -1);
+    if(listUsers===false && j.who) editor.setReadOnly(true);
     originalCode=j.code;
     initFiles(j.who);
     //runCode();
@@ -102,12 +103,14 @@ function refreshCloud(rep){
     }
     let restore=JSON.parse(localStorage.getItem("laborop_restore"));
     if(restore){
-       let NOW = new Date();
-       let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
-       currentFilename=restore.fn+' Récupéré '+NOWSTR;
-       editor.setValue(restore.code, -1);
-       localStorage.setItem("laborop_restore", "false");
-       return saveCode(false);
+        setPwd(false);
+        let NOW = new Date();
+        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
+        currentFilename=restore.fn+' Récupéré '+NOWSTR;
+        editor.setValue(restore.code, -1);
+        editor.setReadOnly(false);
+        localStorage.setItem("laborop_restore", "false");
+        return saveCode(false);
     }
     let tab='#files';
     if(rep.who=='_Prof') tab='#repository';
@@ -137,10 +140,13 @@ function refreshCloud(rep){
             if(g==profGroupFilter) o.attr('selected', 'selected');
         }
         userSelect.change(function(e){
+            // When we change user, to be sure to not be unaware of what we write, unload file
+            saveCode(false); // Save what we have
             setPwd(userSelect.val());
             currentFilename=false;
             originalCode='';
             editor.setValue('', -1);
+            editor.setReadOnly(true); // No file is opened
             initFiles(pwd);
         });
         let filterGroup=function(e){
@@ -190,6 +196,7 @@ function refreshCloud(rep){
         $("<td>").appendTo(tr).append(btOpen);
         btOpen.click(function(){
             mypost('/load', {who:pwd, src:fn}).then(loadCloudFile);
+            editor.setReadOnly(!canwrite);
         });
 
 
@@ -222,6 +229,7 @@ function refreshCloud(rep){
                         currentFilename=false;
                         originalCode='';
                         editor.setValue('', -1);
+                        editor.setReadOnly(true); // Cannot edit file without opening one first
                     }
                     initFiles(pwd)
                 });
@@ -251,6 +259,7 @@ function refreshCloud(rep){
         }
         if(currentFilename) saveCode();
         editor.setValue("", -1);
+        editor.setReadOnly(false); // This one is a new file, we can edit it since we could create it
         originalCode="";
         currentFilename=ns;
         mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then((j)=>initFiles(pwd));
@@ -260,10 +269,6 @@ function refreshCloud(rep){
 function initFiles(who=false){
     setPwd(who);
     mypost("/ls", {who:pwd}).then(refreshCloud);
-}
-
-function importPyroFile(txt){
-    editor.setValue(txt, -1);
 }
 
 
@@ -284,6 +289,7 @@ function lsUsers(){
 }
 
 function initCloud(){
+    editor.setReadOnly(true) ; // Intialy nothing is opened. Will change as soon as we create/open a file
     lsUsers();
 
     $beprof.addEventListener('click', function(){
