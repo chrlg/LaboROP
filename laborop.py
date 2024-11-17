@@ -157,7 +157,7 @@ def isProf():
 
 # Get the real directory from which pyro files should be taken 
 # (That is, DB/Root/user. Unless we are teacher and specified another user. Unless there is a ·Eval subdir in that dir)
-def wdir(who):
+def wdir(who=False):
     # Default dir is just DB/Root/user
     thisdir=os.path.join(userdir, session['user'])
     canwrite=True
@@ -317,9 +317,19 @@ def routeCopy():
     if illegalFn(fn): 
         logging.debug(f"{now} Illegal file name in copy <{fn}> for {user=}")
         return returnError('copy', f"Illegal filename «{fn}»")
+    destdir=thisdir
+    destfn=f"Copie de {fn}"
+    # If we cannot write here, try to make the copy in our dir
+    if not canwrite:
+        destdir,_,canwrite=wdir()
+        destfn=fn # No need for "copy de" if it is not in the same dir
     if not canwrite:
         return returnError('copy', 'Permission denied')
-    shutil.copy(os.path.join(thisdir, fn), os.path.join(thisdir, f"Copie de {fn}"))
+    destfull = os.path.join(destdir, destfn)
+    # Do not erase existing file
+    if os.path.isfile(destfull): 
+        return jsonify({'ok':'na'})
+    shutil.copy(os.path.join(thisdir, fn), destfull)
     logging.info(f"==Copy== {now} {user=} {who=} {fn=}")
     return jsonify({'ok':'ok'})
 
