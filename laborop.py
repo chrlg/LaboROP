@@ -143,8 +143,10 @@ def illegalFn(fn):
     return False
 
 # Return an error to an ajax call
-def returnError(action, err):
-    return jsonify({'action':action, 'error':err, 'user':session['user']})
+def returnError(action, err, msg=None):
+    ans={'action':action, 'error':err, 'user':session['user']}
+    if msg: ans['msg']=msg;
+    return jsonify(ans);
 
 #Repositories ≡ the other dirs that all users can read (read-only). 
 #For now only "_Prof" exists
@@ -259,14 +261,14 @@ def routeLoad():
     thisdir,histdir,canwrite=wdir(who)
     if illegalFn(src):
         logging.debug(f"{now} Illegal file name in load <{src}> for {user=}")
-        return returnError('load', f"Illegal filename «{src}»")
+        return returnError('load', 'illegalfn', msg=f"Illegal filename «{src}»")
     try:
         with open(os.path.join(thisdir,src)) as f: code=f.read()
         logging.debug(f"{now} open file {src} by {user} {who=}")
         return jsonify({'src':src, 'who':who, 'code':code})
     except:
         logging.error(f"{now} failed open file {src} by {user} {who=} {thisdir=}")
-        return returnError('load', 'cannot open file')
+        return returnError('load', 'server', msg='cannot open file')
 
 
 @app.route("/lsUsers", methods=['POST'])

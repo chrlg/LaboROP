@@ -33,6 +33,10 @@ function mypost(url,payload){
 }
 
 function loadCloudFile(j){
+    if(j.error){
+        alert(j.msg);
+        return;
+    }
     if(currentFilename && currentFilename!=j.src){
         saveCode();
     }
@@ -65,6 +69,7 @@ function checkSavedCode(j){
         localStorage.setItem("laborop_restore", JSON.stringify(false));
     }else{
         // Should never happen, but if it does, just in case, store in localstorage
+        alert("Sauvegarde échouée");
         if(currentFilename){
             localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
         }
