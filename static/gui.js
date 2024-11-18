@@ -13,7 +13,7 @@ function showTab(t, button=false){
     if(button) button.addClass("selected");
     else $("#tabs button[data-target='"+t+"']").addClass("selected");
     if(t=='files') initFiles(false);
-    else if(t=='repository') initFiles('_Prof');
+    else if(t=='repository') initFiles('_Grimoire');
     if(t=='show' && button.attr('data-graph')){
         let gname=button.attr('data-graph');
         _graphes[gname].shown=false;

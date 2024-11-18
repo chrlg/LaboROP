@@ -149,8 +149,8 @@ def returnError(action, err, msg=None):
     return jsonify(ans);
 
 #Repositories ≡ the other dirs that all users can read (read-only). 
-#For now only "_Prof" exists
-Repositories=["_Prof"]
+#For now only "_Grimoire" exists
+Repositories=["_Grimoire"]
 
 def isProf():
     return ('prof' in session) and (session['prof']==1)

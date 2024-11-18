@@ -10,7 +10,7 @@ let originalCode=false;
 function setPwd(p){
     if(p=='0' || p==0) pwd=false;
     else pwd=p;
-    if(pwd=='_Prof'){
+    if(pwd=='_Grimoire'){
         $ecrandroit.style.backgroundColor='#bbf';
     }else if(pwd){
         $ecrandroit.style.backgroundColor='#f88';
@@ -113,7 +113,7 @@ function refreshCloud(rep){
         return saveCode(false);
     }
     let tab='#files';
-    if(rep.who=='_Prof') tab='#repository';
+    if(rep.who=='_Grimoire') tab='#repository';
     $(tab).empty();
     let table=$("<table></table>").appendTo($(tab));
     if(listUsers && tab=='#files'){
@@ -296,7 +296,7 @@ function initCloud(){
         let nstate="0";
         if($beprof.checked) nstate="1";
         mypost('/setProf', {prof:nstate}).then(function(){
-            if(nstate=="0" && pwd!==false && pwd!="_Prof") setPwd(false);
+            if(nstate=="0" && pwd!==false && pwd!="_Grimoire") setPwd(false);
             lsUsers(); // Implies `ls`
         });
     });
