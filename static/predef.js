@@ -440,7 +440,7 @@ function preArcs(args, named, ln, fname){
         if(!g.isOrient() && fname=='arcs'){
             larcs=[];
             for(let a of g.arcs){
-                larcs.push(a);
+                larcs.push({t:'Arc', i:a.i, a:a.a, marques:a.marques});
                 larcs.push({t:'Arc', i:a.a, a:a.i, marques:a.marques});
             }
         }

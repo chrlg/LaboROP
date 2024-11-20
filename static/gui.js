@@ -3,6 +3,8 @@
 let $extragraph, $tabs, $unrollExtragraph;
 let $progress, $progressval, $userStatus;
 let $run, $stop, $argv;
+let $ecrandroit;
+let $beprof;
 
 function showTab(t, button=false){
     $(".show").removeClass("selected");
@@ -10,7 +12,8 @@ function showTab(t, button=false){
     $("#tabs button").removeClass("selected");
     if(button) button.addClass("selected");
     else $("#tabs button[data-target='"+t+"']").addClass("selected");
-    if(t=='files') initFiles();
+    if(t=='files') initFiles(false);
+    else if(t=='repository') initFiles('_Grimoire');
     if(t=='show' && button.attr('data-graph')){
         let gname=button.attr('data-graph');
         _graphes[gname].shown=false;
@@ -90,6 +93,8 @@ function initGui(){
     $stop=document.getElementById('stop');
     $run=document.getElementById('run');
     $argv=document.getElementById('argv');
+    $ecrandroit=document.getElementById('ecrandroit');
+    $beprof=document.getElementById('beprof');
 
     // Initialise split handlers
     splitMove();
