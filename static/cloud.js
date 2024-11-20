@@ -11,11 +11,14 @@ function setPwd(p){
     if(p=='0' || p==0) pwd=false;
     else pwd=p;
     if(pwd=='_Grimoire'){
-        $ecrandroit.style.backgroundColor='#bbf';
+        $ecrandroit.style.backgroundColor='';
+        $ecrandroit.style.backgroundImage='URL("oldpaper.jpg")';
     }else if(pwd){
         $ecrandroit.style.backgroundColor='#f88';
+        $ecrandroit.style.backgroundImage='';
     }else{
         $ecrandroit.style.backgroundColor='#fff';
+        $ecrandroit.style.backgroundImage='';
     }
 }
 

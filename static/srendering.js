@@ -248,6 +248,7 @@ function generateDot(g){
     let orient = g.oriented;
     if(orient) gr+="digraph{";
     else gr+="graph{";
+    gr += 'bgcolor="transparent"\n';
     // Utile uniquement pour les sommets isolés, mais sans effet sur les autres (qui auraient
     // été générés de toutes façons avec leurs arcs)
     // (Note: servira plus tard pour les attributs)

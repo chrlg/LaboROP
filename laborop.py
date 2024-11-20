@@ -49,7 +49,6 @@ def createDbIfNeeded():
 
 @app.route("/")
 def root():
-    print('root')
     if ('user' in session):
         if not 'prof' in session: session['prof']=0
         logging.debug(f"Root route called by {session['user']}. Redirecting to main")
