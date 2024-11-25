@@ -1,25 +1,39 @@
 // Client-side cloud functions
 
-let currentFilename=false;
+let currentSource=false; // source for the current opened file. false if no file is opened. A triplet {fn: filename, who: userorFalseForMe, code: intialValue
+                         // of code}
 let pwd=false; // Directory for 'ls' (that is, user of files)
-let listUsers=false; // list of all users of the system. false=unintialized or non available
-let profGroupFilter='all';
-let whoami=false;
-let originalCode=false;
+let listUsers=false; // list of all users of the system. false=unintialized or non available (false also means you are not a teacher)
+let profGroupFilter='all'; // Current group filter for user <select> in teacher file interface
+let whoami=false; // For now, serves no purpose. But is updated when we know the value
+
+// Update currently opened file with new filename, directory (who. false=me), original code (currently saved content), and flag telling if we can modify that
+function setSource(fn, who, orgcode, readonly=false){
+    if(fn===false){
+        // Close file. And since no file is opened, switch to read-only mode
+        currentSource=false;
+        editor.setReadOnly(true);
+        editor.setValue('', -1);
+    }else{
+        currentSource = {fn:fn, who:who, code:orgcode};
+        editor.setReadOnly(readonly);
+    }
+    // Currently edited code if ours (or none)
+    if(fn===false || who===false){
+        $ecrandroit.style.backgroundColor='#fff';
+        $ecrandroit.style.backgroundImage='';
+    }else if(who=='_Grimoire'){
+        $ecrandroit.style.backgroundColor='';
+        $ecrandroit.style.backgroundImage='URL("oldpaper.jpg")';
+    }else{
+        $ecrandroit.style.backgroundColor='#f88';
+        $ecrandroit.style.backgroundImage='';
+    }
+}
 
 function setPwd(p){
     if(p=='0' || p==0) pwd=false;
     else pwd=p;
-    if(pwd=='_Grimoire'){
-        $ecrandroit.style.backgroundColor='';
-        $ecrandroit.style.backgroundImage='URL("oldpaper.jpg")';
-    }else if(pwd){
-        $ecrandroit.style.backgroundColor='#f88';
-        $ecrandroit.style.backgroundImage='';
-    }else{
-        $ecrandroit.style.backgroundColor='#fff';
-        $ecrandroit.style.backgroundImage='';
-    }
 }
 
 function mypost(url,payload){
@@ -40,13 +54,15 @@ function loadCloudFile(j){
         alert(j.msg);
         return;
     }
-    if(currentFilename && currentFilename!=j.src){
+    // If there is already a file opened, and it is different of the one we received, save code (if needed, but that is handled in saveCode)
+    // before replacing editor content with what we received
+    if(currentSource && (currentSource.fn!=j.src || currentSource.who!=j.who)){
         saveCode();
     }
-    currentFilename=j.src;
+    // Set source of just received file. It is readonly iff user is not teacher and edited code is not his (so Grimoire, since non-teacher can't edit
+    // other can than theirs and Grimoire)
+    setSource(j.src, j.who, j.code, (listUsers===false) && (j.who!==false));
     editor.setValue(j.code, -1);
-    if(listUsers===false && j.who) editor.setReadOnly(true);
-    originalCode=j.code;
     initFiles(j.who);
     //runCode();
 }
@@ -58,8 +74,11 @@ function checkSavedCode(j){
     // of editor in local storage
     if(j.error=='login'){
         document.getElementById('relogin').classList.add('show');
-        if(currentFilename){
-            localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        let code=editor.getValue();
+        // If a file was opened, and modified (and therefore, where we can write it), then save code to local storage
+        // for future restore
+        if(currentSource && currentSource.code!=code){
+            localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentSource.fn, "code":code}));
         }
         return;
     }
@@ -74,25 +93,28 @@ function checkSavedCode(j){
     }else{
         // Should never happen, but if it does, just in case, store in localstorage
         alert("Sauvegarde échouée");
-        if(currentFilename){
-            localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentFilename, "code":editor.getValue()}));
+        if(currentSource){
+            localStorage.setItem("laborop_restore", JSON.stringify({"fn":currentSource.fn, "code":editor.getValue()}));
         }
     }
 }
 
 function saveCode(run=false){
     // If we try to save code without a file (we typed code with an editor when no file were opened), then create a filename
-    if(!currentFilename){
+    // Note that this should now be impossible, since editor is read-only unless we selected a file
+    if(!currentSource){
        let NOW = new Date();
        let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
-       currentFilename='New '+NOWSTR;
+       // source (that is where we would save it, since that source is invented here) is constructed filename on our dir, 
+       // with org code='' (to force next save of anything non empty), and is not read-only
+       setSource('New '+NOWSTR, false, '', false);
     }
 
     let code=editor.getValue();
     // Save only if needed
-    if(code!=originalCode){
-        mypost('/save', {who:pwd, fn:currentFilename, code:code}).then(checkSavedCode);
-        originalCode=code;
+    if(code!=currentSource.code){
+        mypost('/save', {who:currentSource.who, fn:currentSource.fn, code:code}).then(checkSavedCode);
+        currentSource.code=code; // Keep track of what is saved
     }
 
     if(run) runCode();
@@ -109,9 +131,9 @@ function refreshCloud(rep){
         setPwd(false);
         let NOW = new Date();
         let NOWSTR = ""+(NOW.getYear()+1900)+"-"+(NOW.getMonth()+1)+"-"+(NOW.getDate())+"_"+(NOW.getHours())+":"+(NOW.getMinutes());
-        currentFilename=restore.fn+' Récupéré '+NOWSTR;
+        // code is '' in source so that next attempt to save actually saves even if we change nothing (unless, of course, file is empty)
+        setSource(restore.fn+' Récupéré '+NOWSTR, false, '', false);
         editor.setValue(restore.code, -1);
-        editor.setReadOnly(false);
         localStorage.setItem("laborop_restore", "false");
         return saveCode(false);
     }
@@ -146,10 +168,7 @@ function refreshCloud(rep){
             // When we change user, to be sure to not be unaware of what we write, unload file
             saveCode(false); // Save what we have
             setPwd(userSelect.val());
-            currentFilename=false;
-            originalCode='';
-            editor.setValue('', -1);
-            editor.setReadOnly(true); // No file is opened
+            setSource(false); // close file
             initFiles(pwd);
         });
         let filterGroup=function(e){
@@ -172,7 +191,7 @@ function refreshCloud(rep){
         // New row for file fn
         let tr=$("<tr></tr>").appendTo(table);
         let spanName=$("<span>"+fn+"</span>");  // File name
-        if(fn==currentFilename) spanName.css("color", "red"); // Colored in red if we are editing this
+        if(fn==currentSource.fn && pwd==currentSource.who) spanName.css("color", "red"); // Colored in red if we are editing this
 
         // ==== Field to rename it
         let inputName=$("<input />").val(fn).hide();  
@@ -183,7 +202,8 @@ function refreshCloud(rep){
             if(e.keyCode===13){
                 if(inputName.val()=="") return;
                 let ns=inputName.val().replaceAll('/','╱');
-                if(fn==currentFilename) currentFilename=ns;
+                // If we renamed the file currently opened, also change the name in currentSource (used as a target for future saves)
+                if(currentSource && fn==currentSource.fn && pwd==currentSource.who) currentSource.fn=ns;
                 mypost('/mv', {who:pwd, src:fn, dest:ns}).then(function(j){
                     initFiles(pwd);
                 });
@@ -228,11 +248,9 @@ function refreshCloud(rep){
                 let sur=confirm("Supprimer le fichier "+fn+ " ?");
                 if(!sur) return;
                 mypost('/rm', {who:pwd, fn:fn}).then(function(j){
-                    if(fn==currentFilename){
-                        currentFilename=false;
-                        originalCode='';
-                        editor.setValue('', -1);
-                        editor.setReadOnly(true); // Cannot edit file without opening one first
+                    // If we remove the file currently opened, close it (empty editor...)
+                    if(fn==currentSource.fn && pwd==currentSource.who){
+                        setSource(false);
                     }
                     initFiles(pwd)
                 });
@@ -260,12 +278,11 @@ function refreshCloud(rep){
                 return;
             }
         }
-        if(currentFilename) saveCode();
+        if(currentSource) saveCode();
         editor.setValue("", -1);
-        editor.setReadOnly(false); // This one is a new file, we can edit it since we could create it
-        originalCode="";
-        currentFilename=ns;
-        mypost('/save', {who:pwd, fn:currentFilename, code:editor.getValue()}).then((j)=>initFiles(pwd));
+        // This is the new edited file, on currently watched dir, with no code, and writable
+        setSource(ns, pwd, '', false);
+        mypost('/save', {who:pwd, fn:ns, code:''}).then((j)=>initFiles(pwd));
    });
 }
 
