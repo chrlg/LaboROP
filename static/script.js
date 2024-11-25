@@ -70,7 +70,7 @@ function runCode(){
     worker = new Worker("interpret.js", {type:"module"});
     worker.onmessage = messageFromWorker;
     worker.onerror = (e) => {console.log(e);};
-    let argv=[currentFilename];
+    let argv=[currentSource.fn];
     if($argv.value!='') argv=argv.concat($argv.value.split(' '));
     worker.postMessage({argv:argv, code:editor.getValue()});
     setStateRunning();
