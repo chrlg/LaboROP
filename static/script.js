@@ -94,7 +94,7 @@ function runCode(){
     // Otherwise, we start workers as soon as we end the previous one, so that it is already there to run code
     // (it avoids 1/2 second delay, approx, of starting time)
     if((!worker) || workerRunning) startWorker(); 
-    let argv=[currentFilename];
+    let argv=[currentSource.fn];
     if($argv.value!='') argv=argv.concat($argv.value.split(' '));
     workerRunning=true;
     worker.postMessage({argv:argv, code:editor.getValue()});
