@@ -8,6 +8,9 @@ var timeoutLen=120000;
 var timeout=false;
 var editorOptions=false;
 
+var workerSab = new SharedArrayBuffer(4);
+var workerSem = new Int32Array(workerSab);
+
 function messageFromWorker(event){
     if(event.data.error){
         let e=event.data;
@@ -50,6 +53,9 @@ function messageFromWorker(event){
         setUserStatus(event.data.status, event.data.color);
         return;
     }
+    if(event.data.sleep){
+        setTimeout(function(){Atomics.store(workerSem,0,1); Atomics.notify(workerSem,0);}, event.data.sleep);
+    }
     if(event.data.termine!==undefined){
         $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
         if(timeout) clearTimeout(timeout); timeout=false;
@@ -81,6 +87,7 @@ function startWorker(){
         console.log('error received by worker', e); 
         endWorker();
     };
+    worker.postMessage({pausesab:workerSab});
 }
 
 // Start worker in advance for future code run
@@ -97,7 +104,9 @@ function runCode(){
     let argv=[currentSource.fn];
     if($argv.value!='') argv=argv.concat($argv.value.split(' '));
     workerRunning=true;
-    worker.postMessage({argv:argv, code:editor.getValue()});
+    Atomics.store(workerSem,0,1);
+    worker.postMessage({argv: argv});
+    worker.postMessage({code:editor.getValue()});
     setStateRunning();
     timeout=setTimeout(Terminate, timeoutLen);
     $("#console").empty();

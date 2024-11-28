@@ -7,6 +7,7 @@ import * as Env from "./environment.js";
 let _str='';
 let _strChange=false; // true iff _str has changed since last display of stdout
 let lastPrint=0; // Date of last print (to avoid to flush too frequently)
+let pauseSem; // Semaphore for play/pause, sleep, etc.
 
 // Just a log
 function myLog(msg){
@@ -56,6 +57,16 @@ export function setProgress(p){
 
 export function setUserStatus(t,c){
     postMessage({status: t, color:c});
+}
+
+export function setPauseSab(sab){
+    pauseSem=new Int32Array(sab);
+}
+
+export function timeoutResume(dt){
+    Atomics.store(pauseSem, 0, 0);
+    postMessage({sleep: dt});
+    Atomics.wait(pauseSem, 0, 0);
 }
 
 // Reset state as it were when worker starts

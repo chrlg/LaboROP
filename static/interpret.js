@@ -2,7 +2,7 @@
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
-import {regularCheck} from "./domcom.js";
+import {regularCheck, setPauseSab} from "./domcom.js";
 import {interpretWithEnv, Line} from "./instructions.js";
 import * as Process from "./process.js";
 
@@ -95,10 +95,16 @@ function interpret(tree){
     regularCheck(true);
 }
 
+
 onmessage = function (evt){
+    if(evt.data.argv) Env.setArgv(evt.data.argv);
+    else if(evt.data.code) onMessageCode(evt);
+    else if(evt.data.pausesab) setPauseSab(evt.data.pausesab);
+}
+
+function onMessageCode(evt){
    let str, out;
    try{
-      Env.setArgv(evt.data.argv);
       str=parseTabulation(evt.data.code);
       out = grlang.parse(str);
       interpret(out);

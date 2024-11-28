@@ -10,7 +10,7 @@ import shutil
 import sys
 
 # configure flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 app.secret_key="AbdeGilM@bstuv"
 basedir = os.path.abspath(os.path.dirname(__file__))
 staticdir = os.path.join(basedir, 'static')
@@ -57,6 +57,13 @@ def root():
     # Not connected. Redirect to CAS 
     logging.debug(f"Root route called by unknown user. Redirecting to CAS")
     return redirect(f"https://cas.enib.fr/login?service={URL}/retourcas")
+
+@app.route('/static/<path:path>')
+def serveStatic(path):
+    rep=send_from_directory('static', path)
+    rep.headers.add("Cross-Origin-Opener-Policy", "same-origin");
+    rep.headers.add("Cross-Origin-Embedder-Policy", "require-corp");
+    return rep
 
 @app.route("/Module/<path:text>", methods=['GET', 'POST'])
 def getModule(text):

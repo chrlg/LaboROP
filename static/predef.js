@@ -3,7 +3,7 @@ import * as Env from "./environment.js";
 import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
 import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
-import {regularCheck, print, flush, setProgress, setUserStatus} from "./domcom.js";
+import {timeoutResume, regularCheck, print, flush, setProgress, setUserStatus} from "./domcom.js";
 import Decimal from "./lib/decimal.mjs";
 
 // help available for different kind of objects. To be fill later in the code
@@ -51,6 +51,7 @@ export default function populate(){
    Env.addPredfn("argmax", preArgmin);
    Env.addPredfn("int", preInt);
    Env.addPredfn("help", preHelp);
+   Env.addPredfn("sleep", preSleep);
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Argv", ()=>{return Env.Argv});
    Env.addPredvar("Id", preId, true);
@@ -1035,6 +1036,15 @@ information sur l'argument (l'instance) lui-même
 help(theme): pour des cas spécifiques, affiche l'aide sur un thème
     help(matrix) : aide sur les matrices (⇔ help(Id*2))
     help(boolean) : aide sur les booléens (⇔ help(1==1))
+`;
+
+function preSleep(args, named, ln, fname){
+    if(args.length!=1) throw {error:"type", name:"Mauvais nombre d'arguments", msg:`Mauvais nombre d'argument pour sleep(delai)`, ln:ln};
+    let t=evaluate(args[0]);
+    if(!isNumeric(t)) throw {error:"type", name:"Mauvais type", msg:`sleep attend comme argument un nombre, en secondes`, ln:ln};
+    timeoutResume(numericValue(t)*1000);
+}
+Help.predfn.sleep=`sleep(delai): attend delai secondes avant de continuer
 `;
 
 
