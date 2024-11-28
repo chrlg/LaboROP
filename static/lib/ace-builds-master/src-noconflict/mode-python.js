@@ -21,7 +21,7 @@ var PythonHighlightRules = function() {
         "min|max|argmin|argmax|int|sum|" +
 	"print|printnr|println|progress|status|arcs|aretes|sommets|import|" +
         "premier|dernier|random|pop|insert|" +
-        "clear|refresh|_grapheMode|" +
+        "clear|refresh|_grapheMode|sleep|" +
         "len|type|whoami|help"
     );
 

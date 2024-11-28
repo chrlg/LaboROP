@@ -6,6 +6,7 @@ var errorMarker=false;
 var lastError;
 var timeoutLen=120000;
 var timeout=false;
+var workerSleepTimeout=false;
 var editorOptions=false;
 
 var workerSab = new SharedArrayBuffer(4);
@@ -54,7 +55,12 @@ function messageFromWorker(event){
         return;
     }
     if(event.data.sleep){
-        setTimeout(function(){Atomics.store(workerSem,0,1); Atomics.notify(workerSem,0);}, event.data.sleep);
+        if(workerSleepTimeout) clearTimeout(workerSleepTimeout); // Should be useless
+        workerSleepTimeout = setTimeout(function(){
+            Atomics.store(workerSem,0,1); 
+            Atomics.notify(workerSem,0);
+            workerSleepTimeout=false;
+        }, event.data.sleep);
     }
     if(event.data.termine!==undefined){
         $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
@@ -104,7 +110,9 @@ function runCode(){
     let argv=[currentSource.fn];
     if($argv.value!='') argv=argv.concat($argv.value.split(' '));
     workerRunning=true;
-    Atomics.store(workerSem,0,1);
+    if(workerSleepTimeout) clearTimeout(workerSleepTimeout);
+    workerSleepTimeout=false;
+    Atomics.store(workerSem,0,1); // In case we ended previous run while in waiting state
     worker.postMessage({argv: argv});
     worker.postMessage({code:editor.getValue()});
     setStateRunning();
