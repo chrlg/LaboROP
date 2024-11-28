@@ -22,6 +22,11 @@
 [0-9]+("."[0-9]+)?(("E"|"e")("-")?[0-9]+)?("d"|"D")\b	return 'DECIMAL'
 [0-9]+("."[0-9]+)?(("E"|"e")"-"?[0-9]+)?\b	return 'NUMBER'
 
+'"""'                   this.begin("stringddd"); yy._clg_stringBuf="";
+<stringddd>'"""'        this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<stringddd>[^\\]        yy._clg_stringBuf += yytext;
+<stringddd>"\\".        y._clg_stringBuf += yytext.slice(1);
+
 ["]			this.begin("string"); yy._clg_stringBuf="";
 <string>["]		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
 <string>"\\r"		yy._clg_stringBuf += "\r";
@@ -33,11 +38,6 @@
 <stringqqq>"'''"        this.popState(); yytext=yy._clg_stringBuf; return "STRING";
 <stringqqq>[^\\]        yy._clg_stringBuf += yytext;
 <stringqqq>"\\".        yy._clg_stringBuf += yytext.slice(1);
-
-'"""'                   this.begin("stringddd"); yy._clg_stringBuf="";
-<stringddd>'"""'        this.popState(); yytext=yy._clg_stringBuf; return "STRING";
-<stringddd>[^\\]        yy._clg_stringBuf += yytext;
-<stringddd>"\\".        y._clg_stringBuf += yytext.slice(1);
 
 [']			this.begin("stringq"); yy._clg_stringBuf="";
 <stringq>[']		this.popState(); yytext=yy._clg_stringBuf; return "STRING";

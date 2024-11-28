@@ -1170,33 +1170,33 @@ case 7:return 60
 break;
 case 8:return 59
 break;
-case 9:this.begin("string"); yy._clg_stringBuf="";
+case 9:this.begin("stringddd"); yy._clg_stringBuf="";
 break;
 case 10:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
-case 11:yy._clg_stringBuf += "\r";
+case 11:yy._clg_stringBuf += yy_.yytext;
 break;
-case 12:yy._clg_stringBuf += yy_.yytext;
+case 12:y._clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 13:yy._clg_stringBuf += "\n";
+case 13:this.begin("string"); yy._clg_stringBuf="";
 break;
-case 14:yy._clg_stringBuf += yy_.yytext.slice(1);
+case 14:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
-case 15:this.begin("stringqqq"); yy._clg_stringBuf="";
+case 15:yy._clg_stringBuf += "\r";
 break;
-case 16:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
+case 16:yy._clg_stringBuf += yy_.yytext;
 break;
-case 17:yy._clg_stringBuf += yy_.yytext;
+case 17:yy._clg_stringBuf += "\n";
 break;
 case 18:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
-case 19:this.begin("stringddd"); yy._clg_stringBuf="";
+case 19:this.begin("stringqqq"); yy._clg_stringBuf="";
 break;
 case 20:this.popState(); yy_.yytext=yy._clg_stringBuf; return "STRING";
 break;
 case 21:yy._clg_stringBuf += yy_.yytext;
 break;
-case 22:y._clg_stringBuf += yy_.yytext.slice(1);
+case 22:yy._clg_stringBuf += yy_.yytext.slice(1);
 break;
 case 23:this.begin("stringq"); yy._clg_stringBuf="";
 break;
@@ -1348,8 +1348,8 @@ case 96:return 'INVALID'
 break;
 }
 },
-rules: [/^(?:#.*)/,/^(?: +)/,/^(?:[\n])/,/^(?:[\r])/,/^(?:§\{)/,/^(?:§\})/,/^(?:§;)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)(-)?[0-9]+)?(d|D)\b)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)-?[0-9]+)?\b)/,/^(?:["])/,/^(?:["])/,/^(?:\\r)/,/^(?:[^"\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:''')/,/^(?:''')/,/^(?:[^\\])/,/^(?:\\.)/,/^(?:""")/,/^(?:""")/,/^(?:[^\\])/,/^(?:\\.)/,/^(?:['])/,/^(?:['])/,/^(?:\\r)/,/^(?:[^'\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:\+=)/,/^(?:\*=)/,/^(?:-=)/,/^(?:\/\/=)/,/^(?:\/=)/,/^(?:\/\/)/,/^(?:\+\+)/,/^(?:--)/,/^(?:==)/,/^(?:\^)/,/^(?:!=)/,/^(?:<=)/,/^(?:>=)/,/^(?:&&)/,/^(?:and\b)/,/^(?:\|\|)/,/^(?:or\b)/,/^(?:xor\b)/,/^(?:\^\^)/,/^(?:\.\+=)/,/^(?:\.\+)/,/^(?:\.\*\*)/,/^(?:\*\*)/,/^(?:\.\*=)/,/^(?:\.\*)/,/^(?:\.\^)/,/^(?:\[\])/,/^(?:\{\})/,/^(?:=)/,/^(?:\[)/,/^(?:\])/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?::)/,/^(?:\.)/,/^(?:\+)/,/^(?:<)/,/^(?:>)/,/^(?:-)/,/^(?:\*)/,/^(?:%)/,/^(?:\/)/,/^(?:\?)/,/^(?:!)/,/^(?:not\b)/,/^(?:\$.*)/,/^(?:Sommet\b)/,/^(?:Arete\b)/,/^(?:Graphe\b)/,/^(?:Arc\b)/,/^(?:def\b)/,/^(?:for\b)/,/^(?:while\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:elif\b)/,/^(?:continue\b)/,/^(?:break\b)/,/^(?:pass\b)/,/^(?:in\b)/,/^(?:global\b)/,/^(?:return\b)/,/^(?:range\b)/,/^(?:breakpoint\b)/,/^(?:[A-Za-z_][A-Za-z0-9_]*)/,/^(?:$)/,/^(?:.)/],
-conditions: {"stringq":{"rules":[24,25,26,27,28],"inclusive":false},"string":{"rules":[10,11,12,13,14],"inclusive":false},"stringqqq":{"rules":[16,17,18],"inclusive":false},"stringddd":{"rules":[20,21,22],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,15,19,23,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96],"inclusive":true}}
+rules: [/^(?:#.*)/,/^(?: +)/,/^(?:[\n])/,/^(?:[\r])/,/^(?:§\{)/,/^(?:§\})/,/^(?:§;)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)(-)?[0-9]+)?(d|D)\b)/,/^(?:[0-9]+(\.[0-9]+)?((E|e)-?[0-9]+)?\b)/,/^(?:""")/,/^(?:""")/,/^(?:[^\\])/,/^(?:\\.)/,/^(?:["])/,/^(?:["])/,/^(?:\\r)/,/^(?:[^"\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:''')/,/^(?:''')/,/^(?:[^\\])/,/^(?:\\.)/,/^(?:['])/,/^(?:['])/,/^(?:\\r)/,/^(?:[^'\\\n])/,/^(?:\\n)/,/^(?:\\[^\n])/,/^(?:\+=)/,/^(?:\*=)/,/^(?:-=)/,/^(?:\/\/=)/,/^(?:\/=)/,/^(?:\/\/)/,/^(?:\+\+)/,/^(?:--)/,/^(?:==)/,/^(?:\^)/,/^(?:!=)/,/^(?:<=)/,/^(?:>=)/,/^(?:&&)/,/^(?:and\b)/,/^(?:\|\|)/,/^(?:or\b)/,/^(?:xor\b)/,/^(?:\^\^)/,/^(?:\.\+=)/,/^(?:\.\+)/,/^(?:\.\*\*)/,/^(?:\*\*)/,/^(?:\.\*=)/,/^(?:\.\*)/,/^(?:\.\^)/,/^(?:\[\])/,/^(?:\{\})/,/^(?:=)/,/^(?:\[)/,/^(?:\])/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?::)/,/^(?:\.)/,/^(?:\+)/,/^(?:<)/,/^(?:>)/,/^(?:-)/,/^(?:\*)/,/^(?:%)/,/^(?:\/)/,/^(?:\?)/,/^(?:!)/,/^(?:not\b)/,/^(?:\$.*)/,/^(?:Sommet\b)/,/^(?:Arete\b)/,/^(?:Graphe\b)/,/^(?:Arc\b)/,/^(?:def\b)/,/^(?:for\b)/,/^(?:while\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:elif\b)/,/^(?:continue\b)/,/^(?:break\b)/,/^(?:pass\b)/,/^(?:in\b)/,/^(?:global\b)/,/^(?:return\b)/,/^(?:range\b)/,/^(?:breakpoint\b)/,/^(?:[A-Za-z_][A-Za-z0-9_]*)/,/^(?:$)/,/^(?:.)/],
+conditions: {"stringq":{"rules":[24,25,26,27,28],"inclusive":false},"string":{"rules":[14,15,16,17,18],"inclusive":false},"stringqqq":{"rules":[20,21,22],"inclusive":false},"stringddd":{"rules":[10,11,12],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,13,19,23,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96],"inclusive":true}}
 });
 return lexer;
 })();
