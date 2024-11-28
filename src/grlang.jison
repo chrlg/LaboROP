@@ -3,6 +3,7 @@
 
 %{
 %}
+%x stringddd
 %x stringqqq
 %x string
 %x stringq
@@ -32,6 +33,11 @@
 <stringqqq>"'''"        this.popState(); yytext=yy._clg_stringBuf; return "STRING";
 <stringqqq>[^\\]        yy._clg_stringBuf += yytext;
 <stringqqq>"\\".        yy._clg_stringBuf += yytext.slice(1);
+
+'"""'                   this.begin("stringddd"); yy._clg_stringBuf="";
+<stringddd>'"""'        this.popState(); yytext=yy._clg_stringBuf; return "STRING";
+<stringddd>[^\\]        yy._clg_stringBuf += yytext;
+<stringddd>"\\".        y._clg_stringBuf += yytext.slice(1);
 
 [']			this.begin("stringq"); yy._clg_stringBuf="";
 <stringq>[']		this.popState(); yytext=yy._clg_stringBuf; return "STRING";
