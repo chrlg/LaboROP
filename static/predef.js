@@ -940,7 +940,20 @@ function preHelp(args, named, ln, fname){
         print(Help.line);
         print("Help : liste des symboles prédéfinis\n");
         print(Help.line);
-        for(let k in Env.Predef){
+        print("Fonctions:\n");
+        for(let k of Object.keys(Help.predfn).sort()){
+            print(k+' ');
+        }
+        print("\n"); print(Help.line);
+        print("Variables:\n");
+        for(let k of Object.keys(Help.name).sort()){
+            print(k+' ');
+        }
+        print("\n");
+        print(Help.line);
+        print("Liste des types\n");
+        print(Help.line);
+        for(let k of Object.keys(Help.type).sort()){
             print(k+' ');
         }
         print('\n');
@@ -966,6 +979,12 @@ function preHelp(args, named, ln, fname){
             return;
         }
         print(`Pas d'aide disponible sur la fonction «${a.name}»\n`);
+    }
+    if(a.t=="string" && Help.type[a.val]){
+        print(Help.line);
+        print(Help.type[a.val]);
+        print(Help.line);
+        return;
     }
     if(Help.type[a.t]){
         print(Help.line);
@@ -1311,8 +1330,6 @@ Les matrices ont un champ immutable length. Ainsi, pour l'exemple précédent
 Voir aussi : Id, Adj, Zero
 `
 
-Help.name.matrix=Help.type.matrix
-
 Help.name.True = `Le booléen vrai.
 Voir help(boolean) ou Help(1==1) pour l'aide générale sur les booléens
 Voir aussi : False
@@ -1343,8 +1360,6 @@ tandis que «&&» et «||» ne le sont pas
 
 Voir aussi : True, False
 `
-
-Help.name['boolean'] = Help.type['boolean']
 
 Help.type['Sommet'] =`Un sommet d'un graphe.
 Un sommet est créé par l'instruction ad-hoc
