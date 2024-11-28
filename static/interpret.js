@@ -2,7 +2,7 @@
 import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
-import {regularCheck, setPauseSab} from "./domcom.js";
+import {regularCheck, setSabs} from "./domcom.js";
 import {interpretWithEnv, Line} from "./instructions.js";
 import * as Process from "./process.js";
 
@@ -99,7 +99,7 @@ function interpret(tree){
 onmessage = function (evt){
     if(evt.data.argv) Env.setArgv(evt.data.argv);
     else if(evt.data.code) onMessageCode(evt);
-    else if(evt.data.pausesab) setPauseSab(evt.data.pausesab);
+    else if(evt.data.pausesab) setSabs(evt.data.pausesab);
 }
 
 function onMessageCode(evt){
@@ -113,7 +113,6 @@ function onMessageCode(evt){
       regularCheck(true);
       if(e.error) {
 	 if(e.error=="exit") {
-            console.log("exit", e);
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
 	       msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
 	    else postMessage({termine: e.val, optcnt:Env.OpCnt});

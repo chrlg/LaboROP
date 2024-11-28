@@ -2,7 +2,8 @@
 
 let $extragraph, $tabs, $unrollExtragraph;
 let $progress, $progressval, $userStatus;
-let $run, $stop, $argv;
+let $run, $stop, $resume, $argv;
+let $debugInfo, $debugInfoContent, $debugInfoClose, $debugInfoHandle;
 let $ecrandroit;
 let $beprof;
 
@@ -75,11 +76,79 @@ function setUserStatus(t, col){
 
 function setStateRunning(){
     $run.disabled=true;
+    $run.style.display="inline";
     $stop.disabled=false;
+    $resume.style.display="none";
+    workerInPause=false;
 }
 function setStateStop(){
     $run.disabled=false;
+    $run.style.display="inline";
     $stop.disabled=true;
+    $resume.style.display="none";
+    workerInPause=false;
+}
+
+function setStatePause(){
+    $run.disabled=false;
+    $run.style.display="none";
+    $stop.disabled=false;
+    $resume.style.display="inline";
+    workerInPause=true;
+}
+
+function makeMovable(handle, win){
+    let xpos0=false, ypos0, xptr0, yptr0;
+    handle.addEventListener('mousedown', function(e){
+        let re=$debugInfo.getBoundingClientRect();
+        xpos0=re.x;
+        ypos0=re.y;
+        xptr0=e.clientX;
+        yptr0=e.clientY;
+        e.preventDefault();
+        return false;
+    });
+
+    document.addEventListener('mouseup', function(e){
+        xpos0=false;
+        e.preventDefault();
+        return false;
+    });
+
+    document.addEventListener('mousemove', function(e){
+        if(xpos0===false) return;
+        $debugInfo.style.left = (e.clientX-xptr0+xpos0).toFixed(2)+'px';
+        $debugInfo.style.top = (e.clientY-yptr0+ypos0).toFixed(2)+'px';
+    });
+}
+
+function closeDebugInfo(){
+    $debugInfo.style.display='';
+}
+
+function addEnvTable(name, e){
+    let table=document.createElement('table');
+    table.classList.add('debugInfoEnv');
+    table.innerHTML=`<thead><tr class=title><th colspan=3>${name}</th></tr><tr><th>Variable<th>Type<th>Valeur</tr></thead>`;
+    $debugInfoContent.appendChild(table);
+    let body=document.createElement('tbody');
+    let s='';
+    for(let k in e){
+        s+=`<tr><th>${k}<td>${e[k][0]}<td>${e[k][1]}`;
+    }
+    body.innerHTML=s;
+    table.appendChild(body);
+}
+
+function showDebugInfo(info){
+    $debugInfo.style.display='inline-block';
+    $debugInfoContent.innerHTML='';
+    if(info.global){
+        addEnvTable("Environnement global", info.global);
+    }
+    for(let e of info.stack){
+        addEnvTable("Environnement local", e);
+    }
 }
 
 function initGui(){
@@ -92,9 +161,14 @@ function initGui(){
     $userStatus=document.getElementById('userStatus');
     $stop=document.getElementById('stop');
     $run=document.getElementById('run');
+    $resume=document.getElementById('resume');
     $argv=document.getElementById('argv');
     $ecrandroit=document.getElementById('ecrandroit');
     $beprof=document.getElementById('beprof');
+    $debugInfoClose=document.getElementById('debugInfoClose');
+    $debugInfo=document.getElementById('debugInfo');
+    $debugInfoContent=document.getElementById('debugInfoContent');
+    $debugInfoHandle=document.getElementById('debugInfoHandle');
 
     // Initialise split handlers
     splitMove();
@@ -119,7 +193,12 @@ function initGui(){
 
     // Run/stop
     $run.addEventListener('click', function(){saveCode(true);});
-    $stop.addEventListener('click', function(){if(timeout) clearTimeout(timeout); Terminate();});
+    $stop.addEventListener('click', function(){if(timeout) clearTimeout(timeout); timeout=false; Terminate();});
+    $resume.addEventListener('click', function(){resumeBreak(1);});
+
+    // Debug window
+    $debugInfoClose.addEventListener('click', function(){ resumeBreak(2); closeDebugInfo();} );
+    makeMovable($debugInfoHandle, $debugInfo);
 
     // Start with nothing running
     setStateStop();

@@ -1,15 +1,17 @@
 var editor;
 var worker=false;
 var workerRunning=false;
+var workerInPause=false;
 var Range;
 var errorMarker=false;
+var debugMarker=false;
 var lastError;
 var timeoutLen=120000;
 var timeout=false;
 var workerSleepTimeout=false;
 var editorOptions=false;
 
-var workerSab = new SharedArrayBuffer(4);
+var workerSab = new SharedArrayBuffer(16);
 var workerSem = new Int32Array(workerSab);
 
 function messageFromWorker(event){
@@ -63,6 +65,20 @@ function messageFromWorker(event){
         }, event.data.sleep);
         return;
     }
+    if(event.data.breakpoint){
+        // We don't kill programs while they are debugged!
+        if(timeout) clearTimeout(timeout); timeout=false;
+        let ln=event.data.ln;
+        debugMarker = editor.session.addMarker(new Range(ln-1, 0, ln-1, 999), "debug", "line");
+        showDebugInfo(event.data.breakpoint);
+        setStatePause();
+        return;
+    }
+    if(event.data.debugInfo){
+        //Future -> show debug info for a specifc request
+        //Console.log("info", event.data.debugInfo, event.data.row, event.data.col);
+        return;
+    }
     if(event.data.termine!==undefined){
         $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");
         if(timeout) clearTimeout(timeout); timeout=false;
@@ -73,6 +89,32 @@ function messageFromWorker(event){
     }
 }
 
+function resetMarkers(){
+    if(debugMarker) {
+        editor.session.removeMarker(debugMarker);
+        debugMarker=false;
+    }
+    if(debugMarker){
+        editor.session.removeMarker(debugMarker);
+        debugMarker=false;
+    }
+}
+
+function resumeBreak(lvl){
+    Atomics.store(workerSem,0,lvl); 
+    Atomics.notify(workerSem,0);
+    setStateRunning();
+    resetMarkers();
+    if(timeout) clearTimeout(timeout); // Defensive: we have cancelled it when we broke
+    timeout=setTimeout(function(){timeout=false; Terminate();}, timeoutLen); // That means that a code that last 1m59 before breakpoint, can get 2 brand new minutes of run
+                        // But user is expected to know what they do in such case 
+}
+
+// Terminate only if something is running (called when a new file is opened to end current run, if there is one)
+function StopProcess(){
+    if(workerRunning) Terminate();
+}
+
 function endWorker(){
     if(!worker) return;
     if(timeout) clearTimeout(timeout);
@@ -80,6 +122,7 @@ function endWorker(){
     worker.terminate();
     worker=false;
     workerRunning=false;
+    resetMarkers();
 }
 
 function startWorker(){
@@ -117,7 +160,7 @@ function runCode(){
     worker.postMessage({argv: argv});
     worker.postMessage({code:editor.getValue()});
     setStateRunning();
-    timeout=setTimeout(Terminate, timeoutLen);
+    timeout=setTimeout(function(){timeout=false; Terminate();}, timeoutLen);
     $("#console").empty();
     $("#status").empty();
     $("#errors").empty();
@@ -127,19 +170,21 @@ function runCode(){
     setUserStatus('');
     $tabs.classList.remove('multextra');
     _graphes={Gr:true};
-    if(errorMarker){
-        editor.session.removeMarker(errorMarker);
-        errorMarker=false;
-    }
+    resetMarkers();
     return true;
 }
 
 function Terminate(){
+    if(timeout) clearTimeout(timeout);
+    if(workerSleepTimeout) clearTimeout(workerSleepTimeout);
+    workerSleepTimeout=false;
     timeout=false;
     // Start a new worker (and, more importantly here, kill the former one
     // but starting a new one — not running — make it ready for next code run)
     startWorker(); 
     setStateStop();
+    closeDebugInfo();
+    resetMarkers();
     $("#status").html("<i>Programme en boucle, interrompu au bout de "+(timeoutLen/1000)+" secondes</i>");
 }
 
@@ -176,6 +221,17 @@ function checkEditorSettings(){
             }
         }
     }
+}
+
+function mouseMove(e){
+    if(!workerInPause) return;
+    /*
+    let pos=e.getDocumentPosition();
+    Atomics.store(workerSem, 1, pos.row);
+    Atomics.store(workerSem, 2, pos.column);
+    Atomics.store(workerSem, 0, 3); // I want debug info on that pos
+    Atomics.notify(workerSem, 0);
+    */
 }
 
 function init(){
@@ -215,7 +271,7 @@ function init(){
    editor.commands.addCommand({name:"ShowFiles", bindKey:{win:"alt-f",mac:"Alt-f"},
          exec:()=>{showTab("files");}});
    editor.commands.addCommand({name:"Stop", bindKey:{win:"alt-c",mac:"Alt-c"},
-         exec:()=>{if(timeout) clearTimeout(timeout); Terminate();}});
+         exec:()=>{Terminate();}});
    editor.commands.addCommand({name:"Save&Run", 
          bindKey:{win:"Ctrl-s", mac:"Command-s"}, exec:()=>saveCode(true)});
    editor.commands.addCommand({name:"Run", 
@@ -236,6 +292,8 @@ function init(){
     // Check for options in localStorage. And do that again anytime we get focus (presumably going back from ctrl+,)
     editor.on('focus', checkEditorSettings);
     checkEditorSettings();
+
+    editor.on('mousemove', mouseMove);
 
     initGui();
 

@@ -62,6 +62,7 @@ function loadCloudFile(j){
     // Set source of just received file. It is readonly iff user is not teacher and edited code is not his (so Grimoire, since non-teacher can't edit
     // other can than theirs and Grimoire)
     setSource(j.src, j.who, j.code, (listUsers===false) && (j.who!==false));
+    StopProcess();
     editor.setValue(j.code, -1);
     initFiles(j.who);
     //runCode();
@@ -280,6 +281,7 @@ function refreshCloud(rep){
         }
         if(currentSource) saveCode();
         editor.setValue("", -1);
+        StopProcess();
         // This is the new edited file, on currently watched dir, with no code, and writable
         setSource(ns, pwd, '', false);
         mypost('/save', {who:pwd, fn:ns, code:''}).then((j)=>initFiles(pwd));

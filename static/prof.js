@@ -81,7 +81,6 @@ mypost('/listRooms', {}).then(function(rep){
 
 mypost('/listGroups', {}).then(function(rep){
     for(let gr of rep){
-        console.log(gr);
         let oo=document.createElement('option');
         oo.value=gr;
         oo.textContent=gr;

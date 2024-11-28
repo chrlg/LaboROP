@@ -1,7 +1,7 @@
 import * as Process from "./process.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
-import {regularCheck, print} from "./domcom.js";
+import {regularCheck, print, breakpoint} from "./domcom.js";
 import {evalSommet, evalGraphe, creerArc, creerArete} from "./graphe.js";
 import {FALSE} from "./constants.js";
 import Decimal from "./lib/decimal.mjs";
@@ -209,6 +209,9 @@ export function interpretWithEnv(tree, isloop){
         if(ti.t=="$"){
             print(JSON.stringify(eval(ti.i.slice(1)))+"\n");
             continue;
+        }
+        if(ti.t=="breakpoint"){
+            breakpoint(ti.ln);
         }
     }
     return false;

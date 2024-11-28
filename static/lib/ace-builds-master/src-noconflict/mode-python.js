@@ -26,7 +26,7 @@ var PythonHighlightRules = function() {
     );
 
     var keywordMapper = this.createKeywordMapper({
-        "invalid.deprecated": "debugger",
+        "invalid.deprecated": "breakpoint",
         "support.function": builtinFunctions,
         "constant.language": builtinConstants,
         "keyword": keywords

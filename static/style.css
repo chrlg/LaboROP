@@ -273,6 +273,13 @@ pre#console{
    left: 0 !important;
 }
 
+.debug {
+   background: rgba(128,255,128,0.5);
+   position: absolute;
+   width: 100% !important;
+   left: 0 !important;
+}
+
 #runBar button {
     display: inline-block;
     height: calc(4vh - 2px);
@@ -320,4 +327,53 @@ pre#console{
     text-align: center;
     line-height: calc(4vh - 2px);
     margin-left:2px;
+}
+
+#debugInfo {
+    height: 70vh;
+    width: 45vw;
+    position: fixed;
+    display: none;
+    top: 20vh;
+    left:25vw;
+    background-color: #ccccff;
+    border: solid 2px #7777ff;
+    z-index: 10;
+}
+
+#debugInfoHandle {
+    background-color: #0000ff;
+    height: 3vh;
+    font-family: sans-serif;
+    color: white;
+    font-size: 3vh;
+    line-height: 3vh;
+}
+
+#debugInfoClose {
+    float: right;
+    height: 3vh;
+}
+
+table.debugInfoEnv {
+    width: 100%;
+    font-family: sans-serif;
+}
+
+table.debugInfoEnv thead tr.title th {
+    background-color: #f44;
+    color: while;
+}
+table.debugInfoEnv thead th {
+    background-color: #66f;
+    color: white;
+}
+table.debugInfoEnv tbody th {
+    background-color: #99f;
+    color: black;
+}
+
+#debugInfoContent {
+    overflow-y: scroll;
+    height: 67vh;
 }
