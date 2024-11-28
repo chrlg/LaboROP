@@ -194,10 +194,6 @@ export function interpretWithEnv(tree, isloop){
             interpReturn(ti);
             return "return";
         }
-        if(ti.t=="exit"){
-            interpExit(ti.arg);
-            return "exit";
-        }
         if(ti.t=="+="){
             interpPlusEgal(ti);
             continue;
@@ -358,16 +354,6 @@ function interpFoisEgal(tree){
     let lv=evaluateLVal(tree.left);
     let r=evaluate({t:'*', left:tree.left, right:tree.right, ln:tree.ln});
     setRef(lv, r, tree.ln);
-}
-
-function interpExit(arg){
-    let v=evaluate(arg);
-    if(v.t=="boolean" || v.t=="string" || v.t=="number" || v.t=="decimal")
-        throw {error:"exit", val:v.val, ln:arg.ln};
-    if(v.t=="Sommet") throw {error:"exit", val:v.name, ln:arg.ln};
-    if(v.t=="Arc") throw {error:"exit", val:v.i.name+"->"+v.a.name, ln:arg.ln};
-    if(v.t=="Arete") throw {error:"exit", val:v.i.name+"--"+v.a.name, ln:arg.ln};
-    throw {error:"type", name:"Mauvais type pour exit", msg:"", ln:arg.ln};
 }
 
 

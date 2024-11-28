@@ -113,9 +113,10 @@ function onMessageCode(evt){
       regularCheck(true);
       if(e.error) {
 	 if(e.error=="exit") {
+            console.log("exit", e);
 	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
 	       msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
-	    else postMessage({termine: e.val, tree:out});
+	    else postMessage({termine: e.val, optcnt:Env.OpCnt});
 	 }
 	 else {
             postMessage(e);

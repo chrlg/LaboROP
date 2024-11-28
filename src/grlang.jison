@@ -108,7 +108,7 @@
 "global"		return "global"
 "return"		return "return"
 "range"			return "range"
-"exit"			return "exit"
+"breakpoint"            return "breakpoint"
 
 [A-Za-z_][A-Za-z0-9_]*	return "ID"
 
@@ -210,8 +210,8 @@ instructionNoColon
       | global listID {
 	 $$ = {t:"global", vars:$2, ln:@1.first_line};
       }
-      | exit '(' expr ')' {
-	 $$ = {t:"exit", arg:$3, ln:@1.first_line};
+      | breakpoint {
+        $$ = {t:"breakpoint", ln:@1.first_line};
       }
       | "BEGIN" manySemis "END" {
          $$ = {t:"pass"};

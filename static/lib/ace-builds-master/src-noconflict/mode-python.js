@@ -7,7 +7,7 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var PythonHighlightRules = function() {
 
     var keywords = (
-        "and|break|continue|def|elif|else|exit|" +
+        "and|break|continue|def|elif|else|" +
         "for|global|if|in|not|or|pass|this|" +
         "Sommet|Arc|Arete|Graphe|range|return|while|xor"
     );
@@ -21,7 +21,7 @@ var PythonHighlightRules = function() {
         "min|max|argmin|argmax|int|sum|" +
 	"print|printnr|println|progress|status|arcs|aretes|sommets|import|" +
         "premier|dernier|random|pop|insert|" +
-        "clear|refresh|_grapheMode|sleep|" +
+        "clear|refresh|_grapheMode|sleep|exit|" +
         "len|type|whoami|help"
     );
 

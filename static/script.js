@@ -61,6 +61,7 @@ function messageFromWorker(event){
             Atomics.notify(workerSem,0);
             workerSleepTimeout=false;
         }, event.data.sleep);
+        return;
     }
     if(event.data.termine!==undefined){
         $("#status").html("<i>Program terminé avec le code "+event.data.termine+" en "+event.data.opcnt+" opérations</i>");

@@ -52,6 +52,7 @@ export default function populate(){
    Env.addPredfn("int", preInt);
    Env.addPredfn("help", preHelp);
    Env.addPredfn("sleep", preSleep);
+   Env.addPredfn("exit", preExit);
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Argv", ()=>{return Env.Argv});
    Env.addPredvar("Id", preId, true);
@@ -932,6 +933,21 @@ x peut être un nombre, un décimal ou une chaîne
     int(12.5) ⇒ 12
     int(12.5d) ⇒ 12
     int("12.5") ⇒ 12
+`;
+
+function preExit(args, named, ln, fname){
+    if(args.length==0) throw {error:"exit", val:0, ln:ln};
+    let v=evaluate(args[0]);
+    if(v.t=="boolean" || v.t=="string" || v.t=="number" || v.t=="decimal")
+        throw {error:"exit", val:v.val, ln:ln};
+    if(v.t=="Sommet") throw {error:"exit", val:v.name, ln:ln};
+    if(v.t=="Arc") throw {error:"exit", val:v.i.name+"->"+v.a.name, ln:ln};
+    if(v.t=="Arete") throw {error:"exit", val:v.i.name+"--"+v.a.name, ln:ln};
+    throw {error:"type", name:"Mauvais type pour exit", msg:"", ln:ln};
+}
+Help.predfn['exit']=`exit(): provoque la fin immédiate du programme.
+────────────────────────────────────────────────────────────
+exit(valeur): provoque la fin immédiate du programme avec un code d'erreur
 `;
 
 function preHelp(args, named, ln, fname){
