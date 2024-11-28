@@ -25,8 +25,13 @@ export function load(name, ln){
         cache[fn]=req.response;
     }
     let j=cache[fn];
-    if(!j) throw {error:"module", name:"Erreur de chargement", 
-        msg:`Le module ${name} semble avoir été trouvé, mais n'a pas pu être chargé`, ln:ln}
+    if(!j) throw {error:"module", name:"Erreur de chargement", msg:`Le module ${name} semble avoir été trouvé, mais n'a pas pu être chargé`, ln:ln};
+    if(Array.isArray(j) && subnum===false){
+        throw {error:"module", name:"Module multigraphe", msg:`Ce module devrait être importé en spécifiant un numéro de graph tel que import("${name}$1")`, ln:ln};
+    }
+    if(subnum!==false && !Array.isArray(j)){
+        throw {error:"module", name:"Module monographe", msg:`Tentative de choisir un graphe dans un module monographe. Vouliez-vous dire import("${fn}") ?`, ln:ln};
+    }
     try{
         if(subnum!==false) j=j[subnum];
     }catch(e){

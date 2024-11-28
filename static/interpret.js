@@ -121,7 +121,7 @@ function onMessageCode(evt){
             postMessage(e);
         }
       }
-      else if(e.msg){
+      else if(e.msg && e.loc){
          let rawLineIdx=0, parseLineIdx=0, rawLineIdxEnd=0, parseLineIdxEnd=0;
          let nn=0;
          for(;rawLineIdxEnd<evt.data.code.length; rawLineIdxEnd++){
@@ -174,6 +174,9 @@ function onMessageCode(evt){
          }
          msg+=possib;
          postMessage({error: "syntax", name: "Erreur de syntaxe", msg: msg, ln: e.line+1, err:e});
+      }
+      else if(e.msg){
+         postMessage({error: "lexical", name: "Erreur lexicale", msg: e.msg, ln: e.line+1, err:e});
       }
       else if(e.message=='too much recursion'){
         postMessage({error:"exec", name:"Limite machine atteinte", msg:"Trop d'appels récursifs", ln:-1});

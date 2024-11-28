@@ -94,9 +94,9 @@ function resetMarkers(){
         editor.session.removeMarker(debugMarker);
         debugMarker=false;
     }
-    if(debugMarker){
-        editor.session.removeMarker(debugMarker);
-        debugMarker=false;
+    if(errorMarker){
+        editor.session.removeMarker(errorMarker);
+        errorMarker=false;
     }
 }
 
