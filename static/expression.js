@@ -570,6 +570,13 @@ export function evaluate(expr){
         if(c.val) return evaluate(expr.oui);
         return evaluate(expr.non);
     }
+
+    // A very special case: node that are already evaluated. For now it is used only in one place: for callback calls
+    // we already have graph and node, and are too lazy to build a {t:field {t:id} ...} expression (plus it would be
+    // quite stupid to build an expression so that it is evaluated, when we already know evaluation)
+    if(expr.t=="evalDone"){
+        return expr.v;
+    }
     console.trace("Cannot evaluate", expr);
 }
 

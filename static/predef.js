@@ -986,6 +986,13 @@ function preHelp(args, named, ln, fname){
         print(Help.line);
         return;
     }
+    // Needed for special case of clickSommet : it desn't exist as predfn, but still has a help page
+    if(args[0].t=='id' && Help.predfn[args[0].name]){
+        print(Help.line);
+        print(Help.predfn[args[0].name]);
+        print(Help.line);
+        return;
+    }
     let a=evaluate(args[0]);
     if(a.t=='predfn'){
         if(Help.predfn[a.name]){
@@ -1161,6 +1168,27 @@ function preZero(args, named, ln, fname){
     let n=Object.keys(g.sommets).length;
     return Mat.zeroDim(n);
 }
+
+Help.predfn['clickSommet']=`Un cas particulier : cette fonction n'existe pas. 
+Sauf si vous la définissez.  Mais si vous définissez une fonction de ce nom, 
+avec deux paramètres, g et s, alors elle sera appelée, après la fin du 
+programme, quand vous cliquerez sur un sommet, avec comme argument g le graphe
+sur lequel on a cliqué, et s le sommet
+
+Exemple:
+    def clickSommet(g, s):
+        if s.color=='red':
+            s.color=''
+        else:
+            s.color='red'
+
+Si cette fonction est définie dans votre programme, alors, un click sur un sommet, 
+une fois le programme terminé, change sa couleur
+
+Utilisez cette possibilité, par exemple, pour débugger, en affichant des 
+informations sur le sommet cliqué, ou en colorant son chemin
+`;
+
 
 Help.type['number']=`Un nombre est un entier ou un réel. 
 Lorsque ce nombre est un entier inférieur à 9007199254740992, il est exact. 

@@ -3,7 +3,7 @@ import grlang from "./grlang.js";
 import * as Env from "./environment.js";
 import {evaluate, evaluateLVal} from "./expression.js";
 import {regularCheck, setSabs} from "./domcom.js";
-import {interpretWithEnv, Line} from "./instructions.js";
+import {interpretWithEnv, interpCall, Line} from "./instructions.js";
 import * as Process from "./process.js";
 
 // Fonction levant une erreur de syntaxe ou lexicale (call back de l'analyseur syntaxique généré par jison)
@@ -100,6 +100,17 @@ onmessage = function (evt){
     if(evt.data.argv) Env.setArgv(evt.data.argv);
     else if(evt.data.code) onMessageCode(evt);
     else if(evt.data.pausesab) setSabs(evt.data.pausesab);
+    else if(evt.data.clickGraph){
+        // We assume that interpret has already ran. So, we should be able to just run user defined function, if it exists
+        if(Env.Global['clickSommet'] && Env.Global['clickSommet'].t=='DEF'){
+            let g=Env.Graphes[evt.data.clickGraph];
+            if(!g) return;
+            let s=g.sommets[evt.data.clickNode];
+            if(!s) return;
+            let call={t:'call', f:'clickSommet', args:[{t:'evalDone', v:g}, {t:'evalDone', v:s}], ln:0, named:[]};
+            interpCall(call);
+        }
+    }
 }
 
 function onMessageCode(evt){

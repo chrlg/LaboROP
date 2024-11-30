@@ -8,6 +8,22 @@ let _graphes={"Gr":true};
 let _graphRendererRunning=false;
 
 
+function initSrenderer(){
+    let $s = document.getElementById('svgcont');
+    $s.addEventListener('click', function(e){
+        let g=false;
+        for(let k in _graphes){
+            let gg=_graphes[k];
+            if(gg.shown){
+                g=gg;
+                break;
+            }
+        }
+        if(!g) return;
+        if(e.target.tagName=='text') clickNode(g.name, e.target.textContent);
+    });
+}
+
 function updateGraph(gr){
     if(!_graphes[gr.name]){
         createExtraGraph(gr.name);

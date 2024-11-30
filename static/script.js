@@ -89,6 +89,17 @@ function messageFromWorker(event){
     }
 }
 
+// Called when user has clicked on node whose name is s of graph whose name is g
+function clickNode(g, s){
+    if(!worker) return; // Worker is dead
+    if(workerRunning) return ; // For now we don't know how to call a callback while the worker is occupied
+                              // Note that it could be done via a "mainLoop(timeout)" call from the code
+                              // that would wait for a return from SAB. Never the favorite situation to have two mechanism to do the
+                              // same thing, but well... (when a proper MV will exist, that would be easier, since MV could receive
+                              // messaeg while running, if it runs by batches)
+    worker.postMessage({clickGraph: g, clickNode: s});
+}
+
 function resetMarkers(){
     if(debugMarker) {
         editor.session.removeMarker(debugMarker);
@@ -311,6 +322,7 @@ function init(){
    });
 
    setInterval(refreshGraphs, 500);
+   initSrenderer();
 }
 
 window.onload=init;
