@@ -108,61 +108,60 @@ onmessage = function (evt){
             let s=g.sommets[evt.data.clickNode];
             if(!s) return;
             let call={t:'call', f:'clickSommet', args:[{t:'evalDone', v:g}, {t:'evalDone', v:s}], ln:0, named:[]};
-            interpCall(call);
+            try{
+                interpCall(call);
+                regularCheck(true);
+            }catch(e){
+                // Note that 2nd and 3rd argument should never be used anyway, since our `call` could not raise lexical or syntaxic error
+                processError(e, {data:{code:'clickSommet(g,s)'}}, 'clickSommet(g,s)');
+            }
         }
     }
 }
 
-function onMessageCode(evt){
-   let str, out;
-   try{
-      str=parseTabulation(evt.data.code);
-      out = grlang.parse(str);
-      interpret(out);
-      postMessage({termine: 0, opcnt:Env.OpCnt});
-   }catch(e){
-      regularCheck(true);
-      if(e.error) {
-	 if(e.error=="exit") {
-	    if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
-	       msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
-	    else postMessage({termine: e.val, optcnt:Env.OpCnt});
-	 }
-	 else {
+function processError(e, evt, str){
+    regularCheck(true);
+    if(e.error) {
+        if(e.error=="exit") {
+            if(e.val) postMessage({error:"exec", name:"Erreur signalée par le progamme",
+                    msg:"Le programme a déclenché l'erreur "+e.val, ln:e.ln});
+            else postMessage({termine: e.val, optcnt:Env.OpCnt});
+        }
+        else {
             postMessage(e);
         }
-      }
-      else if(e.msg && e.loc){
-         let rawLineIdx=0, parseLineIdx=0, rawLineIdxEnd=0, parseLineIdxEnd=0;
-         let nn=0;
-         for(;rawLineIdxEnd<evt.data.code.length; rawLineIdxEnd++){
+    }
+    else if(e.msg && e.loc){
+        let rawLineIdx=0, parseLineIdx=0, rawLineIdxEnd=0, parseLineIdxEnd=0;
+        let nn=0;
+        for(;rawLineIdxEnd<evt.data.code.length; rawLineIdxEnd++){
             if(evt.data.code.charCodeAt(rawLineIdxEnd)==10){
                 nn++;
                 if(nn==e.line) rawLineIdx=rawLineIdxEnd;
                 if(nn==e.line+1) break;
             }
-         }
-         nn=0;
-         for(;parseLineIdxEnd<str.length; parseLineIdxEnd++){
+        }
+        nn=0;
+        for(;parseLineIdxEnd<str.length; parseLineIdxEnd++){
             if(str.charCodeAt(parseLineIdxEnd)==10){
                 nn++;
                 if(nn==e.line) parseLineIdx=parseLineIdxEnd;
                 if(nn==e.line+1) break;
             }
-         }
-         let rawLine = evt.data.code.substr(rawLineIdx+1, rawLineIdxEnd-rawLineIdx-1);
-         let parseLine = str.substr(parseLineIdx+1, parseLineIdxEnd-parseLineIdx-1);
-         let colnum=e.loc.last_column;
-         while(parseLine[0]=='§'){
+        }
+        let rawLine = evt.data.code.substr(rawLineIdx+1, rawLineIdxEnd-rawLineIdx-1);
+        let parseLine = str.substr(parseLineIdx+1, parseLineIdxEnd-parseLineIdx-1);
+        let colnum=e.loc.last_column;
+        while(parseLine[0]=='§'){
             colnum-=2;
             parseLine=parseLine.slice(2);
-         }
-         for(let i=0; rawLine.charCodeAt(i)==32; i++){
+        }
+        for(let i=0; rawLine.charCodeAt(i)==32; i++){
             colnum++;
-         }
-         let msg = rawLine+'\n' + '-'.repeat(colnum) + '^\n' + 'Terme inattendu: «' + e.text + '»\n' + "Au lieu d'un de:\n";
-         let possib='';
-         for(let i =0; i<e.expected.length; i++){
+        }
+        let msg = rawLine+'\n' + '-'.repeat(colnum) + '^\n' + 'Terme inattendu: «' + e.text + '»\n' + "Au lieu d'un de:\n";
+        let possib='';
+        for(let i =0; i<e.expected.length; i++){
             if(i) {
                 if(i==e.expected.length-1) possib+=' ou ';
                 else possib+=', ';
@@ -182,21 +181,32 @@ function onMessageCode(evt){
             }else{
                 possib+=np;
             }
-         }
-         msg+=possib;
-         postMessage({error: "syntax", name: "Erreur de syntaxe", msg: msg, ln: e.line+1, err:e});
-      }
-      else if(e.msg){
-         postMessage({error: "lexical", name: "Erreur lexicale", msg: e.msg, ln: e.line+1, err:e});
-      }
-      else if(e.message=='too much recursion'){
+        }
+        msg+=possib;
+        postMessage({error: "syntax", name: "Erreur de syntaxe", msg: msg, ln: e.line+1, err:e});
+    }
+    else if(e.msg){
+        postMessage({error: "lexical", name: "Erreur lexicale", msg: e.msg, ln: e.line+1, err:e});
+    }
+    else if(e.message=='too much recursion'){
         postMessage({error:"exec", name:"Limite machine atteinte", msg:"Trop d'appels récursifs", ln:-1});
-      }
-      else {
-         console.trace(e);
-         postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e), ln:Line});
-         throw(e);
-      }
+    }
+    else {
+        console.trace(e);
+        postMessage({error:"interne", name:"Erreur interne", msg:JSON.stringify(e), ln:Line});
+        throw(e);
+    }
+}
+
+function onMessageCode(evt){
+   let str, out;
+   try{
+      str=parseTabulation(evt.data.code);
+      out = grlang.parse(str);
+      interpret(out);
+      postMessage({termine: 0, opcnt:Env.OpCnt});
+   }catch(e){
+      processError(e, evt, str);
    }
 }
 

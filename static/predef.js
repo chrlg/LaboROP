@@ -300,6 +300,9 @@ function printRec(o){
         else if(o.t=="None"){
             print("None");
         }
+        else if(o.t=="graphe"){
+            print(o.name);
+        }
         else print("{"+o.t+"}");
     }
     else{
