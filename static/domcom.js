@@ -70,6 +70,13 @@ export function timeoutResume(dt){
     postMessage({sleep: dt});
     Atomics.wait(pauseSem, 0, 0);
 }
+
+export function wait(dt){
+    Atomics.store(pauseSem, 0, 0);
+    postMessage({wait: dt});
+    Atomics.wait(pauseSem, 0, 0);
+}
+
 function debugPrint(v){
     let vv;
     if(isNumeric(v)) return numericValue(v);

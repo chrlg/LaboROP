@@ -6,6 +6,7 @@ let _grlg = {
 };
 let _graphes={"Gr":true};
 let _graphRendererRunning=false;
+let _mapCoef=false;
 
 
 function initSrenderer(){
@@ -21,6 +22,33 @@ function initSrenderer(){
         }
         if(!g) return;
         if(e.target.tagName=='text') clickNode(g.name, e.target.textContent);
+    });
+    let $c = document.getElementById('canvascont');
+    $c.addEventListener('click', function(e){
+        let g=false;
+        for(let k in _graphes){
+            let gg=_graphes[k];
+            if(gg.shown){
+                g=gg;
+                break;
+            }
+        }
+        if(!g) return;
+        let targetscale = 1.1**_grlg.zoomlv;
+        let xs=4*e.layerX/targetscale; let ys=4*e.layerY/targetscale;
+        let x=(xs-_mapCoef[1])/_mapCoef[0];
+        let y=(ys-_mapCoef[3])/_mapCoef[2];
+        let sbest=false;
+        let dmin=1e30;
+        for(let sn in g.sommets){
+            let s=g.sommets[sn];
+            let d2=(s.x-x)**2+(s.y-y)**2;
+            if(d2<dmin){
+                dmin=d2;
+                sbest=sn;
+            }
+        }
+        clickNode(g.name, sbest);
     });
 }
 
@@ -146,6 +174,7 @@ function showMap(g){
     let BX=(-xmin+(xmax-xmin)*0.005)*AX;
     let AY=4000/(ymax-ymin)*0.99;
     let BY=(-ymin+(ymax-ymin)*0.005)*AY;
+    _mapCoef = [AX, BX, AY, BY];
     for(let a of g.arcs){
         if(g.discover && !a.visible) continue;
         let x1=AX*g.sommets[a.i].x+BX;

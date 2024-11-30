@@ -3,7 +3,7 @@ import * as Env from "./environment.js";
 import * as Mod from "./modules.js";
 import * as Mat from "./matrix.js";
 import {evaluate, evaluateLVal, isNumeric, numericValue} from "./expression.js";
-import {timeoutResume, regularCheck, print, flush, setProgress, setUserStatus} from "./domcom.js";
+import {wait, timeoutResume, regularCheck, print, flush, setProgress, setUserStatus} from "./domcom.js";
 import Decimal from "./lib/decimal.mjs";
 
 // help available for different kind of objects. To be fill later in the code
@@ -52,6 +52,7 @@ export default function populate(){
    Env.addPredfn("int", preInt);
    Env.addPredfn("help", preHelp);
    Env.addPredfn("sleep", preSleep);
+   Env.addPredfn("wait", preWait);
    Env.addPredfn("exit", preExit);
    Env.addPredvar("Adj", preM, true);
    Env.addPredvar("Argv", ()=>{return Env.Argv});
@@ -309,6 +310,7 @@ function printRec(o){
         print(o);
     }
 }
+
 function prePrint(args, named, ln, fname){
     let sep=(fname=='print')?' ':'';
     let end=(fname=='printnr')?'':'\n';
@@ -1091,6 +1093,29 @@ function preSleep(args, named, ln, fname){
 }
 Help.predfn.sleep=`sleep(delai): attend delai secondes avant de continuer
 `;
+
+function preWait(args, named, ln, fname){
+    let timeout=false;
+    if(args.length>1){
+        throw {error:'type', name:"Mauvais nombre d'arguments", msg:`wait prend 0, ou 1 argument (le délai d'attente maximum)`, ln:ln};
+    }
+    if(args.length==1){
+        let t=evaluate(args[0]);
+        if(!isNumeric(t)) throw {error:"type", name:"Mauvais type", msg:`L'argument de wait, quand il y en a un, doit être un nombre, en seconds`, 
+                                ln:args[0].ln};
+        timeout=numericValue(t)*1000;
+    }
+    wait(timeout);
+}
+Help.predfn.wait=`wait(): attend un événement, c'est-à-dire un clic de l'utilisateur sur un sommet
+Retourne le sommet sur lequel l'utilisateur a cliqué.
+Notez que si une "callback" clickSommet a été définie, elle sera appelée avec le graphe et le sommet 
+cliqué.
+────────────────────────────────────────────────────────────
+wait(delai): même chose que précédemment. Mais à l'expliration du délai, l'appel à wait se terminera,
+avec comme retour None, même si aucun clic n'est survenu
+`;
+
 
 
 function prePremier(args, named, ln, fname){

@@ -188,7 +188,7 @@ function initGui(){
         // Set position to the one of $unrollExtragraph button
         // Note: void if not multgraph (since then position is not absolute)
         $extragraph.style.left=($unrollExtragraph.getBoundingClientRect().x-$unrollExtragraph.parentElement.getBoundingClientRect().x).toFixed(2)+'px';
-        showTab('show');
+        //showTab('show');
     });
 
     // Run/stop
